@@ -189,6 +189,9 @@ tr.today-row td{background:#fdf8ee}
 #salesRoot tbody tr.help td{background:#FCE3EE}
 #salesRoot tbody tr.help:hover td{background:#F9D3E4}
 #salesRoot .help-ck{width:16px;height:16px;cursor:pointer;accent-color:#D14D8B}
+#salesRoot .sel-ck{width:16px;height:16px;cursor:pointer;accent-color:#B4372F;margin:0}
+#salesRoot tbody tr.sel td{background:#FDECEA}
+#salesRoot tbody tr.sel:hover td{background:#FBDDD9}
 #salesRoot .num{text-align:right;font-variant-numeric:tabular-nums}
 #salesRoot .strong{font-weight:700}
 #salesRoot .mono{font-variant-numeric:tabular-nums;color:var(--ink2)}
@@ -433,12 +436,13 @@ tr.today-row td{background:#fdf8ee}
         <button class="btn btn-g" onclick="S.downloadXlsx()">엑셀 다운로드</button>
         <button class="btn btn-g hidden" id="asgBtn" onclick="S.openAssign()">담당자 관리</button>
         <button class="btn btn-g" id="refreshBtn" onclick="S.refresh()">새로고침</button>
+        <button class="btn btn-d" id="delSelBtn" onclick="S.deleteSelected()" disabled>🗑 삭제</button>
       </div>
     </section>
     <section class="tbl-wrap">
       <table>
         <thead><tr>
-          <th>No.</th><th>도움요청</th><th>센터</th><th>지점장</th><th>파트너스</th><th>조직코드</th><th>구코드</th><th>경력</th><th>차월</th><th>상태</th><th>인보험여부</th><th>매출(금액)</th><th>수정P</th><th>계약자</th><th>피보험자</th><th>상품명</th><th>매출예정일</th><th>실매출일</th><th>비고</th><th></th>
+          <th style="width:34px"><input type="checkbox" id="selAll" class="sel-ck" title="현재 화면 전체 선택" onclick="S.toggleAll(this.checked)"></th><th>No.</th><th>센터</th><th>지점장</th><th>파트너스</th><th>조직코드</th><th>구코드</th><th>경력</th><th>차월</th><th>상태</th><th>인보험여부</th><th>매출(금액)</th><th>수정P</th><th>계약자</th><th>피보험자</th><th>상품명</th><th>매출예정일</th><th>실매출일</th><th>비고</th><th>도움요청</th><th></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -643,7 +647,7 @@ tr.today-row td{background:#fdf8ee}
     </div>
     <div class="form-grid three" style="margin-bottom:1rem">
       <div class="form-group"><label>센터 *</label>
-        <select id="mi-f-센터"><option value="">선택</option><option>강남센터</option><option>서울센터</option><option>경인센터</option><option>충청센터</option><option>대경센터</option><option>부경센터</option><option>호남센터</option></select>
+        <select id="mi-f-센터"><option value="">선택</option><option>강남센터</option><option>서울센터</option><option>경인센터</option><option>충청센터</option><option>호남센터</option><option>부경센터</option><option>대경센터</option></select>
       </div>
       <div class="form-group"><label>지점장명 *</label><input type="text" id="mi-f-지점장명"></div>
       <div class="form-group"><label>입사월</label><input type="month" id="mi-f-입사월" onchange="MGR.calcMonth()"></div>
@@ -690,6 +694,7 @@ tr.today-row td{background:#fdf8ee}
 /* ★★ 1. 지점장용 파트너스 시트의 Apps Script 웹 앱 URL ★★
    (새로 만든 '지점장 원노트' 스프레드시트에 파트너스_시트코드.gs를 넣고 배포한 뒤 그 URL을 붙여넣으세요) */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUjef00IG7016fh5iOh6f9So6OJ9Y0ohZe-10nusOQrVVIGtGAKxk66oA2J__roEj74Q/exec';
+const CENTERS_ALL = ['강남센터','서울센터','경인센터','충청센터','호남센터','부경센터','대경센터'];
 const ADMINS = ['김세인'];                       // 파트너스 관리대장에서 전체 조회 가능한 관리자
 const SALES_ADMIN = '김세인';                    // 매출관리 최고 관리자 (비밀번호 관리 권한)
 /* ★★ 2. 매출관리 Apps Script 웹 앱 URL ★★ (기존 매출관리 시트에 doPost 추가 후 재배포한 URL) */
@@ -1259,6 +1264,34 @@ function weeksOfMonth(key){
   return out;
 }
 
+/* 센터(fc)에 소속된 지점장 명단 — 3곳에서 모아 중복 제거 */
+function collectManagers(fc){
+  const set = new Set();
+
+  // ① 지점장정보 시트
+  (typeof MGR!=='undefined' && MGR.getList ? MGR.getList() : []).forEach(m=>{
+    if(!m.지점장명) return;
+    if(fc && (m.센터||'') !== fc) return;
+    set.add(m.지점장명);
+  });
+
+  // ② 파트너스 관리대장 담당자
+  (typeof data!=='undefined' ? data : []).forEach(d=>{
+    if(!d.담당자) return;
+    if(fc && (d.센터||'') !== fc) return;
+    set.add(d.담당자);
+  });
+
+  // ③ 매출관리 지점장
+  ((typeof S!=='undefined' && S.getRows) ? S.getRows() : []).forEach(r=>{
+    if(!r.mgr) return;
+    if(fc && (r.center||'') !== fc) return;
+    set.add(r.mgr);
+  });
+
+  return [...set].sort((a,b)=>String(a).localeCompare(String(b),'ko'));
+}
+
 function statsScopedPartners(fc, fp){
   let v = getVisibleData();
   if(isAdmin){
@@ -1349,8 +1382,12 @@ function renderStatsPage(keepFilters=false){
   if(!years.includes(String(now.getFullYear()))) years.push(String(now.getFullYear()));
   years.sort((a,b)=>b-a);
 
-  const centers = [...new Set(all.map(d=>d.센터||'').filter(Boolean))].sort();
-  const persons = [...new Set(all.filter(d=>!fc||d.센터===fc).map(d=>d.담당자||'').filter(Boolean))].sort();
+  /* 센터: 고정 7개 + 데이터에 있는 기타 센터 */
+  const extraC = [...new Set(all.map(d=>d.센터||'').filter(Boolean))].filter(c=>!CENTERS_ALL.includes(c));
+  const centers = CENTERS_ALL.concat(extraC.sort());
+
+  /* 지점장: 지점장정보 명단 + 파트너스 담당자 + 매출 지점장 (센터 선택 시 소속만) */
+  const persons = collectManagers(fc);
 
   const adminFilter = isAdmin ? `
       <select id="st-center" onchange="renderStatsPage(true)" style="padding:7px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;min-width:120px">
@@ -1398,12 +1435,30 @@ function renderStatsPage(keepFilters=false){
 
   /* --- 매출 (비동기 로드) --- */
   if(typeof S!=='undefined' && S.ensureRows){
-    S.ensureRows().then(()=>renderStatsSales(prevKey, baseKey, fc, fp))
-      .catch(e=>{
-        document.getElementById('st-sales').innerHTML =
-          `<div class="st-card"><div class="empty" style="padding:1.2rem">매출 데이터를 불러오지 못했습니다.<br><span style="font-size:11px">${e.message||e}</span></div></div>`;
-      });
+    S.ensureRows().then(()=>{
+      renderStatsSales(prevKey, baseKey, fc, fp);
+      if(isAdmin) refreshPersonSelect(fc, fp);   // 매출 지점장까지 반영
+    }).catch(e=>{
+      document.getElementById('st-sales').innerHTML =
+        `<div class="st-card"><div class="empty" style="padding:1.2rem">매출 데이터를 불러오지 못했습니다.<br><span style="font-size:11px">${e.message||e}</span></div></div>`;
+    });
   }
+
+  /* --- 지점장 명단 확보 (관리자만) --- */
+  if(isAdmin && typeof MGR!=='undefined' && MGR.ensure){
+    MGR.ensure().then(()=>refreshPersonSelect(fc, fp)).catch(()=>{});
+  }
+}
+
+/* 지점장 드롭다운만 다시 채우기 (선택값 유지) */
+function refreshPersonSelect(fc, fp){
+  const sel = document.getElementById('st-person');
+  if(!sel) return;
+  const list = collectManagers(fc);
+  const cur = sel.value || fp || '';
+  sel.innerHTML = '<option value="">지점장 전체</option>'
+    + list.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+  if(cur && !list.includes(cur)) sel.value = '';
 }
 
 function renderStatsSales(prevKey, baseKey, fc, fp){
@@ -1487,19 +1542,10 @@ var MGR = (function(){
   }
 
   function enter(){
-    if(loaded){ render(); return; }
+    if(loaded){ fillCenters(); render(); return; }
     document.getElementById('mi-body').innerHTML = '<tr><td colspan="9" class="empty">불러오는 중…</td></tr>';
-    fetch(GAS_URL + '?type=mgr&t=' + Date.now())
-      .then(r=>r.json())
-      .then(j=>{
-        list = Array.isArray(j) ? j : [];
-        loaded = true;
-        if(!list.length){
-          list = SEED.map(([c,n])=>({센터:c, 지점장명:n, 입사월:'', 차월:'', 교육이수:'', 경력사항:'', 특이사항:''}));
-          save(true);
-        }
-        fillCenters(); render();
-      })
+    ensure()
+      .then(()=>{ fillCenters(); render(); })
       .catch(e=>{
         document.getElementById('mi-body').innerHTML =
           `<tr><td colspan="9" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
@@ -1507,7 +1553,8 @@ var MGR = (function(){
   }
 
   function fillCenters(){
-    const cs = [...new Set(list.map(x=>x.센터).filter(Boolean))].sort();
+    const extra = [...new Set(list.map(x=>x.센터).filter(Boolean))].filter(c=>!CENTERS_ALL.includes(c));
+    const cs = CENTERS_ALL.concat(extra.sort());
     const sel = document.getElementById('mi-center');
     const cur = sel.value;
     sel.innerHTML = '<option value="">센터 전체</option>' +
@@ -1585,7 +1632,24 @@ var MGR = (function(){
     save().then(()=>{ closeModal('mi-modal'); fillCenters(); render(); });
   }
 
-  return { enter, render, openEdit, save:saveFromModal, remove, calcMonth };
+  /* 통계에서 지점장 명단이 필요할 때 (탭에 안 들어가도 불러옴) */
+  function getList(){ return list; }
+  function ensure(){
+    if(loaded) return Promise.resolve(list);
+    return fetch(GAS_URL + '?type=mgr&t=' + Date.now())
+      .then(r=>r.json())
+      .then(j=>{
+        list = Array.isArray(j) ? j : [];
+        loaded = true;
+        if(!list.length){
+          list = SEED.map(([c,n])=>({센터:c, 지점장명:n, 입사월:'', 차월:'', 교육이수:'', 경력사항:'', 특이사항:''}));
+          save(true).catch(()=>{});
+        }
+        return list;
+      });
+  }
+
+  return { enter, render, openEdit, save:saveFromModal, remove, calcMonth, getList, ensure };
 })();
 </script>
 <script>
@@ -1594,7 +1658,7 @@ var S = (function(){
 var SKEYS = ["center","mgr","partner","code","career","month","status","active","amt","pcorr","holder","insured","product","proposal","planDate","saleDate","note","help","oldcode"];
 var SHEADERS = ["센터","지점장명","파트너스명","조직코드","경력구분","차월","조직상태","인보험여부","매출(금액)▶","수정p","계약자명","피보험자명","상품명","제안내용(상품, 조건 등등)","매출예정일","실매출일","매출특이사항","도움요청","구코드"];
 var ASSIGNEES = ["김세인","배정은","김한길","이명우"];
-var CENTERS = ["서울센터","경인센터","부경센터","대경센터","호남센터","강남센터","충청센터"];
+var CENTERS = ["강남센터","서울센터","경인센터","충청센터","호남센터","부경센터","대경센터"];
 var CAREERS = ["신규","경력","재등록"];
 var MANAGERS = ["손다혜","홍승지","김수진","이인성","민진홍","이주아","현유라","김혜선","김혜정","박가현","방수연","이주향","최창대","임지유","이은정","서유리"];
 
@@ -1639,7 +1703,7 @@ function enter(){
 }
 function reset(){
   if (autoTimer){ clearInterval(autoTimer); autoTimer = null; }
-  rows = []; parsedUpload = null; entered = false; openMsId = null; page = 1; codeLabel = "";
+  rows = []; parsedUpload = null; entered = false; openMsId = null; page = 1; codeLabel = ""; SEL = {};
   F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: [], pFrom: "", pTo: "", sFrom: "", sTo: "" };
   ["editModal","uploadModal","setModal","asgModal","myPwModal"].forEach(function(id){ var el=$(id); if(el) el.classList.add("hidden"); });
   var cb=$("codeBanner"); if(cb) cb.classList.add("hidden");
@@ -1650,6 +1714,7 @@ function reset(){
 /* ----- 데이터 ----- */
 function refresh(){
   $("refreshBtn").disabled = true;
+  SEL = {};
   return call("list").then(function(j){
     rows = j.rows || [];
     pruneFilters();
@@ -1949,9 +2014,10 @@ function renderBody(){
     var isHelp = Number(r.help) === 1;
     var helpTitle = AUTH.role === "admin" ? "체크 해제 = 처리완료" : "체크 = 관리자에게 도움요청";
     var no = (page - 1) * PER + ri + 1;
-    html += '<tr' + (isHelp ? ' class="help"' : '') + ' onclick="S.openEdit(\'' + esc(r.id) + '\')">'
+    var isSel = SEL[r.id] === 1;
+    html += '<tr class="' + (isSel ? 'sel' : (isHelp ? 'help' : '')) + '" onclick="S.openEdit(\'' + esc(r.id) + '\')">'
+      + '<td onclick="event.stopPropagation()" style="text-align:center"><input type="checkbox" class="sel-ck"' + (isSel ? ' checked' : '') + ' title="선택 후 [🗑 삭제]" onchange="S.toggleSel(\'' + esc(r.id) + '\',this.checked)"></td>'
       + '<td class="num mono">' + no + '</td>'
-      + '<td onclick="event.stopPropagation()" style="text-align:center"><input type="checkbox" class="help-ck" title="' + helpTitle + '"' + (isHelp ? ' checked' : '') + ' onchange="S.toggleHelp(\'' + esc(r.id) + '\',this.checked)"></td>'
       + '<td>' + esc(r.center) + '</td><td>' + esc(r.mgr) + '</td><td>' + esc(r.partner) + '</td>'
       + '<td class="mono">' + esc(r.code) + '</td>'
       + '<td class="mono">' + esc(r.oldcode) + '</td><td>' + careerTag + '</td>'
@@ -1964,15 +2030,89 @@ function renderBody(){
       + '<td class="mono">' + esc(r.planDate) + '</td>'
       + '<td class="mono">' + (r.saleDate ? '<span class="done">' + esc(r.saleDate) + '</span>' : "") + '</td>'
       + '<td class="ellip" title="' + esc(r.note) + '">' + esc(r.note) + '</td>'
+      + '<td onclick="event.stopPropagation()" style="text-align:center"><input type="checkbox" class="help-ck" title="' + helpTitle + '"' + (isHelp ? ' checked' : '') + ' onchange="S.toggleHelp(\'' + esc(r.id) + '\',this.checked)"></td>'
       + '<td class="edit-cell">수정</td></tr>';
   });
-  if (!pr.length && rows.length) html = '<tr><td colspan="20" class="empty-row">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 \'건 추가\'로 입력하세요.</td></tr>';
-  if (!pr.length && !rows.length) html = '<tr><td colspan="20" class="empty-row">매출 데이터가 없습니다. \'건 추가\' 또는 엑셀 업로드로 입력하세요.</td></tr>';
+  if (!pr.length && rows.length) html = '<tr><td colspan="21" class="empty-row">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 \'건 추가\'로 입력하세요.</td></tr>';
+  if (!pr.length && !rows.length) html = '<tr><td colspan="21" class="empty-row">매출 데이터가 없습니다. \'건 추가\' 또는 엑셀 업로드로 입력하세요.</td></tr>';
   $("tbody").innerHTML = html;
+  syncSelUI(pr);
   $("pageInfo").textContent = page + " / " + total + " 페이지 · 총 " + fmt(f.length) + "건";
   $("prevBtn").disabled = page <= 1; $("nextBtn").disabled = page >= total;
 }
-function setPage(p, rel){ page = rel ? page + p : p; render(); }
+function setPage(p, rel){ page = rel ? page + p : p; SEL = {}; render(); }
+
+/* ---------- 선택 삭제 ---------- */
+var SEL = {};   // { id: 1 }
+
+function selCount(){ return Object.keys(SEL).length; }
+
+function syncSelUI(pageRows){
+  var btn = $("delSelBtn");
+  var n = selCount();
+  if (btn){
+    btn.disabled = n === 0;
+    btn.textContent = n ? ("🗑 삭제 (" + n + ")") : "🗑 삭제";
+  }
+  var all = $("selAll");
+  if (all){
+    var visible = (pageRows || []).length;
+    var picked = (pageRows || []).filter(function(r){ return SEL[r.id] === 1; }).length;
+    all.checked = visible > 0 && picked === visible;
+    all.indeterminate = picked > 0 && picked < visible;
+  }
+}
+
+function toggleSel(id, on){
+  if (on) SEL[id] = 1; else delete SEL[id];
+  var tr = document.querySelector('#tbody input.sel-ck[onchange*="' + id + '"]');
+  if (tr){
+    var row = tr.closest("tr");
+    if (row) row.classList.toggle("sel", !!on);
+  }
+  syncSelUI(currentPageRows());
+}
+
+function currentPageRows(){
+  var f = filteredRows();
+  return f.slice((page - 1) * PER, page * PER);
+}
+
+function toggleAll(on){
+  currentPageRows().forEach(function(r){
+    if (on) SEL[r.id] = 1; else delete SEL[r.id];
+  });
+  render();
+}
+
+function deleteSelected(){
+  var ids = Object.keys(SEL);
+  if (!ids.length) return;
+  if (!confirm("선택한 " + ids.length + "건을 삭제할까요?\n삭제하면 되돌릴 수 없습니다.")) return;
+
+  var btn = $("delSelBtn");
+  btn.disabled = true; btn.textContent = "삭제 중…";
+
+  var done = 0, fail = [];
+  var next = function(i){
+    if (i >= ids.length){
+      SEL = {};
+      refresh().then(function(){
+        if (fail.length) alert(done + "건 삭제 완료.\n" + fail.length + "건 실패:\n" + fail.slice(0,5).join("\n"));
+        else flash(done + "건이 삭제되었습니다");
+      });
+      return;
+    }
+    call("delete", { id: ids[i] })
+      .then(function(){ done++; })
+      .catch(function(e){ fail.push("· " + e.message); })
+      .finally(function(){
+        btn.textContent = "삭제 중… (" + (i + 1) + "/" + ids.length + ")";
+        next(i + 1);
+      });
+  };
+  next(0);
+}
 
 /* ----- 편집 ----- */
 function fillSelect(id, opts, withEmpty){
@@ -2269,6 +2409,7 @@ return {
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
+  toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected,
   toggleMs: toggleMs, renderPop: renderPop, renderPopList: renderPopList,
   toggleVal: toggleVal, clearVals: clearVals,
   setDate: setDate, resetFilters: resetFilters,
