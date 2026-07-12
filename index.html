@@ -335,6 +335,10 @@ tr.today-row td{background:#fdf8ee}
     <div class="section">
       <div class="section-title">기본 정보</div>
       <div class="form-grid three">
+        <div class="form-group" id="f-담당자-wrap" style="display:none">
+          <label>담당 지점장 <span style="color:#534AB7;font-size:10px">(관리자)</span></label>
+          <select id="f-담당자" onchange="syncOwnerCenter()"><option value="">선택</option></select>
+        </div>
         <div class="form-group"><label>센터</label>
           <select id="f-센터">
             <option value="">선택</option>
@@ -645,6 +649,17 @@ tr.today-row td{background:#fdf8ee}
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">담당EM</label><input type="text" id="e-배정지점장" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉여부</label><select id="e-위촉여부" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>위촉</option><option>미위촉</option></select></div>
         <div style="padding:10px 12px;grid-column:2/-1;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉코드</label><input type="text" id="e-위촉코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div id="e-owner-wrap" style="display:none;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff;padding:10px 12px">
+          <label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 관리자 전용 · 담당 지점장 / 센터</label>
+          <div style="display:flex;gap:10px;margin-top:6px">
+            <select id="e-담당자" onchange="syncOwnerCenterEdit()" style="flex:1;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></select>
+            <select id="e-센터" style="flex:1;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px">
+              <option value="">센터 선택</option>
+              <option>강남센터</option><option>서울센터</option><option>경인센터</option>
+              <option>충청센터</option><option>호남센터</option><option>부경센터</option><option>대경센터</option>
+            </select>
+          </div>
+        </div>
         <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 사전준비</label></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">보장분석 동의</label><select id="e-보장분석동의" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">브릿지콜</label><select id="e-브릿지콜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
@@ -923,6 +938,11 @@ function doLogin(restoring){
     document.getElementById('view-scope-label').textContent=isAdmin?'전체 데이터 조회 중':'본인 데이터만 조회 중';
     document.getElementById('account-btn').textContent = (AUTH.role==='admin') ? '🔑 설정' : '🔑 비밀번호 변경';
     document.getElementById('tab-btn-mgrinfo').style.display = isAdmin ? 'block' : 'none';
+    if(isAdmin && typeof MGR!=='undefined' && MGR.ensure){
+      MGR.ensure().then(()=>{                      // 담당 지점장 드롭다운용 명단 미리 로드
+        if(document.getElementById('tab-add').style.display !== 'none') syncCenterField();
+      }).catch(()=>{});
+    }
     document.getElementById('screen-login').style.display='none';
     document.getElementById('screen-main').style.display='block';
     saveSession(name, pw, currentCenter, code);
@@ -1038,18 +1058,49 @@ function switchTab(t){
   if(t==='add')syncCenterField();
 }
 
-/* 신규 입력 폼의 센터: 본인 센터로 자동 선택 (관리자는 직접 선택) */
+/* 신규 입력 폼의 센터·담당자 세팅 */
 function syncCenterField(){
   const el = document.getElementById('f-센터');
+  const wrap = document.getElementById('f-담당자-wrap');
+  const own = document.getElementById('f-담당자');
   if(!el) return;
-  if(!isAdmin && currentCenter){
-    el.value = currentCenter;
-    el.disabled = true;
-    el.title = '본인 센터로 자동 설정됩니다';
-  } else {
+
+  if(isAdmin){
+    /* 관리자: 어느 지점장 대신 입력하는지 선택 */
+    if(wrap) wrap.style.display = '';
+    if(own){
+      const cur = own.value;
+      const names = collectManagers('');
+      if(!names.length && typeof MGR!=='undefined' && MGR.ensure){
+        MGR.ensure().then(()=>syncCenterField()).catch(()=>{});   // 명단이 아직이면 받아온 뒤 다시
+      }
+      own.innerHTML = '<option value="">선택 (필수)</option>'
+        + names.map(n=>`<option value="${n}" ${n===cur?'selected':''}>${n}</option>`).join('');
+    }
     el.disabled = false;
     el.title = '';
+  } else {
+    if(wrap) wrap.style.display = 'none';
+    if(currentCenter){
+      el.value = currentCenter;
+      el.disabled = true;
+      el.title = '본인 센터로 자동 설정됩니다';
+    } else {
+      el.disabled = false;
+    }
   }
+}
+
+/* 담당 지점장을 고르면 센터도 자동으로 맞춰줌 */
+function syncOwnerCenter(){
+  const n = document.getElementById('f-담당자').value;
+  const c = mgrCenter(n);
+  if(c) document.getElementById('f-센터').value = c;
+}
+function syncOwnerCenterEdit(){
+  const n = document.getElementById('e-담당자').value;
+  const c = mgrCenter(n);
+  if(c) document.getElementById('e-센터').value = c;
 }
 
 function prepBadge(v){
@@ -1253,10 +1304,11 @@ async function recallReschedule(idx){
 async function saveEntry(){
   const get=id=>document.getElementById(id).value.trim();
   if(!get('f-파트너스명')){alert('파트너스명을 입력해주세요.');return;}
+  if(isAdmin && !get('f-담당자')){alert('담당 지점장을 선택해 주세요.\n(누구를 대신해 입력하는지 지정해야 통계에 반영됩니다)');return;}
   const btn=document.getElementById('save-btn');
   btn.disabled=true; btn.style.cursor='not-allowed'; btn.textContent='저장 중...';
   const entry={
-    담당자:currentUser, 센터:(get('f-센터')||currentCenter), 인입날짜:get('f-인입날짜'), 가코드:get('f-가코드'), 파트너스명:get('f-파트너스명'),
+    담당자:(isAdmin ? get('f-담당자') : currentUser), 센터:(get('f-센터')||currentCenter), 인입날짜:get('f-인입날짜'), 가코드:get('f-가코드'), 파트너스명:get('f-파트너스명'),
     생년월일:get('f-생년월일'), 경력구분:get('f-경력구분'), 직업:get('f-직업'),
     전화번호:get('f-전화번호'), 상담가능시간:get('f-상담가능시간'), 재통화일정:buildRecall('f-재통화일정-date','f-재통화일정-ampm','f-재통화일정-hour','f-재통화일정-min'),
     상담이력:get('f-상담이력'), 응시날짜:get('f-응시날짜'), 구분:get('f-구분'),
@@ -1279,7 +1331,7 @@ async function saveEntry(){
 
 function clearForm(){
   setTimeout(syncCenterField, 0);
-  ['f-인입날짜','f-가코드','f-파트너스명','f-생년월일','f-경력구분','f-직업','f-전화번호','f-상담가능시간','f-재통화일정-date','f-상담이력','f-응시날짜','f-구분','f-지역','f-시험시간','f-합격날짜','f-배정지점장','f-위촉여부','f-위촉코드','f-보장분석동의','f-브릿지콜','f-가계약','f-직업','f-센터']
+  ['f-인입날짜','f-가코드','f-파트너스명','f-생년월일','f-경력구분','f-직업','f-전화번호','f-상담가능시간','f-재통화일정-date','f-상담이력','f-응시날짜','f-구분','f-지역','f-시험시간','f-합격날짜','f-배정지점장','f-위촉여부','f-위촉코드','f-보장분석동의','f-브릿지콜','f-가계약','f-직업','f-센터','f-담당자']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 
@@ -1310,6 +1362,20 @@ function openDetail(idx){
 function openEdit(idx){
   const d=data[idx];
   document.getElementById('edit-modal').dataset.idx=idx;
+  /* 관리자: 담당 지점장·센터 수정 가능 */
+  const ow=document.getElementById('e-owner-wrap');
+  if(ow){
+    ow.style.display = isAdmin ? '' : 'none';
+    if(isAdmin){
+      const names = collectManagers('');
+      const cur = d.담당자||'';
+      const extra = (cur && !names.includes(cur)) ? [cur] : [];
+      document.getElementById('e-담당자').innerHTML =
+        '<option value="">담당 지점장 선택</option>'
+        + extra.concat(names).map(n=>`<option value="${n}" ${n===cur?'selected':''}>${n}${extra.includes(n)?' (지점장 아님)':''}</option>`).join('');
+      document.getElementById('e-센터').value = d.센터||'';
+    }
+  }
   const rp=parseRecall(d.재통화일정);document.getElementById('e-재통화일정-date').value=rp.date;document.getElementById('e-재통화일정-ampm').value=rp.ampm;document.getElementById('e-재통화일정-hour').value=rp.hour;document.getElementById('e-재통화일정-min').value=rp.min;
   const fields={'e-인입날짜':cleanDate(d.인입날짜),'e-가코드':d.가코드,'e-파트너스명':d.파트너스명,'e-생년월일':cleanDate(d.생년월일),'e-경력구분':d.경력구분,'e-직업':d.직업,'e-전화번호':d.전화번호,'e-상담가능시간':d.상담가능시간,'e-재통화일정':d.재통화일정,'e-상담이력':d.상담이력,'e-응시날짜':cleanDate(d.응시날짜),'e-구분':d.구분,'e-지역':d.지역,'e-시험시간':d.시험시간,'e-합격날짜':cleanDate(d.합격날짜),'e-배정지점장':d.배정지점장,'e-위촉여부':d.위촉여부,'e-위촉코드':d.위촉코드,'e-보장분석동의':d.보장분석동의,'e-브릿지콜':d.브릿지콜,'e-가계약':d.가계약};
   Object.entries(fields).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||''});
@@ -1326,6 +1392,11 @@ async function saveEdit(){
   d.전화번호=get('e-전화번호');d.상담가능시간=get('e-상담가능시간');d.재통화일정=buildRecall('e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min');
   d.상담이력=get('e-상담이력');d.응시날짜=get('e-응시날짜');d.구분=get('e-구분');
   d.지역=get('e-지역');d.시험시간=get('e-시험시간');d.합격날짜=get('e-합격날짜');
+  if(isAdmin){
+    const own=get('e-담당자'), ct=get('e-센터');
+    if(own) d.담당자=own;
+    if(ct)  d.센터=ct;
+  }
   d.배정지점장=get('e-배정지점장');d.위촉여부=get('e-위촉여부');d.위촉코드=get('e-위촉코드');
   d.보장분석동의=get('e-보장분석동의');d.브릿지콜=get('e-브릿지콜');d.가계약=get('e-가계약');
   d.수정일시=new Date().toLocaleString();
@@ -2139,19 +2210,53 @@ var XL = (function(){
           `${bm}월 신청(명)`, `${bm}월 보장분석(명)`, `${bm}월 가계약(명)`,
           `${bm}월 예정 매출(원)`, `${bm}월 실제 매출(원)`, '달성율',
           '유실적 예상(명)','유실적 현재(명)']);
-        names.forEach(n=>{
+        /* 센터 순 → 지점장 차월 순으로 정렬 */
+        const detail = names.map(n=>{
           const pRows = P.filter(d=>d.담당자 === n);
           const rRows = R.filter(r=>r.mgr === n);
           const ap = calcApply(pRows, baseKey);
           const sm = calcSalesMonth(rRows, baseKey);
-          const ct = (pRows[0] && pRows[0].센터) || (rRows[0] && rRows[0].center) || mgrCenter(n) || '';
+          const ct = mgrCenter(n) || (pRows[0] && pRows[0].센터) || (rRows[0] && rRows[0].center) || '';
           const tv = mgrTenure(n);
-          ws.addRow([ct, n, (tv === null ? '-' : tv),
-            ap.sum.cnt, ap.sum.ok, ap.sum.ga,
-            sm.plan, sm.real, pctStr(sm.real, sm.plan),
-            sm.planCnt, sm.realCnt]);
+          return { n, ct, tv, ap, sm };
+        });
+        detail.sort((a,b)=>{
+          const ia = CENTERS_ALL.indexOf(a.ct), ib = CENTERS_ALL.indexOf(b.ct);
+          const ca = ia < 0 ? 999 : ia, cb = ib < 0 ? 999 : ib;
+          if(ca !== cb) return ca - cb;                                   // ① 센터 순
+          if(ca === 999 && a.ct !== b.ct) return String(a.ct).localeCompare(String(b.ct),'ko');
+          const ta = (a.tv === null ? 9999 : a.tv), tb = (b.tv === null ? 9999 : b.tv);
+          if(ta !== tb) return ta - tb;                                   // ② 차월 순 (낮은 차월부터)
+          return String(a.n).localeCompare(String(b.n),'ko');             // ③ 이름 순
+        });
+
+        let lastCt = null;
+        detail.forEach(d=>{
+          const row = ws.addRow([
+            d.ct === lastCt ? '' : d.ct,      // 같은 센터는 한 번만 표기
+            d.n, (d.tv === null ? '-' : d.tv),
+            d.ap.sum.cnt, d.ap.sum.ok, d.ap.sum.ga,
+            d.sm.plan, d.sm.real, pctStr(d.sm.real, d.sm.plan),
+            d.sm.planCnt, d.sm.realCnt]);
+          if(d.ct !== lastCt && lastCt !== null){
+            for(let c = 1; c <= 11; c++){
+              row.getCell(c).border = Object.assign({}, BORDER, { top:{ style:'medium', color:{ argb:'FF9A96C7' } } });
+            }
+          }
+          lastCt = d.ct;
         });
         styleRange(ws, r1, ws.rowCount, 11, { header:true });
+        /* 센터가 바뀌는 지점에 굵은 구분선 다시 적용 (styleRange 이후) */
+        let prev = null, rn = r1 + 1;
+        detail.forEach(d=>{
+          if(prev !== null && d.ct !== prev){
+            for(let c = 1; c <= 11; c++){
+              const cell = ws.getRow(rn).getCell(c);
+              cell.border = Object.assign({}, BORDER, { top:{ style:'medium', color:{ argb:'FF9A96C7' } } });
+            }
+          }
+          prev = d.ct; rn++;
+        });
       }
     }
 
