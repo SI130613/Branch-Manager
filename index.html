@@ -128,10 +128,12 @@ tr.today-row td{background:#fdf8ee}
 #salesRoot .ms-btn:hover{border-color:var(--brand)}
 #salesRoot .ms-btn.on{border-color:var(--brand);background:var(--soft);font-weight:600}
 #salesRoot .ms-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#salesRoot .ms-pop{position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(23,37,31,.16);padding:8px}
+#salesRoot .ms-pop{position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:230px;width:max-content;max-width:320px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(23,37,31,.16);padding:8px}
 #salesRoot .ms-search{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13px;margin-bottom:6px;font-family:inherit}
 #salesRoot .ms-list{max-height:220px;overflow:auto}
-#salesRoot .ms-item{display:flex;gap:8px;align-items:center;padding:5px 6px;font-size:13px;border-radius:6px;cursor:pointer}
+#salesRoot .ms-item{display:flex;gap:8px;align-items:center;padding:5px 6px;font-size:13px;border-radius:6px;cursor:pointer;flex-wrap:nowrap;white-space:nowrap}
+#salesRoot .ms-item input[type=checkbox]{flex:0 0 auto;width:14px;height:14px;margin:0;padding:0}
+#salesRoot .ms-item span{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 #salesRoot .ms-item:hover{background:var(--soft)}
 #salesRoot .ms-empty{padding:8px;font-size:12px;color:var(--ink2)}
 #salesRoot .ms-clear{width:100%;margin-top:6px;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;padding:4px;font-family:inherit}
@@ -304,7 +306,7 @@ tr.today-row td{background:#fdf8ee}
         <div class="form-group"><label>파트너스명 *</label><input type="text" id="f-파트너스명" placeholder="이름 입력"></div>
         <div class="form-group"><label>생년월일</label><input type="date" id="f-생년월일"></div>
         <div class="form-group"><label>경력 구분</label><select id="f-경력구분"><option value="">선택</option><option>신인</option><option>경력</option><option>재등록</option></select></div>
-        <div class="form-group"><label>직업</label><input type="text" id="f-직업" list="job-options" placeholder="선택 또는 직접 입력" autocomplete="off"><datalist id="job-options"><option>직장인</option><option>자영업</option><option>주부</option><option>학생</option><option>전업</option><option>기타</option></datalist></div>
+        <div class="form-group"><label>직업</label><input type="text" id="f-직업" placeholder="직접 입력 (예: 직장인, 카페 운영)" autocomplete="off"></div>
       </div>
     </div>
     <div class="section" style="margin-top:1rem">
@@ -554,7 +556,7 @@ tr.today-row td{background:#fdf8ee}
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">파트너스명 *</label><input type="text" id="e-파트너스명" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">생년월일</label><input type="date" id="e-생년월일" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">경력구분</label><select id="e-경력구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>신인</option><option>경력</option><option>재등록</option></select></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">직업</label><input type="text" id="e-직업" list="job-options" placeholder="선택 또는 직접 입력" autocomplete="off" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">직업</label><input type="text" id="e-직업" placeholder="직접 입력" autocomplete="off" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">전화번호</label><input type="text" id="e-전화번호" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">상담가능시간</label><input type="text" id="e-상담가능시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">재통화일정</label>
@@ -1662,36 +1664,81 @@ function renderFilterBar(){
 }
 function toggleMs(id, ev){
   ev.stopPropagation();
-  if (openMsId === id){ openMsId = null; renderFilterBar(); return; }
+  if (openMsId === id){ openMsId = null; msQ[id] = ""; renderFilterBar(); return; }
   openMsId = id;
+  msQ[id] = "";
   renderFilterBar();
 }
-function renderPop(id, q){
+var msQ = {};   /* 필터별 검색어 보관 */
+
+/* 검색창은 그대로 두고 '목록만' 다시 그린다 → 한글 입력이 깨지지 않음 */
+function renderPopList(id){
   var d = MS_DEFS.filter(function(x){ return x.id === id; })[0];
-  var pop = $("pop_" + id);
-  if (!pop) return;
-  pop.classList.remove("hidden");
-  q = q || "";
-  var opts = d.opts().filter(function(o){ return String(o).toLowerCase().indexOf(q.toLowerCase()) >= 0; });
-  var html = '<input class="ms-search" id="msq_' + id + '" placeholder="검색" value="' + esc(q) + '" oninput="S.renderPop(\'' + id + '\',this.value)" onclick="event.stopPropagation()">'
-    + '<div class="ms-list">';
-  if (!opts.length) html += '<div class="ms-empty">항목 없음</div>';
+  var list = $("mslist_" + id);
+  if (!list || !d) return;
+  var q = (msQ[id] || "").toLowerCase();
+  var opts = d.opts().filter(function(o){ return String(o).toLowerCase().indexOf(q) >= 0; });
+  var html = "";
+  if (!opts.length) html = '<div class="ms-empty">항목 없음</div>';
   opts.forEach(function(o){
     var ck = F[id].indexOf(o) >= 0 ? " checked" : "";
     html += '<label class="ms-item" onclick="event.stopPropagation()"><input type="checkbox"' + ck + ' onchange="S.toggleVal(\'' + id + '\',this.value)" value="' + esc(o) + '"><span>' + esc(o) + '</span></label>';
   });
-  html += '</div>';
-  if (F[id].length) html += '<button class="ms-clear" onclick="S.clearVals(\'' + id + '\',event)">선택 해제 (' + F[id].length + ')</button>';
-  pop.innerHTML = html;
-  var qi = $("msq_" + id);
-  if (qi){ qi.focus(); var v = qi.value; qi.value = ""; qi.value = v; }
+  list.innerHTML = html;
+  var cl = $("msclear_" + id);
+  if (cl) cl.innerHTML = F[id].length
+    ? '<button class="ms-clear" onclick="S.clearVals(\'' + id + '\',event)">선택 해제 (' + F[id].length + ')</button>' : '';
+}
+
+function renderPop(id){
+  var pop = $("pop_" + id);
+  if (!pop) return;
+  pop.classList.remove("hidden");
+
+  /* 팝업 뼈대는 처음 한 번만 만든다 (검색 input이 살아있어야 한글 조합이 유지됨) */
+  if (pop.getAttribute("data-built") !== "1"){
+    pop.innerHTML =
+        '<input class="ms-search" id="msq_' + id + '" placeholder="검색" autocomplete="off" onclick="event.stopPropagation()">'
+      + '<div class="ms-list" id="mslist_' + id + '"></div>'
+      + '<div id="msclear_' + id + '"></div>';
+    pop.setAttribute("data-built", "1");
+
+    var inp = $("msq_" + id);
+    inp.value = msQ[id] || "";
+    var onType = function(){ msQ[id] = inp.value; renderPopList(id); };
+    inp.addEventListener("input", onType);          /* 영문·숫자 */
+    inp.addEventListener("compositionend", onType); /* 한글 조합 완료 시 */
+    inp.addEventListener("keydown", function(e){ e.stopPropagation(); });
+    setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 0);
+  }
+  renderPopList(id);
 }
 function toggleVal(id, v){
   var i = F[id].indexOf(v);
   if (i >= 0) F[id].splice(i, 1); else F[id].push(v);
-  pruneFilters(); page = 1; render();
+  pruneFilters(); page = 1;
+  renderBody();          /* 표·통계만 갱신 */
+  renderMsButton(id);    /* 해당 버튼 라벨만 갱신 */
+  renderPopList(id);     /* 목록만 갱신 (검색창·한글 입력 유지) */
 }
-function clearVals(id, ev){ ev.stopPropagation(); F[id] = []; pruneFilters(); page = 1; render(); }
+
+/* 필터 버튼 라벨만 살짝 갱신 */
+function renderMsButton(id){
+  var d = MS_DEFS.filter(function(x){ return x.id === id; })[0];
+  var pop = $("pop_" + id);
+  if (!pop || !d) return;
+  var btn = pop.parentElement.querySelector(".ms-btn");
+  if (!btn) return;
+  var sel = F[id];
+  var txt = sel.length === 0 ? "전체" : (sel.length <= 2 ? sel.join(", ") : sel[0] + " 외 " + (sel.length - 1));
+  btn.className = "ms-btn" + (sel.length ? " on" : "");
+  btn.querySelector(".ms-txt").textContent = txt;
+}
+function clearVals(id, ev){
+  ev.stopPropagation();
+  F[id] = []; pruneFilters(); page = 1;
+  renderBody(); renderMsButton(id); renderPopList(id);
+}
 function setDate(k, v){ F[k] = v; page = 1; render(); }
 function resetFilters(){
   var codes = F.codes;
@@ -1780,6 +1827,11 @@ function filteredRows(){
 function render(){
   if (!AUTH) return;
   renderFilterBar();
+  renderBody();
+}
+
+function renderBody(){
+  if (!AUTH) return;
   var f = filteredRows();
   var anyF = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.codes.length || F.pFrom || F.pTo || F.sFrom || F.sTo;
   renderPStats(f, !!anyF);
@@ -2117,7 +2169,8 @@ return {
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
-  toggleMs: toggleMs, renderPop: renderPop, toggleVal: toggleVal, clearVals: clearVals,
+  toggleMs: toggleMs, renderPop: renderPop, renderPopList: renderPopList,
+  toggleVal: toggleVal, clearVals: clearVals,
   setDate: setDate, resetFilters: resetFilters,
   filterByCodes: filterByCodes, clearCodeFilter: clearCodeFilter,
   openMyPw: openMyPw, doChangeMyPw: doChangeMyPw,
