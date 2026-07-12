@@ -126,6 +126,9 @@ tr.today-row td{background:#fdf8ee}
 .st-n3{font-weight:700;color:#BA7517}
 .st-money{font-size:19px;font-weight:800;color:#0A5540;font-variant-numeric:tabular-nums}
 .st-money.plan{color:#534AB7}
+.st-sm{font-size:11px;color:#888;font-weight:700}
+.st-kv .pkv{display:flex;gap:4px;align-items:baseline;font-size:13px;color:#45403A}
+.st-kv .pkv b{font-size:16px;font-variant-numeric:tabular-nums}
 .st-kv{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:6px 0}
 .st-kv .lbl{font-size:11px;color:#888;font-weight:700}
 .st-rate{font-size:12px;font-weight:700;color:#0A5540;background:#E3F0EB;padding:2px 8px;border-radius:20px}
@@ -1371,13 +1374,14 @@ function collectManagers(fc, ft){
 
 /* 지점장 차월 구간 */
 const TENURE = [
-  { v:'',      t:'차월 전체',     min:null, max:null },
-  { v:'1-3',   t:'1~3차월',      min:1,   max:3 },
-  { v:'4-6',   t:'4~6차월',      min:4,   max:6 },
-  { v:'7-12',  t:'7~12차월',     min:7,   max:12 },
-  { v:'13-24', t:'13~24차월',    min:13,  max:24 },
-  { v:'25+',   t:'25차월 이상',   min:25,  max:9999 },
-  { v:'none',  t:'차월 미입력',   min:null, max:null },
+  { v:'',   t:'차월 전체',    min:null, max:null },
+  { v:'1',  t:'1차월',       min:1,  max:1 },
+  { v:'2',  t:'2차월',       min:2,  max:2 },
+  { v:'3',  t:'3차월',       min:3,  max:3 },
+  { v:'4',  t:'4차월',       min:4,  max:4 },
+  { v:'5',  t:'5차월',       min:5,  max:5 },
+  { v:'6',  t:'6차월',       min:6,  max:6 },
+  { v:'7+', t:'7차월 이상',   min:7,  max:9999 },
 ];
 
 /* 지점장 이름 → 차월 (지점장정보 시트 기준, 없으면 입사월로 계산) */
@@ -1436,15 +1440,21 @@ function calcApply(list, key){
   return { a, b, sum:{ cnt:a.cnt+b.cnt, ok:a.ok+b.ok, ga:a.ga+b.ga } };
 }
 
-/* 매출 집계 */
+/* 매출 집계 (유실적 인원 포함)
+   · 유실적 = 인보험 인정(active=1) 건들의 파트너스별 합산 매출이 5만원 이상 */
+const YS_LIMIT = 50000;
 function calcSalesMonth(rows, key){
   let plan=0, real=0;
+  const planMap={}, realMap={};
   rows.forEach(r=>{
     const amt = Number(r.amt)||0;
-    if(String(r.planDate||'').startsWith(key)) plan += amt;
-    if(String(r.saleDate||'').startsWith(key)) real += amt;
+    const ok  = Number(r.active)===1;
+    const pn  = r.partner || ('(무명)'+r.mgr);
+    if(String(r.planDate||'').startsWith(key)){ plan += amt; if(ok) planMap[pn]=(planMap[pn]||0)+amt; }
+    if(String(r.saleDate||'').startsWith(key)){ real += amt; if(ok) realMap[pn]=(realMap[pn]||0)+amt; }
   });
-  return { plan, real };
+  const cnt = m => Object.keys(m).filter(k=>m[k]>=YS_LIMIT).length;
+  return { plan, real, planCnt: cnt(planMap), realCnt: cnt(realMap) };
 }
 function calcSalesRange(rows, from, to){
   let plan=0, real=0;
@@ -1609,14 +1619,21 @@ function renderStatsSales(prevKey, baseKey, fc, fp, ft){
     <div class="st-card${isNow?' now':''}">
       <div class="st-h">${title}<span class="sub">${sub}</span></div>
       <div class="st-kv" style="border-bottom:1px dashed #e5e4e0">
-        <span class="lbl" style="width:64px">예정 매출</span>
+        <span class="lbl" style="width:66px">예정 매출</span>
         <span class="st-money plan">${won(st.plan)}<span style="font-size:12px;font-weight:600"> 원</span></span>
       </div>
-      <div class="st-kv">
-        <span class="lbl" style="width:64px">실제 매출</span>
+      <div class="st-kv" style="border-bottom:1px solid #e5e4e0">
+        <span class="lbl" style="width:66px">실제 매출</span>
         <span class="st-money">${won(st.real)}<span style="font-size:12px;font-weight:600"> 원</span></span>
         <span class="st-rate">달성 ${pctStr(st.real, st.plan)}</span>
       </div>
+      <div class="st-kv" style="padding-top:9px">
+        <span class="lbl" style="width:66px">유실적 인원</span>
+        <span class="pkv"><span class="st-sm">예상</span> <b class="st-n">${st.planCnt}</b>명</span>
+        <span class="pkv"><span class="st-sm">현재</span> <b class="st-n2">${st.realCnt}</b>명</span>
+        <span class="st-rate">달성 ${pctStr(st.realCnt, st.planCnt)}</span>
+      </div>
+      <div style="font-size:10.5px;color:#bbb;margin-top:2px">인보험 인정 · 파트너스별 합산 5만원 이상</div>
     </div>`;
 
   document.getElementById('st-sales').innerHTML =
