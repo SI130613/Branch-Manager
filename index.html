@@ -307,6 +307,8 @@ tr.today-row td{background:#fdf8ee}
         <option value="past">지난 미완료</option>
       </select>
       <select id="filter-합격" onchange="renderTable()" style="width:115px"><option value="">합격 전체</option><option value="y">합격</option><option value="n">미합격</option></select>
+      <button class="btn btn-sm" onclick="XL.downloadPartners()" title="현재 화면에 보이는 목록을 엑셀로 저장">⬇ 엑셀 다운로드</button>
+      <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
       <select id="filter-사전준비" onchange="renderTable()" style="width:150px">
         <option value="">사전준비 전체</option>
         <option value="보장분석동의">보장분석 동의 O</option>
@@ -413,6 +415,8 @@ tr.today-row td{background:#fdf8ee}
     <div class="search-bar">
       <input type="text" id="mi-search" placeholder="🔍  지점장명, 센터, 위촉코드 검색..." oninput="MGR.render()">
       <select id="mi-center" onchange="MGR.render()" style="width:130px"><option value="">센터 전체</option></select>
+      <button class="btn btn-sm" onclick="XL.downloadMgr()">⬇ 엑셀 다운로드</button>
+      <button class="btn btn-sm" onclick="XL.openMgrUpload()">⬆ 엑셀 업로드</button>
       <button class="btn btn-sm" onclick="MGR.applyPreset()" title="위촉코드·기수·입사월을 한 번에 채웁니다">📥 코드·기수 일괄 입력</button>
       <button class="btn btn-primary btn-sm" onclick="MGR.openEdit(-1)">+ 지점장 추가</button>
     </div>
@@ -649,6 +653,34 @@ tr.today-row td{background:#fdf8ee}
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-sm" onclick="closeModal('edit-modal')">취소</button>
       <button class="btn btn-sm btn-primary" onclick="saveEdit()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 엑셀 업로드 모달 -->
+<div class="overlay" id="xl-modal">
+  <div class="modal-box" style="max-width:520px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 id="xl-title">엑셀 업로드</h3>
+      <button class="btn btn-sm" onclick="closeModal('xl-modal')">✕</button>
+    </div>
+    <p id="xl-hint" style="font-size:12.5px;color:#888;line-height:1.6;margin:0 0 12px"></p>
+    <input type="file" id="xl-file" accept=".xlsx,.xls,.csv" style="margin-bottom:10px">
+    <div id="xl-err" style="display:none;background:#FCEBEB;color:#B4372F;font-size:12.5px;padding:8px 10px;border-radius:8px;margin-bottom:10px"></div>
+    <div id="xl-res" style="display:none;background:#F6F5FF;border-radius:8px;padding:12px;margin-bottom:12px">
+      <div id="xl-cnt" style="font-weight:700;font-size:13.5px;color:#3C3489;margin-bottom:8px"></div>
+      <div id="xl-mode">
+        <label style="font-size:13px;display:flex;gap:7px;align-items:center;margin-bottom:5px">
+          <input type="radio" name="xlMode" value="append" checked style="width:auto;margin:0"> 기존 데이터에 <b>추가</b>
+        </label>
+        <label style="font-size:13px;display:flex;gap:7px;align-items:center">
+          <input type="radio" name="xlMode" value="replace" style="width:auto;margin:0"> <span id="xl-replace-label">전체 교체</span>
+        </label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-sm" onclick="closeModal('xl-modal')">취소</button>
+      <button class="btn btn-sm btn-primary" id="xl-apply" onclick="XL.apply()" disabled>반영하기</button>
     </div>
   </div>
 </div>
@@ -1069,6 +1101,10 @@ function renderStatsBar(){
     </div>`;
 }
 
+/* 전체목록에서 현재 필터가 적용된 데이터 (엑셀 다운로드에서 재사용) */
+let lastFiltered = [];
+function getFilteredPartners(){ return lastFiltered; }
+
 function renderTable(){
   const vis=getVisibleData();
   const q=document.getElementById('search').value.toLowerCase();
@@ -1077,7 +1113,7 @@ function renderTable(){
   const fp=document.getElementById('filter-사전준비').value;
   const fy=document.getElementById('filter-년').value,fm=document.getElementById('filter-월').value;
   const weekEnd=getWeekEnd();
-  const filtered=vis.filter(d=>{
+  const filtered=lastFiltered=vis.filter(d=>{
     if(q&&![(d.파트너스명||''),(d.전화번호||''),(d.가코드||''),(d.담당자||'')].join(' ').toLowerCase().includes(q))return false;
     if(fg&&d.구분!==fg)return false;if(fe&&d.경력구분!==fe)return false;
     if(fh==='y'&&!d.합격날짜)return false;if(fh==='n'&&d.합격날짜)return false;
@@ -1547,6 +1583,7 @@ function renderStatsPage(keepFilters=false){
       </select>
       ${adminFilter}
       <button class="btn btn-sm" onclick="renderStatsPage(false)">초기화</button>
+      <button class="btn btn-sm" onclick="XL.downloadStats()">⬇ 엑셀 다운로드</button>
       <span class="st-scope">📌 ${scopeLabel}</span>
     </div>
 
@@ -1881,8 +1918,273 @@ var MGR = (function(){
       });
   }
 
-  return { enter, render, openEdit, save:saveFromModal, remove, calcMonth, onGisu, applyPreset, getList, ensure };
+  /* 엑셀 업로드: 명단 전체 교체 */
+  function replaceAll(rows){
+    list = rows;
+    loaded = true;
+    return save(true).then(()=>{ fillCenters(); render(); });
+  }
+
+  return { enter, render, openEdit, save:saveFromModal, remove, calcMonth, onGisu, applyPreset, getList, ensure, replaceAll };
 })();
+/* ═══════════════════ 엑셀 다운로드 / 업로드 ═══════════════════ */
+var XL = (function(){
+
+  /* 파트너스 항목 (구글 시트와 동일) */
+  const P_FIELDS = ['담당자','센터','인입날짜','가코드','파트너스명','생년월일','경력구분','직업',
+    '전화번호','상담가능시간','재통화일정','재통화완료','재통화완료일시','상담이력',
+    '응시날짜','구분','지역','시험시간','합격날짜',
+    '보장분석동의','브릿지콜','가계약','배정지점장','위촉여부','위촉코드','등록일시','수정일시'];
+
+  /* 엑셀 헤더(보기 좋은 이름) ↔ 실제 항목 */
+  const P_ALIAS = { '담당EM':'배정지점장', '보장분석 동의':'보장분석동의', '재통화 일정':'재통화일정' };
+
+  const M_FIELDS = ['센터','지점장명','위촉코드','기수','입사월','차월','교육이수','경력사항','특이사항'];
+
+  let mode = null;      // 'partner' | 'mgr'
+  let parsed = null;
+
+  function today(){ return new Date().toISOString().slice(0,10); }
+
+  function toSheet(rows, fields){
+    return rows.map(r=>{
+      const o = {};
+      fields.forEach(k=>{ o[k] = (r[k]===null||r[k]===undefined) ? '' : String(r[k]); });
+      return o;
+    });
+  }
+
+  function save(sheets, filename){
+    if(typeof XLSX === 'undefined'){ showToast('엑셀 기능을 불러오지 못했습니다. 새로고침 후 다시 시도하세요.','err'); return; }
+    const wb = XLSX.utils.book_new();
+    sheets.forEach(s=>{
+      const ws = XLSX.utils.json_to_sheet(s.rows, s.header ? { header: s.header } : undefined);
+      if(s.header) ws['!cols'] = s.header.map(hd=>({ wch: Math.max(10, String(hd).length*2+2) }));
+      XLSX.utils.book_append_sheet(wb, ws, s.name);
+    });
+    XLSX.writeFile(wb, filename);
+  }
+
+  /* ---------- ① 파트너스 목록 다운로드 ---------- */
+  function downloadPartners(){
+    const rows = getFilteredPartners();
+    if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
+    save([{ name:'파트너스', header:P_FIELDS, rows: toSheet(rows, P_FIELDS) }],
+         `파트너스_관리대장_${today()}.xlsx`);
+    showToast(`${rows.length}건을 엑셀로 저장했습니다`,'ok');
+  }
+
+  /* ---------- ② 지점장 정보 다운로드 ---------- */
+  function downloadMgr(){
+    const rows = MGR.getList();
+    if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
+    save([{ name:'지점장정보', header:M_FIELDS, rows: toSheet(rows, M_FIELDS) }],
+         `지점장_정보_${today()}.xlsx`);
+    showToast(`${rows.length}명을 엑셀로 저장했습니다`,'ok');
+  }
+
+  /* ---------- ③ 통계 결과 다운로드 ---------- */
+  function downloadStats(){
+    const g = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+    const fy = g('st-year'), fm = g('st-month'), fc = g('st-center'), fp = g('st-person'), ft = g('st-tenure');
+    const baseKey = `${fy}-${fm}`;
+    const nextKey = addMonth(baseKey, 1);
+    const prevKey = addMonth(baseKey, -1);
+    const tLabel = ft ? (TENURE.find(t=>t.v===ft)||{}).t : '전체';
+
+    const P = statsScopedPartners(fc, fp, ft);
+    const R = statsScopedSales(fc, fp, ft);
+    const a1 = calcApply(P, baseKey), a2 = calcApply(P, nextKey);
+    const s0 = calcSalesMonth(R, prevKey), s1 = calcSalesMonth(R, baseKey);
+    const bm = Number(fm), nm = Number(nextKey.split('-')[1]), pm = Number(prevKey.split('-')[1]);
+
+    const cond = [
+      { 항목:'기준월',   값: baseKey },
+      { 항목:'센터',     값: fc || '전체' },
+      { 항목:'지점장 차월', 값: tLabel },
+      { 항목:'지점장',   값: fp || '전체' },
+      { 항목:'조회 범위', 값: isAdmin ? '관리자(전체)' : `${currentUser} 님` },
+      { 항목:'출력일시', 값: new Date().toLocaleString() },
+    ];
+
+    const apply = [];
+    [[`${bm}월(당월)`, a1],[`${nm}월(익월)`, a2]].forEach(([label, st])=>{
+      apply.push({ 월:label, 구분:'선행',       신청:st.a.cnt,   '보장분석 동의':st.a.ok,   가계약:st.a.ga });
+      apply.push({ 월:label, 구분:'정규+후속',  신청:st.b.cnt,   '보장분석 동의':st.b.ok,   가계약:st.b.ga });
+      apply.push({ 월:label, 구분:'합계',       신청:st.sum.cnt, '보장분석 동의':st.sum.ok, 가계약:st.sum.ga });
+    });
+
+    const sales = [
+      { 월:`${pm}월(전월)`, '예정 매출':s0.plan, '실제 매출':s0.real, '매출 달성율':pctStr(s0.real,s0.plan),
+        '유실적 예상':s0.planCnt, '유실적 현재':s0.realCnt, '유실적 달성율':pctStr(s0.realCnt,s0.planCnt) },
+      { 월:`${bm}월(당월)`, '예정 매출':s1.plan, '실제 매출':s1.real, '매출 달성율':pctStr(s1.real,s1.plan),
+        '유실적 예상':s1.planCnt, '유실적 현재':s1.realCnt, '유실적 달성율':pctStr(s1.realCnt,s1.planCnt) },
+    ];
+
+    const weeks = weeksOfMonth(baseKey).map(w=>{
+      const s = calcSalesRange(R, w.from, w.to);
+      return { 주차:`${w.no}주차`, 기간:`${w.from} ~ ${w.to}`,
+        '예정 매출':s.plan, '실제 매출':s.real, 달성율:pctStr(s.real,s.plan) };
+    });
+    weeks.push({ 주차:'합계', 기간:'-', '예정 매출':s1.plan, '실제 매출':s1.real, 달성율:pctStr(s1.real,s1.plan) });
+
+    save([
+      { name:'조회조건',    header:['항목','값'], rows:cond },
+      { name:'파트너스신청', header:['월','구분','신청','보장분석 동의','가계약'], rows:apply },
+      { name:'매출현황',    header:['월','예정 매출','실제 매출','매출 달성율','유실적 예상','유실적 현재','유실적 달성율'], rows:sales },
+      { name:'주단위매출',  header:['주차','기간','예정 매출','실제 매출','달성율'], rows:weeks },
+    ], `통계_${baseKey}${fc?'_'+fc:''}${fp?'_'+fp:''}_${today()}.xlsx`);
+    showToast('통계를 엑셀로 저장했습니다','ok');
+  }
+
+  /* ---------- 업로드 ---------- */
+  function openPartnerUpload(){
+    mode = 'partner';
+    document.getElementById('xl-title').textContent = '파트너스 엑셀 업로드';
+    document.getElementById('xl-hint').innerHTML =
+      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다. (담당자, 센터, 파트너스명, …)<br>'
+      + (isAdmin ? '' : '<b>본인 데이터만</b> 등록됩니다. 담당자·센터는 자동으로 채워집니다.');
+    document.getElementById('xl-replace-label').textContent = isAdmin ? '전체 데이터 교체' : '내 데이터 교체';
+    document.getElementById('xl-mode').style.display = '';
+    resetUpload();
+    document.getElementById('xl-modal').classList.add('open');
+  }
+
+  function openMgrUpload(){
+    mode = 'mgr';
+    document.getElementById('xl-title').textContent = '지점장 정보 엑셀 업로드';
+    document.getElementById('xl-hint').innerHTML =
+      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다.<br>(센터, 지점장명, 위촉코드, 기수, 입사월, 차월, 교육이수, 경력사항, 특이사항)<br>업로드하면 <b>기존 명단을 전부 교체</b>합니다.';
+    document.getElementById('xl-mode').style.display = 'none';
+    resetUpload();
+    document.getElementById('xl-modal').classList.add('open');
+  }
+
+  function resetUpload(){
+    parsed = null;
+    const f = document.getElementById('xl-file'); f.value = '';
+    document.getElementById('xl-err').style.display = 'none';
+    document.getElementById('xl-res').style.display = 'none';
+    document.getElementById('xl-apply').disabled = true;
+  }
+
+  function err(msg){
+    const e = document.getElementById('xl-err');
+    e.textContent = msg; e.style.display = 'block';
+    document.getElementById('xl-res').style.display = 'none';
+    document.getElementById('xl-apply').disabled = true;
+  }
+
+  function norm(s){ return String(s||'').replace(/[\s()·]/g,''); }
+
+  function onFile(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    document.getElementById('xl-err').style.display = 'none';
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try{
+        const wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array', cellDates:true });
+        const js = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+        if(!js.length) throw new Error('데이터가 없습니다. 첫 번째 시트에 내용이 있어야 합니다.');
+
+        const FIELDS = (mode==='mgr') ? M_FIELDS : P_FIELDS;
+        const map = {};
+        Object.keys(js[0]).forEach(hd=>{
+          const n = norm(hd);
+          if(P_ALIAS[hd]) { map[hd] = P_ALIAS[hd]; return; }
+          const hit = FIELDS.find(f=>norm(f) === n);
+          if(hit) map[hd] = hit;
+        });
+
+        const key = (mode==='mgr') ? '지점장명' : '파트너스명';
+        if(!Object.values(map).includes(key))
+          throw new Error(`'${key}' 컬럼을 찾지 못했습니다. 엑셀 다운로드 파일의 헤더를 그대로 사용해 주세요.`);
+
+        const out = js.map(r=>{
+          const o = {};
+          FIELDS.forEach(f=>{ o[f] = ''; });
+          Object.keys(map).forEach(hd=>{
+            let v = r[hd];
+            if(v instanceof Date) v = cleanDate(v.toISOString().slice(0,10));
+            o[map[hd]] = (v===null||v===undefined) ? '' : String(v).trim();
+          });
+          return o;
+        }).filter(o=>o[key]);
+
+        if(!out.length) throw new Error(`${key}이(가) 비어 있지 않은 행이 없습니다.`);
+
+        let skipped = 0;
+        if(mode==='partner' && !isAdmin){
+          const before = out.length;
+          out.forEach(o=>{ o.담당자 = currentUser; if(currentCenter) o.센터 = currentCenter; });
+          skipped = before - out.length;
+        }
+
+        parsed = out;
+        document.getElementById('xl-cnt').textContent =
+          `${out.length.toLocaleString()}건 인식됨` + (skipped ? ` · 본인 외 ${skipped}건 제외` : '');
+        document.getElementById('xl-res').style.display = 'block';
+        document.getElementById('xl-apply').disabled = false;
+      }catch(ex){ err(ex.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function apply(){
+    if(!parsed || !parsed.length) return;
+    const btn = document.getElementById('xl-apply');
+    btn.disabled = true; btn.textContent = '반영 중…';
+
+    if(mode === 'mgr'){
+      if(!confirm(`지점장 명단을 ${parsed.length}명으로 전부 교체합니다. 계속할까요?`)){
+        btn.disabled = false; btn.textContent = '반영하기'; return;
+      }
+      MGR.replaceAll(parsed).then(()=>{
+        closeModal('xl-modal');
+        showToast(`지점장 ${parsed.length}명이 반영되었습니다`,'ok');
+      }).catch(e=>showToast('실패: '+(e.message||e),'err'))
+        .finally(()=>{ btn.disabled = false; btn.textContent = '반영하기'; });
+      return;
+    }
+
+    /* 파트너스 */
+    const m = document.querySelector('input[name="xlMode"]:checked').value;
+    const stamp = new Date().toLocaleString();
+    parsed.forEach(o=>{ if(!o.등록일시) o.등록일시 = stamp; });
+
+    let next;
+    if(m === 'replace'){
+      const label = isAdmin ? '전체 데이터' : '본인 데이터';
+      if(!confirm(`${label}를 업로드한 ${parsed.length}건으로 교체합니다.\n되돌릴 수 없습니다. 계속할까요?`)){
+        btn.disabled = false; btn.textContent = '반영하기'; return;
+      }
+      next = isAdmin ? parsed.slice() : data.filter(d=>d.담당자 !== currentUser).concat(parsed);
+    } else {
+      next = data.concat(parsed);
+    }
+
+    const backup = data;
+    data = next;
+    saveToSheet().then(ok=>{
+      if(ok){
+        closeModal('xl-modal');
+        renderTable(); renderStatsBar();
+        showToast(`${parsed.length}건이 반영되었습니다`,'ok');
+      } else {
+        data = backup;
+      }
+    }).finally(()=>{ btn.disabled = false; btn.textContent = '반영하기'; });
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const f = document.getElementById('xl-file');
+    if(f) f.addEventListener('change', onFile);
+  });
+
+  return { downloadPartners, downloadMgr, downloadStats, openPartnerUpload, openMgrUpload, apply };
+})();
+
 </script>
 <script>
 /* ===================== 매출관리 모듈 (S) ===================== */
