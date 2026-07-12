@@ -102,6 +102,26 @@ tr.today-row td{background:#fdf8ee}
 .chart-wrap{position:relative;width:100%;height:280px}
 .stat-group{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.5rem}
 .prep-th{background:#F6F5FF !important;color:#534AB7 !important}
+.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
+@media(max-width:820px){.st-grid{grid-template-columns:1fr}}
+.st-card{background:#fff;border:1px solid #d8d8d4;border-radius:10px;padding:14px 16px}
+.st-card.now{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.07)}
+.st-h{font-size:13px;font-weight:700;color:#534AB7;margin-bottom:10px;display:flex;align-items:baseline;gap:8px}
+.st-h .sub{font-size:11px;color:#aaa;font-weight:500}
+.st-t{width:100%;border-collapse:collapse;font-size:12.5px;min-width:0}
+.st-t th{background:#f6f5f2;padding:7px 8px;border:1px solid #e5e4e0;font-size:11px;color:#666;font-weight:600;text-align:center;white-space:nowrap}
+.st-t td{padding:7px 8px;border:1px solid #e5e4e0;text-align:center}
+.st-t td.k{text-align:left;font-weight:600;background:#fbfbf9;white-space:nowrap}
+.st-t tr.sum td{background:#f4f3f0;font-weight:700}
+.st-n{font-weight:700;color:#534AB7}
+.st-n2{font-weight:700;color:#085041}
+.st-n3{font-weight:700;color:#BA7517}
+.st-money{font-size:19px;font-weight:800;color:#0A5540;font-variant-numeric:tabular-nums}
+.st-money.plan{color:#534AB7}
+.st-kv{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:6px 0}
+.st-kv .lbl{font-size:11px;color:#888;font-weight:700}
+.st-rate{font-size:12px;font-weight:700;color:#0A5540;background:#E3F0EB;padding:2px 8px;border-radius:20px}
+.mi-cell{max-width:180px;font-size:11px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prep-o{display:inline-block;min-width:22px;padding:2px 6px;border-radius:6px;font-size:11px;font-weight:700;background:#E1F5EE;color:#085041}
 .prep-x{display:inline-block;min-width:22px;padding:2px 6px;border-radius:6px;font-size:11px;font-weight:700;background:#FCEBEB;color:#791F1F}
 .prep-none{color:#ddd;font-size:11px}
@@ -258,6 +278,7 @@ tr.today-row td{background:#fdf8ee}
     <div class="tab" onclick="switchTab('add')">➕ 신규 입력</div>
     <div class="tab" onclick="switchTab('stats')">📊 통계</div>
     <div class="tab" onclick="switchTab('sales')">💰 매출관리</div>
+    <div class="tab" id="tab-btn-mgrinfo" style="display:none" onclick="switchTab('mgrinfo')">👤 지점장 정보</div>
   </div>
 
   <!-- 목록 -->
@@ -369,6 +390,26 @@ tr.today-row td{background:#fdf8ee}
 
   <!-- 통계 -->
   <div id="tab-stats" style="display:none"><div id="stats-content"></div></div>
+
+  <!-- 지점장 정보 (관리자 전용) -->
+  <div id="tab-mgrinfo" style="display:none">
+    <div class="search-bar">
+      <input type="text" id="mi-search" placeholder="🔍  지점장명, 센터 검색..." oninput="MGR.render()">
+      <select id="mi-center" onchange="MGR.render()" style="width:130px"><option value="">센터 전체</option></select>
+      <button class="btn btn-primary btn-sm" onclick="MGR.openEdit(-1)">+ 지점장 추가</button>
+    </div>
+    <div class="section" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>No.</th><th>센터</th><th>지점장명</th><th>입사월</th><th>차월</th>
+            <th>교육 이수 내용</th><th>경력사항</th><th>특이사항</th><th>관리</th>
+          </tr></thead>
+          <tbody id="mi-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
 <!-- ===== 매출관리 (통합) ===== -->
 <div id="salesRoot">
@@ -593,6 +634,33 @@ tr.today-row td{background:#fdf8ee}
   </div>
 </div>
 
+<!-- 지점장 정보 수정 모달 -->
+<div class="overlay" id="mi-modal">
+  <div class="modal-box" style="max-width:620px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 id="mi-title">지점장 정보</h3>
+      <button class="btn btn-sm" onclick="closeModal('mi-modal')">✕</button>
+    </div>
+    <div class="form-grid three" style="margin-bottom:1rem">
+      <div class="form-group"><label>센터 *</label>
+        <select id="mi-f-센터"><option value="">선택</option><option>강남센터</option><option>서울센터</option><option>경인센터</option><option>충청센터</option><option>대경센터</option><option>부경센터</option><option>호남센터</option></select>
+      </div>
+      <div class="form-group"><label>지점장명 *</label><input type="text" id="mi-f-지점장명"></div>
+      <div class="form-group"><label>입사월</label><input type="month" id="mi-f-입사월" onchange="MGR.calcMonth()"></div>
+      <div class="form-group"><label>차월 (자동계산)</label><input type="number" id="mi-f-차월" placeholder="입사월 입력 시 자동"></div>
+      <div class="form-group full"><label>교육 이수 내용</label><textarea id="mi-f-교육이수" style="min-height:52px"></textarea></div>
+      <div class="form-group full"><label>경력사항</label><textarea id="mi-f-경력사항" style="min-height:52px"></textarea></div>
+      <div class="form-group full"><label>특이사항</label><textarea id="mi-f-특이사항" style="min-height:52px"></textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-sm btn-danger" id="mi-del" onclick="MGR.remove()">삭제</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-sm" onclick="closeModal('mi-modal')">취소</button>
+      <button class="btn btn-sm btn-primary" onclick="MGR.save()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- 재통화 팝업 -->
 <div class="overlay" id="recall-modal">
   <div class="modal-box" style="max-width:540px">
@@ -794,6 +862,7 @@ function doLogin(restoring){
     badge.className='badge '+(isAdmin?'badge-admin':'badge-new');
     document.getElementById('view-scope-label').textContent=isAdmin?'전체 데이터 조회 중':'본인 데이터만 조회 중';
     document.getElementById('account-btn').textContent = (AUTH.role==='admin') ? '🔑 설정' : '🔑 비밀번호 변경';
+    document.getElementById('tab-btn-mgrinfo').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('screen-login').style.display='none';
     document.getElementById('screen-main').style.display='block';
     saveSession(name, pw, currentCenter);
@@ -867,12 +936,15 @@ function doLogout(){
 function getVisibleData(){return isAdmin?data:data.filter(d=>d.담당자===currentUser);}
 
 function switchTab(t){
-  ['list','add','stats','sales'].forEach((n,i)=>{
-    document.getElementById('tab-'+n).style.display=n===t?'block':'none';
-    document.querySelectorAll('#screen-main > .tabs .tab')[i].classList.toggle('active',n===t);
+  ['list','add','stats','sales','mgrinfo'].forEach((n,i)=>{
+    const el=document.getElementById('tab-'+n);
+    if(el) el.style.display = (n===t?'block':'none');
+    const btn=document.querySelectorAll('#screen-main > .tabs .tab')[i];
+    if(btn) btn.classList.toggle('active',n===t);
   });
   if(t==='stats')renderStatsPage();
   if(t==='sales')S.enter();
+  if(t==='mgrinfo')MGR.enter();
 }
 
 function prepBadge(v){
@@ -1154,347 +1226,367 @@ async function saveEdit(){
 
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
+
+/* ═══════════════════ 통계 (새 버전) ═══════════════════ */
+const 선행SET = ['선행'];
+const 정규후속SET = ['정규','후속'];
+
+function ymKey(y,m){ return `${y}-${String(m).padStart(2,'0')}`; }
+function addMonth(key, n){
+  const [y,m] = key.split('-').map(Number);
+  const d = new Date(y, m-1+n, 1);
+  return ymKey(d.getFullYear(), d.getMonth()+1);
+}
+function isO(v){ return String(v||'').trim().toUpperCase()==='O'; }
+function won(n){ return (Number(n)||0).toLocaleString('ko-KR'); }
+function pctStr(cur, exp){ return exp>0 ? (cur/exp*100).toFixed(1)+'%' : '-'; }
+
+/* 기준월의 주(월~일) 목록 */
+function weeksOfMonth(key){
+  const [y,m] = key.split('-').map(Number);
+  const first = new Date(y, m-1, 1), last = new Date(y, m, 0);
+  const out = [];
+  let cur = new Date(first);
+  cur.setDate(cur.getDate() - ((cur.getDay()+6)%7));   // 그 주 월요일
+  let i = 1;
+  while(cur <= last){
+    const s = new Date(cur), e = new Date(cur); e.setDate(e.getDate()+6);
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    out.push({ no:i++, from:fmt(s), to:fmt(e),
+      label:`${s.getMonth()+1}.${s.getDate()} ~ ${e.getMonth()+1}.${e.getDate()}` });
+    cur.setDate(cur.getDate()+7);
+  }
+  return out;
+}
+
+function statsScopedPartners(fc, fp){
+  let v = getVisibleData();
+  if(isAdmin){
+    if(fc) v = v.filter(d=>(d.센터||'')===fc);
+    if(fp) v = v.filter(d=>(d.담당자||'')===fp);
+  }
+  return v;
+}
+function statsScopedSales(fc, fp){
+  let v = (typeof S!=='undefined' && S.getRows) ? S.getRows().slice() : [];
+  if(isAdmin){
+    if(fc) v = v.filter(r=>(r.center||'')===fc);
+    if(fp) v = v.filter(r=>(r.mgr||'')===fp);
+  }
+  return v;
+}
+
+/* 파트너스 신청 집계: 선행 / 정규+후속 */
+function calcApply(list, key){
+  const inM = d => (d.응시날짜||'').substring(0,7)===key;
+  const grp = set => {
+    const g = list.filter(d=>inM(d) && set.includes(d.구분));
+    return { cnt:g.length, ok:g.filter(d=>isO(d.보장분석동의)).length, ga:g.filter(d=>isO(d.가계약)).length };
+  };
+  const a = grp(선행SET), b = grp(정규후속SET);
+  return { a, b, sum:{ cnt:a.cnt+b.cnt, ok:a.ok+b.ok, ga:a.ga+b.ga } };
+}
+
+/* 매출 집계 */
+function calcSalesMonth(rows, key){
+  let plan=0, real=0;
+  rows.forEach(r=>{
+    const amt = Number(r.amt)||0;
+    if(String(r.planDate||'').startsWith(key)) plan += amt;
+    if(String(r.saleDate||'').startsWith(key)) real += amt;
+  });
+  return { plan, real };
+}
+function calcSalesRange(rows, from, to){
+  let plan=0, real=0;
+  rows.forEach(r=>{
+    const amt = Number(r.amt)||0;
+    const pd = String(r.planDate||''), sd = String(r.saleDate||'');
+    if(pd && pd>=from && pd<=to) plan += amt;
+    if(sd && sd>=from && sd<=to) real += amt;
+  });
+  return { plan, real };
+}
+
+function applyCardHtml(title, sub, key, st, isNow){
+  return `<div class="st-card${isNow?' now':''}">
+    <div class="st-h">${title}<span class="sub">${sub}</span></div>
+    <table class="st-t">
+      <thead><tr><th style="text-align:left">구분</th><th>신청</th><th>보장분석 동의</th><th>가계약</th></tr></thead>
+      <tbody>
+        <tr><td class="k">선행</td>
+          <td><span class="st-n">${st.a.cnt}</span>명</td>
+          <td><span class="st-n2">${st.a.ok}</span>명</td>
+          <td><span class="st-n3">${st.a.ga}</span>명</td></tr>
+        <tr><td class="k">정규 + 후속</td>
+          <td><span class="st-n">${st.b.cnt}</span>명</td>
+          <td><span class="st-n2">${st.b.ok}</span>명</td>
+          <td><span class="st-n3">${st.b.ga}</span>명</td></tr>
+        <tr class="sum"><td class="k">합계</td>
+          <td>${st.sum.cnt}명</td><td>${st.sum.ok}명</td><td>${st.sum.ga}명</td></tr>
+      </tbody>
+    </table>
+  </div>`;
+}
+
 function renderStatsPage(keepFilters=false){
-  const sc=document.getElementById('stats-content');
-  const prevType=keepFilters&&document.getElementById('stats-filter-type')?document.getElementById('stats-filter-type').value:'센터';
-  const prevYear=keepFilters&&document.getElementById('stats-filter-year')?document.getElementById('stats-filter-year').value:'';
-  const prevMonth=keepFilters&&document.getElementById('stats-filter-month')?document.getElementById('stats-filter-month').value:'';
-  const prevPerson=keepFilters&&document.getElementById('stats-filter-person')?document.getElementById('stats-filter-person').value:'';
-  const prevCenter=keepFilters&&document.getElementById('stats-filter-center')?document.getElementById('stats-filter-center').value:'';
-  const prevPersonCenter=keepFilters&&document.getElementById('stats-filter-person-center')?document.getElementById('stats-filter-person-center').value:'';
+  const sc = document.getElementById('stats-content');
+  const now = new Date();
+  const pv = id => (keepFilters && document.getElementById(id)) ? document.getElementById(id).value : null;
 
-  const now=new Date();
-  const allVis=getVisibleData();
-  const allYears=[...new Set(allVis.map(d=>d.응시날짜?d.응시날짜.substring(0,4):'').filter(Boolean))].sort((a,b)=>b-a);
-  const yearOpts=allYears.map(y=>`<option value="${y}" ${y===prevYear?'selected':''}>${y}년</option>`).join('');
-  const monthOpts=[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>{const v=String(m).padStart(2,'0');return`<option value="${v}" ${v===prevMonth?'selected':''}>${m}월</option>`;}).join('');
+  const curKey = ymKey(now.getFullYear(), now.getMonth()+1);
+  let fy = pv('st-year')  ?? String(now.getFullYear());
+  let fm = pv('st-month') ?? String(now.getMonth()+1).padStart(2,'0');
+  const fc = pv('st-center') ?? '';
+  const fp = pv('st-person') ?? '';
 
-  // 센터 목록
-  const allCenters=[...new Set(allVis.map(d=>d.센터||'').filter(Boolean))].sort();
-  const centerOpts=allCenters.map(c=>`<option value="${c}" ${c===prevCenter?'selected':''}>${c}</option>`).join('');
-  const personCenterOpts=allCenters.map(c=>`<option value="${c}" ${c===prevPersonCenter?'selected':''}>${c}</option>`).join('');
+  const baseKey = `${fy}-${fm}`;
+  const nextKey = addMonth(baseKey, 1);
+  const prevKey = addMonth(baseKey, -1);
 
-  // 담당자 목록 - 담당자별 선택 시 센터 필터 적용
-  const personMap={};
-  allVis.forEach(d=>{const p=d.담당자||'미지정';if(!personMap[p])personMap[p]=d.센터||'';});
-  const filteredPersons=Object.keys(personMap).filter(p=>!prevPersonCenter||personMap[p]===prevPersonCenter).sort();
-  const personOpts=filteredPersons.map(p=>`<option value="${p}" ${p===prevPerson?'selected':''}>${p}</option>`).join('');
+  const all = getVisibleData();
+  const years = [...new Set(all.map(d=>(d.응시날짜||'').substring(0,4)).filter(Boolean))];
+  if(!years.includes(String(now.getFullYear()))) years.push(String(now.getFullYear()));
+  years.sort((a,b)=>b-a);
 
-  sc.innerHTML=`
-    <div class="section" style="margin-bottom:1rem;padding:12px 16px">
-      <table style="width:100%;border-collapse:collapse">
-        <tr>
-          <td style="font-size:11px;font-weight:700;color:#888;white-space:nowrap;padding:6px 10px 6px 0;width:36px">기간</td>
-          <td style="padding:6px 6px 6px 0">
-            <select id="stats-filter-year" onchange="renderStatsPage(true)" style="padding:6px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;width:100%">
-              <option value="">년도 전체</option>${yearOpts}
-            </select>
-          </td>
-          <td style="padding:6px 6px 6px 0">
-            <select id="stats-filter-month" onchange="renderStatsPage(true)" style="padding:6px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;width:100%">
-              <option value="">월 전체</option>${monthOpts}
-            </select>
-          </td>
-          <td style="padding:6px 0 6px 0;text-align:right;white-space:nowrap">
-            <button onclick="renderStatsPage(false)" style="padding:6px 12px;border:1px solid #d8d8d4;border-radius:8px;font-size:12px;cursor:pointer;background:#f5f5f3;color:#666">초기화</button>
-          </td>
-        </tr>
-        <tr style="border-top:1px solid #f0efed">
-          <td style="font-size:11px;font-weight:700;color:#888;white-space:nowrap;padding:6px 10px 6px 0">분류</td>
-          <td style="padding:6px 6px 6px 0">
-            <select id="stats-filter-type" onchange="renderStatsPage(true)" style="padding:6px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;width:100%">
-              <option value="센터" ${prevType==='센터'?'selected':''}>센터별</option>
-              <option value="담당자" ${prevType==='담당자'?'selected':''}>담당자별</option>
-            </select>
-          </td>
-          <td style="padding:6px 6px 6px 0" id="stats-sub-filter-cell">
-            <select id="stats-filter-center" onchange="renderStatsPage(true)" style="padding:6px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;width:100%">
-              <option value="">센터 전체</option>${centerOpts}
-            </select>
-            <select id="stats-filter-person-center" onchange="renderStatsPage(true)" style="padding:6px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;width:100%;display:none">
-              <option value="">센터 선택</option>${personCenterOpts}
-            </select>
-          </td>
-          <td style="padding:6px 0 6px 0" id="stats-person-cell">
-            <select id="stats-filter-person" onchange="renderStatsPage(true)" style="padding:6px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;width:100%;display:none">
-              <option value="">담당자 전체</option>${personOpts}
-            </select>
-          </td>
-        </tr>
-      </table>
+  const centers = [...new Set(all.map(d=>d.센터||'').filter(Boolean))].sort();
+  const persons = [...new Set(all.filter(d=>!fc||d.센터===fc).map(d=>d.담당자||'').filter(Boolean))].sort();
+
+  const adminFilter = isAdmin ? `
+      <select id="st-center" onchange="renderStatsPage(true)" style="padding:7px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;min-width:120px">
+        <option value="">센터 전체</option>${centers.map(c=>`<option value="${c}" ${c===fc?'selected':''}>${c}</option>`).join('')}
+      </select>
+      <select id="st-person" onchange="renderStatsPage(true)" style="padding:7px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;min-width:120px">
+        <option value="">지점장 전체</option>${persons.map(c=>`<option value="${c}" ${c===fp?'selected':''}>${c}</option>`).join('')}
+      </select>` : '';
+
+  const scopeLabel = isAdmin
+    ? `${fc||'전체 센터'}${fp?' · '+fp:''}`
+    : `${currentUser} 님`;
+
+  sc.innerHTML = `
+    <div class="section" style="padding:12px 16px;margin-bottom:1rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:#888">기준</span>
+      <select id="st-year" onchange="renderStatsPage(true)" style="padding:7px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff">
+        ${years.map(y=>`<option value="${y}" ${y===fy?'selected':''}>${y}년</option>`).join('')}
+      </select>
+      <select id="st-month" onchange="renderStatsPage(true)" style="padding:7px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff">
+        ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>{const v=String(m).padStart(2,'0');return `<option value="${v}" ${v===fm?'selected':''}>${m}월</option>`;}).join('')}
+      </select>
+      ${adminFilter}
+      <button class="btn btn-sm" onclick="renderStatsPage(false)">기준월로</button>
+      <span style="margin-left:auto;font-size:12px;color:#888">📌 ${scopeLabel} 기준</span>
     </div>
-    <div id="stats-table-wrap"></div>
-    <div class="section" style="margin-top:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="section-title" style="margin-bottom:0">월별 신청/합격 추이 <span id="chart-range-label" style="font-size:11px;color:#aaa;font-weight:400"></span></div>
+
+    <div class="section-title" style="margin-bottom:10px">파트너스 신청 현황</div>
+    <div class="st-grid" id="st-apply"></div>
+
+    <div class="section-title" style="margin:1.4rem 0 10px">매출 현황</div>
+    <div class="st-grid" id="st-sales">
+      <div class="st-card"><div class="empty" style="padding:1.2rem">매출 데이터 불러오는 중…</div></div>
+      <div class="st-card"><div class="empty" style="padding:1.2rem">&nbsp;</div></div>
+    </div>
+    <div id="st-week"></div>
+  `;
+
+  /* --- 파트너스 신청 --- */
+  const P = statsScopedPartners(fc, fp);
+  const bm = Number(baseKey.split('-')[1]), nm = Number(nextKey.split('-')[1]);
+  document.getElementById('st-apply').innerHTML =
+      applyCardHtml(`${bm}월 (당월)`, baseKey, baseKey, calcApply(P, baseKey), baseKey===curKey)
+    + applyCardHtml(`${nm}월 (익월)`, nextKey, nextKey, calcApply(P, nextKey), false);
+
+  /* --- 매출 (비동기 로드) --- */
+  if(typeof S!=='undefined' && S.ensureRows){
+    S.ensureRows().then(()=>renderStatsSales(prevKey, baseKey, fc, fp))
+      .catch(e=>{
+        document.getElementById('st-sales').innerHTML =
+          `<div class="st-card"><div class="empty" style="padding:1.2rem">매출 데이터를 불러오지 못했습니다.<br><span style="font-size:11px">${e.message||e}</span></div></div>`;
+      });
+  }
+}
+
+function renderStatsSales(prevKey, baseKey, fc, fp){
+  const R = statsScopedSales(fc, fp);
+  const pm = Number(prevKey.split('-')[1]), bm = Number(baseKey.split('-')[1]);
+  const prev = calcSalesMonth(R, prevKey);
+  const base = calcSalesMonth(R, baseKey);
+
+  const moneyCard = (title, sub, st, isNow) => `
+    <div class="st-card${isNow?' now':''}">
+      <div class="st-h">${title}<span class="sub">${sub}</span></div>
+      <div class="st-kv" style="border-bottom:1px dashed #e5e4e0">
+        <span class="lbl" style="width:64px">예정 매출</span>
+        <span class="st-money plan">${won(st.plan)}<span style="font-size:12px;font-weight:600"> 원</span></span>
       </div>
-      <div style="position:relative">
-        <canvas id="monthly-chart" style="display:block;width:100%"></canvas>
-        <div id="cur-month-box" style="position:absolute;border:2px solid #534AB7;border-radius:4px;pointer-events:none;box-shadow:0 0 0 3px rgba(83,74,183,0.1)"></div>
-        <div id="cur-month-label" style="position:absolute;background:#534AB7;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap">당월</div>
+      <div class="st-kv">
+        <span class="lbl" style="width:64px">실제 매출</span>
+        <span class="st-money">${won(st.real)}<span style="font-size:12px;font-weight:600"> 원</span></span>
+        <span class="st-rate">달성 ${pctStr(st.real, st.plan)}</span>
       </div>
     </div>`;
 
-  const filterType=prevType;
-  const filterYear=prevYear;
-  const filterMonth=prevMonth;
-  const filterPerson=prevPerson;
-  const filterCenter=prevCenter;
-  const filterPersonCenter=prevPersonCenter;
+  document.getElementById('st-sales').innerHTML =
+      moneyCard(`${pm}월 (전월)`, prevKey, prev, false)
+    + moneyCard(`${bm}월 (당월)`, baseKey, base, true);
 
-  // 드롭다운 표시 제어 - DOM 생성 후 즉시 실행
-  const applyFilterDisplay=()=>{
-    const centerSel=document.getElementById('stats-filter-center');
-    const personCenterSel=document.getElementById('stats-filter-person-center');
-    const personSel=document.getElementById('stats-filter-person');
-    if(filterType==='센터'){
-      if(centerSel)centerSel.style.display='inline-block';
-      if(personCenterSel)personCenterSel.style.display='none';
-      if(personSel)personSel.style.display='none';
-    } else {
-      if(centerSel)centerSel.style.display='none';
-      if(personCenterSel)personCenterSel.style.display='inline-block';
-      if(personSel)personSel.style.display=filterPersonCenter?'inline-block':'none';
-    }
-  };
-  applyFilterDisplay();
+  /* 주단위 (당월) */
+  const wk = weeksOfMonth(baseKey);
+  const rows = wk.map(w=>{
+    const s = calcSalesRange(R, w.from, w.to);
+    return `<tr>
+      <td class="k">${w.no}주차</td>
+      <td style="color:#888;font-size:11px">${w.label}</td>
+      <td><span class="st-n">${won(s.plan)}</span></td>
+      <td><span class="st-n2">${won(s.real)}</span></td>
+      <td>${pctStr(s.real, s.plan)}</td>
+    </tr>`;
+  }).join('');
 
-  // 필터 적용된 데이터
-  const vis=allVis.filter(d=>{
-    const date=d.응시날짜?d.응시날짜.substring(0,10):'';
-    if(filterYear&&(!date||date.substring(0,4)!==filterYear))return false;
-    if(filterMonth&&(!date||date.substring(5,7)!==filterMonth))return false;
-    if(filterType==='담당자'&&filterPersonCenter&&(d.센터||'')!==filterPersonCenter)return false;
-    if(filterType==='담당자'&&filterPerson&&(d.담당자||'미지정')!==filterPerson)return false;
-    if(filterType==='센터'&&filterCenter&&(d.센터||'미지정')!==filterCenter)return false;
-    return true;
-  });
-
-  if(!vis.length){document.getElementById('stats-table-wrap').innerHTML='<div class="empty">해당 조건의 데이터가 없습니다</div>';}
-  else {
-    const total=vis.length,totalPass=vis.filter(d=>d.합격날짜).length;
-
-    // 분류 선택 여부 확인
-    const hasSubFilter=(filterType==='센터'&&filterCenter)||(filterType==='담당자'&&filterPersonCenter);
-
-    let tableHtml='';
-    if(!hasSubFilter){
-      // 분류 미선택 → 전체 합계만 표시
-      tableHtml=`<div class="section" style="padding:0;overflow:hidden">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;border:1px solid #d8d8d4">
-          <thead><tr>
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666">구분</th>
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666;text-align:center">신청인원</th>
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666;text-align:center">합격인원</th>
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666;text-align:center">합격률</th>
-          </tr></thead>
-          <tbody>
-            <tr style="background:#f4f3f0">
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;font-weight:700">전체 합계</td>
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;font-weight:700;color:#534AB7">${total}명</td>
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;font-weight:700;color:#27500A">${totalPass}명</td>
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;font-weight:700">${total?Math.round(totalPass/total*100):0}%</td>
-            </tr>
+  document.getElementById('st-week').innerHTML = `
+    <div class="section" style="padding:14px 16px">
+      <div class="st-h">${bm}월 주단위 매출 <span class="sub">월요일 ~ 일요일 기준</span></div>
+      <div class="table-wrap">
+        <table class="st-t" style="min-width:520px">
+          <thead><tr><th style="text-align:left">주차</th><th>기간</th><th>예정 매출</th><th>실제 매출</th><th>달성율</th></tr></thead>
+          <tbody>${rows}
+            <tr class="sum"><td class="k">합계</td><td>-</td>
+              <td>${won(base.plan)}</td><td>${won(base.real)}</td><td>${pctStr(base.real, base.plan)}</td></tr>
           </tbody>
         </table>
-      </div>`;
-    } else {
-      // 분류 선택 → 세부 내역 표시
-      const map={};
-      vis.forEach(d=>{
-        let key;
-        if(filterType==='담당자') key=(d.담당자||'미지정')+'|'+(d.센터||'');
-        else key=d.센터||'미지정';
-        if(!map[key]) map[key]={신청:0,합격:0};
-        map[key].신청++;
-        if(d.합격날짜) map[key].합격++;
-      });
-      const sorted=Object.entries(map).sort((a,b)=>{
-        if(filterType==='담당자') return a[0]>b[0]?1:-1;
-        return b[1].신청-a[1].신청;
-      });
-      const th1=filterType==='담당자'?'담당자':'센터';
-      tableHtml=`<div class="section" style="padding:0;overflow:hidden">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;border:1px solid #d8d8d4">
-          <thead><tr>
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666">${th1}</th>
-            ${filterType==='담당자'?'<th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666">센터</th>':''}
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666;text-align:center">신청인원</th>
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666;text-align:center">합격인원</th>
-            <th style="background:#f4f3f0;padding:9px 12px;border:1px solid #d8d8d4;font-weight:600;font-size:11px;color:#666;text-align:center">합격률</th>
-          </tr></thead>
-          <tbody>
-            ${sorted.map(([k,v])=>{
-              const [name,center]=filterType==='담당자'?k.split('|'):[k,''];
-              return`<tr>
-                <td style="padding:8px 12px;border:1px solid #d8d8d4;font-weight:500">${name}</td>
-                ${filterType==='담당자'?`<td style="padding:8px 12px;border:1px solid #d8d8d4;font-size:12px;color:#888">${center||'-'}</td>`:''}
-                <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;color:#534AB7;font-weight:600">${v.신청}명</td>
-                <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;color:#27500A;font-weight:600">${v.합격}명</td>
-                <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center">${v.신청?Math.round(v.합격/v.신청*100):0}%</td>
-              </tr>`;
-            }).join('')}
-            <tr style="background:#f4f3f0">
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;font-weight:700" ${filterType==='담당자'?'colspan="2"':''}>합계</td>
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;font-weight:700;color:#534AB7">${total}명</td>
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;font-weight:700;color:#27500A">${totalPass}명</td>
-              <td style="padding:8px 12px;border:1px solid #d8d8d4;text-align:center;font-weight:700">${total?Math.round(totalPass/total*100):0}%</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>`;
-    }
-    document.getElementById('stats-table-wrap').innerHTML=tableHtml;
-  }
-
-  // 하단 그래프: 12개월 (당월 포함), 당월에만 테두리 오버레이
-  const now2=new Date();
-  const curMonth=`${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}`;
-  const months12=[];
-  for(let i=11;i>=0;i--){
-    const d=new Date(now2.getFullYear(),now2.getMonth()-i,1);
-    months12.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
-  }
-  const chartLabel=document.getElementById('chart-range-label');
-  if(chartLabel) chartLabel.textContent=`(${months12[0]} ~ ${months12[11]}, 당월 포함 1년)`;
-
-  // 그래프용 데이터
-  const chartVis=allVis.filter(d=>{
-    if(filterType==='담당자'&&filterPersonCenter&&(d.센터||'')!==filterPersonCenter)return false;
-    if(filterType==='담당자'&&filterPerson&&(d.담당자||'미지정')!==filterPerson)return false;
-    if(filterType==='센터'&&filterCenter&&(d.센터||'미지정')!==filterCenter)return false;
-    return true;
-  });
-
-  const groupKeys=[...new Set(chartVis.map(d=>filterType==='센터'?(d.센터||'미지정'):(d.담당자||'미지정')))].sort();
-  const COLORS=['#534AB7','#E07B39','#27AE60','#E74C3C','#8E44AD','#2980B9','#F39C12','#16A085','#D35400','#7F8C8D'];
-
-  // 12개월 집계
-  const groupMonthMap={};
-  groupKeys.forEach(k=>{groupMonthMap[k]={};months12.forEach(m=>groupMonthMap[k][m]={신청:0,합격:0});});
-  chartVis.forEach(d=>{
-    const m=d.응시날짜?d.응시날짜.substring(0,7):null;
-    if(!m||!months12.includes(m))return;
-    const k=filterType==='센터'?(d.센터||'미지정'):(d.담당자||'미지정');
-    if(groupMonthMap[k]){ groupMonthMap[k][m].신청++; if(d.합격날짜)groupMonthMap[k][m].합격++; }
-  });
-
-  const maxV=100; const yStep=5; const steps=maxV/yStep;
-
-  // 공통 그리드 그리기 함수
-  const drawGrid=(ctx,pad,cw,ch)=>{
-    ctx.strokeStyle='#f0efed';ctx.lineWidth=1;
-    for(let i=0;i<=steps;i++){
-      const v=i*yStep, y=pad.t+ch*(1-v/maxV);
-      ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();
-      if(v%10===0){ctx.fillStyle='#bbb';ctx.font='10px sans-serif';ctx.textAlign='right';ctx.fillText(v,pad.l-4,y+4);}
-    }
-  };
-
-  const drawRoundBar=(ctx,bx,by,bw,bh,color)=>{
-    if(bh<=0)return;
-    const rr=3;
-    ctx.fillStyle=color;ctx.beginPath();
-    ctx.moveTo(bx+rr,by);ctx.lineTo(bx+bw-rr,by);
-    ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+rr);
-    ctx.lineTo(bx+bw,by+bh);ctx.lineTo(bx,by+bh);ctx.lineTo(bx,by+rr);
-    ctx.quadraticCurveTo(bx,by,bx+rr,by);ctx.fill();
-  };
-
-  setTimeout(()=>{
-    const canvas=document.getElementById('monthly-chart');
-    if(!canvas)return;
-    const ctx=canvas.getContext('2d');
-    const legendH=Math.ceil(groupKeys.length/3)*22+14;
-    const W=canvas.parentElement.offsetWidth||700, H=300+legendH;
-    canvas.width=W; canvas.height=H;
-    ctx.clearRect(0,0,W,H);
-    const pad={t:46,r:16,b:52,l:40};
-    const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b-legendH;
-    const gap=cw/months12.length;
-    const curIdx=months12.indexOf(curMonth);
-
-    // 당월 배경 강조 (막대 그리기 전)
-    if(curIdx>=0){
-      const cx=pad.l+gap*curIdx;
-      ctx.fillStyle='rgba(83,74,183,0.06)';
-      ctx.fillRect(cx,pad.t-4,gap,ch+8);
-    }
-
-    // 그리드
-    drawGrid(ctx,pad,cw,ch);
-
-    // X축 라벨
-    months12.forEach((m,i)=>{
-      const x=pad.l+gap*i+gap/2;
-      ctx.fillStyle=m===curMonth?'#534AB7':'#888';
-      ctx.font=m===curMonth?'bold 10px sans-serif':'10px sans-serif';
-      ctx.textAlign='center';
-      ctx.fillText(m.substring(2).replace('-','/'),x,pad.t+ch+18);
-    });
-
-    if(groupKeys.length===1){
-      const barW=Math.max(8,Math.min(22,gap/2.8));
-      months12.forEach((m,i)=>{
-        const x=pad.l+gap*i+gap/2;
-        const v1=groupMonthMap[groupKeys[0]][m].신청, v2=groupMonthMap[groupKeys[0]][m].합격;
-        const h1=v1?Math.min(ch,ch*(v1/maxV)):0, h2=v2?Math.min(ch,ch*(v2/maxV)):0;
-        drawRoundBar(ctx,x-barW-2,pad.t+ch-h1,barW,h1,'#7B73D6');
-        drawRoundBar(ctx,x+2,pad.t+ch-h2,barW,h2,'#4CAF50');
-        ctx.fillStyle='#534AB7';ctx.font='bold 9px sans-serif';ctx.textAlign='center';
-        if(h1>0)ctx.fillText(v1,x-barW/2-2,pad.t+ch-h1-4);
-        ctx.fillStyle='#27500A';
-        if(h2>0)ctx.fillText(v2,x+barW/2+2,pad.t+ch-h2-4);
-      });
-      ctx.fillStyle='#7B73D6';ctx.fillRect(pad.l,pad.t+ch+34,10,10);
-      ctx.fillStyle='#333';ctx.font='11px sans-serif';ctx.textAlign='left';ctx.fillText('신청',pad.l+14,pad.t+ch+43);
-      ctx.fillStyle='#4CAF50';ctx.fillRect(pad.l+54,pad.t+ch+34,10,10);
-      ctx.fillStyle='#333';ctx.fillText('합격',pad.l+68,pad.t+ch+43);
-    } else {
-      const drawLine=(gk,color,dashed)=>{
-        ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash(dashed?[5,3]:[]);
-        ctx.beginPath();let started=false;
-        months12.forEach((m,i)=>{
-          const x=pad.l+gap*i+gap/2;
-          const v=dashed?groupMonthMap[gk][m].합격:groupMonthMap[gk][m].신청;
-          const y=pad.t+ch-ch*(v/maxV);
-          if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
-        });
-        ctx.stroke();ctx.setLineDash([]);
-        months12.forEach((m,i)=>{
-          const x=pad.l+gap*i+gap/2;
-          const v=dashed?groupMonthMap[gk][m].합격:groupMonthMap[gk][m].신청;
-          const y=pad.t+ch-ch*(v/maxV);
-          ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
-          if(v>0){ctx.fillStyle=color;ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillText(v,x,y-(dashed?8:14));}
-        });
-      };
-      groupKeys.forEach((k,ki)=>{const color=COLORS[ki%COLORS.length];drawLine(k,color,false);drawLine(k,color,true);});
-      const legendY=pad.t+ch+32;
-      groupKeys.forEach((k,ki)=>{
-        const col=ki%3,row=Math.floor(ki/3);
-        const lx=pad.l+col*(cw/3),ly=legendY+row*22;
-        const color=COLORS[ki%COLORS.length];
-        ctx.fillStyle=color;ctx.fillRect(lx,ly,16,3);
-        ctx.fillStyle='#333';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText(k,lx+20,ly+4);
-      });
-      ctx.fillStyle='#aaa';ctx.font='10px sans-serif';ctx.textAlign='right';
-      ctx.fillText('실선=신청 / 점선=합격',W-pad.r,pad.t+ch+28);
-    }
-
-    // 당월 테두리 오버레이 (캔버스 위에 그리기)
-    if(curIdx>=0){
-      const cx=pad.l+gap*curIdx;
-      ctx.strokeStyle='#534AB7';ctx.lineWidth=2;ctx.setLineDash([]);
-      ctx.strokeRect(cx+1,pad.t-4,gap-2,ch+8);
-      // 당월 라벨
-      ctx.fillStyle='#534AB7';
-      ctx.fillRect(cx+gap/2-14,pad.t-20,28,14);
-      ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';
-      ctx.fillText('당월',cx+gap/2,pad.t-10);
-    }
-  },50);
+      </div>
+    </div>`;
 }
+
+/* ═══════════════════ 지점장 정보 (관리자 전용) ═══════════════════ */
+var MGR = (function(){
+  const SEED = [
+    ['서울센터','손다혜'],['서울센터','홍승지'],
+    ['경인센터','김수진'],['경인센터','이인성'],['경인센터','민진홍'],['경인센터','이주아'],
+    ['부경센터','현유라'],['부경센터','김혜선'],['부경센터','김혜정'],
+    ['대경센터','박가현'],['대경센터','방수연'],['대경센터','이주향'],['대경센터','최창대'],
+    ['호남센터','임지유'],['호남센터','이은정'],['호남센터','서유리']
+  ];
+  let list = [], loaded = false, editIdx = -1;
+
+  function calcMonth(){
+    const v = document.getElementById('mi-f-입사월').value;
+    if(!v) return;
+    const [y,m] = v.split('-').map(Number);
+    const now = new Date();
+    const diff = (now.getFullYear()-y)*12 + (now.getMonth()+1-m) + 1;
+    document.getElementById('mi-f-차월').value = diff > 0 ? diff : 1;
+  }
+  function autoMonth(joinM){
+    if(!joinM) return '';
+    const [y,m] = String(joinM).split('-').map(Number);
+    if(!y||!m) return '';
+    const now = new Date();
+    const d = (now.getFullYear()-y)*12 + (now.getMonth()+1-m) + 1;
+    return d>0 ? d : 1;
+  }
+
+  function enter(){
+    if(loaded){ render(); return; }
+    document.getElementById('mi-body').innerHTML = '<tr><td colspan="9" class="empty">불러오는 중…</td></tr>';
+    fetch(GAS_URL + '?type=mgr&t=' + Date.now())
+      .then(r=>r.json())
+      .then(j=>{
+        list = Array.isArray(j) ? j : [];
+        loaded = true;
+        if(!list.length){
+          list = SEED.map(([c,n])=>({센터:c, 지점장명:n, 입사월:'', 차월:'', 교육이수:'', 경력사항:'', 특이사항:''}));
+          save(true);
+        }
+        fillCenters(); render();
+      })
+      .catch(e=>{
+        document.getElementById('mi-body').innerHTML =
+          `<tr><td colspan="9" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
+      });
+  }
+
+  function fillCenters(){
+    const cs = [...new Set(list.map(x=>x.센터).filter(Boolean))].sort();
+    const sel = document.getElementById('mi-center');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">센터 전체</option>' +
+      cs.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+  }
+
+  function render(){
+    const q = (document.getElementById('mi-search').value||'').toLowerCase();
+    const fc = document.getElementById('mi-center').value;
+    const f = list.filter(x=>{
+      if(fc && x.센터!==fc) return false;
+      if(q && !`${x.지점장명||''} ${x.센터||''}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const tb = document.getElementById('mi-body');
+    if(!f.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">데이터가 없습니다</td></tr>'; return; }
+    tb.innerHTML = f.map((x,i)=>{
+      const ri = list.indexOf(x);
+      const cha = x.차월 || autoMonth(x.입사월) || '-';
+      return `<tr>
+        <td style="color:#aaa;text-align:center">${i+1}</td>
+        <td style="font-size:11px">${x.센터||'-'}</td>
+        <td style="font-weight:600">${x.지점장명||'-'}</td>
+        <td>${x.입사월||'-'}</td>
+        <td style="text-align:center"><span class="badge badge-new">${cha}</span></td>
+        <td class="mi-cell" title="${(x.교육이수||'').replace(/"/g,'&quot;')}">${x.교육이수||'-'}</td>
+        <td class="mi-cell" title="${(x.경력사항||'').replace(/"/g,'&quot;')}">${x.경력사항||'-'}</td>
+        <td class="mi-cell" title="${(x.특이사항||'').replace(/"/g,'&quot;')}">${x.특이사항||'-'}</td>
+        <td><button class="btn btn-sm btn-edit" onclick="MGR.openEdit(${ri})">✏️</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function openEdit(idx){
+    editIdx = idx;
+    const x = idx>=0 ? list[idx] : {센터:'',지점장명:'',입사월:'',차월:'',교육이수:'',경력사항:'',특이사항:''};
+    document.getElementById('mi-title').textContent = idx>=0 ? `${x.지점장명} 정보 수정` : '지점장 추가';
+    document.getElementById('mi-f-센터').value = x.센터||'';
+    document.getElementById('mi-f-지점장명').value = x.지점장명||'';
+    document.getElementById('mi-f-입사월').value = x.입사월||'';
+    document.getElementById('mi-f-차월').value = x.차월||'';
+    document.getElementById('mi-f-교육이수').value = x.교육이수||'';
+    document.getElementById('mi-f-경력사항').value = x.경력사항||'';
+    document.getElementById('mi-f-특이사항').value = x.특이사항||'';
+    document.getElementById('mi-del').style.display = idx>=0 ? '' : 'none';
+    document.getElementById('mi-modal').classList.add('open');
+  }
+
+  function save(silent){
+    const body = JSON.stringify({action:'save_mgr', data:list});
+    return fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body})
+      .then(r=>r.text()).then(t=>{
+        let j; try{ j=JSON.parse(t); }catch(e){ throw new Error('저장 응답 오류'); }
+        if(!j.ok) throw new Error(j.error||'저장 실패');
+        if(!silent) showToast('✓ 저장되었습니다','ok');
+      }).catch(e=>{ showToast('저장 실패: '+(e.message||e),'err'); throw e; });
+  }
+
+  function saveFromModal(){
+    const g = id => document.getElementById(id).value.trim();
+    if(!g('mi-f-센터') || !g('mi-f-지점장명')){ alert('센터와 지점장명은 필수입니다.'); return; }
+    const o = {
+      센터:g('mi-f-센터'), 지점장명:g('mi-f-지점장명'), 입사월:g('mi-f-입사월'),
+      차월:g('mi-f-차월'), 교육이수:g('mi-f-교육이수'),
+      경력사항:g('mi-f-경력사항'), 특이사항:g('mi-f-특이사항')
+    };
+    if(editIdx>=0) list[editIdx] = o; else list.push(o);
+    save().then(()=>{ closeModal('mi-modal'); fillCenters(); render(); });
+  }
+
+  function remove(){
+    if(editIdx<0) return;
+    if(!confirm(`"${list[editIdx].지점장명}" 정보를 삭제할까요?`)) return;
+    list.splice(editIdx,1);
+    save().then(()=>{ closeModal('mi-modal'); fillCenters(); render(); });
+  }
+
+  return { enter, render, openEdit, save:saveFromModal, remove, calcMonth };
+})();
 </script>
 <script>
 /* ===================== 매출관리 모듈 (S) ===================== */
@@ -2164,8 +2256,16 @@ function doChangePw(){
 
 bindUpload();
 
+/* 통계 탭에서 매출 데이터가 필요할 때 (매출 탭에 안 들어갔어도 불러옴) */
+function getRows(){ return rows; }
+function ensureRows(force){
+  if (!force && rows.length) return Promise.resolve(rows);
+  return call("list").then(function(j){ rows = j.rows || []; return rows; });
+}
+
 return {
   enter: enter, reset: reset, refresh: refresh,
+  getRows: getRows, ensureRows: ensureRows,
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
