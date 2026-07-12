@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>파트너스 관리대장 (지점장)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;font-size:14px;color:#1a1a1a;background:#f5f5f3}
@@ -1384,23 +1385,23 @@ function collectManagers(fc, ft){
 
   // ① 지점장정보 시트
   (typeof MGR!=='undefined' && MGR.getList ? MGR.getList() : []).forEach(m=>{
-    if(!m.지점장명) return;
+    if(!isMgrName(m.지점장명)) return;
     if(fc && (m.센터||'') !== fc) return;
-    set.add(m.지점장명);
+    set.add(String(m.지점장명).trim());
   });
 
   // ② 파트너스 관리대장 담당자
   (typeof data!=='undefined' ? data : []).forEach(d=>{
-    if(!d.담당자) return;
+    if(!isMgrName(d.담당자)) return;
     if(fc && (d.센터||'') !== fc) return;
-    set.add(d.담당자);
+    set.add(String(d.담당자).trim());
   });
 
   // ③ 매출관리 지점장
   ((typeof S!=='undefined' && S.getRows) ? S.getRows() : []).forEach(r=>{
-    if(!r.mgr) return;
+    if(!isMgrName(r.mgr)) return;
     if(fc && (r.center||'') !== fc) return;
-    set.add(r.mgr);
+    set.add(String(r.mgr).trim());
   });
 
   let out = [...set];
@@ -1419,6 +1420,15 @@ const TENURE = [
   { v:'6',  t:'6차월',       min:6,  max:6 },
   { v:'7+', t:'7차월 이상',   min:7,  max:9999 },
 ];
+
+/* 관리자(김세인 등)는 지점장이 아니므로 통계에서 제외 */
+function isMgrName(n){
+  const s = String(n||'').trim();
+  if(!s) return false;
+  if(s === SALES_ADMIN) return false;
+  if(ADMINS.includes(s)) return false;
+  return true;
+}
 
 /* 지점장 이름 → 센터 (지점장정보 시트 기준) */
 function mgrCenter(name){
@@ -1455,6 +1465,7 @@ function tenureOk(name, ft){
 
 function statsScopedPartners(fc, fp, ft){
   let v = getVisibleData();
+  v = v.filter(d=>isMgrName(d.담당자));            // 관리자 등록분 제외
   if(isAdmin){
     if(fc) v = v.filter(d=>(d.센터||'')===fc);
     if(fp) v = v.filter(d=>(d.담당자||'')===fp);
@@ -1464,6 +1475,7 @@ function statsScopedPartners(fc, fp, ft){
 }
 function statsScopedSales(fc, fp, ft){
   let v = (typeof S!=='undefined' && S.getRows) ? S.getRows().slice() : [];
+  v = v.filter(r=>isMgrName(r.mgr));               // 관리자 명의 매출 제외
   if(isAdmin){
     if(fc) v = v.filter(r=>(r.center||'')===fc);
     if(fp) v = v.filter(r=>(r.mgr||'')===fp);
@@ -1953,47 +1965,100 @@ var XL = (function(){
 
   function today(){ return new Date().toISOString().slice(0,10); }
 
-  function toSheet(rows, fields){
-    return rows.map(r=>{
-      const o = {};
-      fields.forEach(k=>{ o[k] = (r[k]===null||r[k]===undefined) ? '' : String(r[k]); });
-      return o;
-    });
+  /* ═══ 서식 있는 엑셀 만들기 (ExcelJS) ═══ */
+  const LINE  = { style:'thin', color:{ argb:'FFC9C7C2' } };
+  const BORDER = { top:LINE, left:LINE, bottom:LINE, right:LINE };
+  const HEAD_FILL = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFEFEEF9' } };
+  const SUM_FILL  = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF4F3F0' } };
+
+  function hasExcelJS(){ return typeof ExcelJS !== 'undefined'; }
+
+  async function writeWb(wb, filename){
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 100);
   }
 
-  function save(sheets, filename){
-    if(typeof XLSX === 'undefined'){ showToast('엑셀 기능을 불러오지 못했습니다. 새로고침 후 다시 시도하세요.','err'); return; }
-    const wb = XLSX.utils.book_new();
-    sheets.forEach(s=>{
-      const ws = XLSX.utils.json_to_sheet(s.rows, s.header ? { header: s.header } : undefined);
-      if(s.header) ws['!cols'] = s.header.map(hd=>({ wch: Math.max(10, String(hd).length*2+2) }));
-      XLSX.utils.book_append_sheet(wb, ws, s.name);
-    });
-    XLSX.writeFile(wb, filename);
+  /* 표 영역에 테두리·헤더음영 입히기 */
+  function styleRange(ws, r1, r2, nCol, opt){
+    opt = opt || {};
+    for(let r = r1; r <= r2; r++){
+      const row = ws.getRow(r);
+      for(let c = 1; c <= nCol; c++){
+        const cell = row.getCell(c);
+        cell.border = BORDER;
+        cell.alignment = { vertical:'middle', horizontal: (c === 1 || c === 2) ? 'left' : 'center', wrapText:false };
+        if(r === r1 && opt.header){
+          cell.fill = HEAD_FILL;
+          cell.font = { bold:true, size:10.5, color:{ argb:'FF3C3489' } };
+          cell.alignment = { vertical:'middle', horizontal:'center' };
+        } else {
+          cell.font = { size:10.5 };
+        }
+        if(typeof cell.value === 'number') cell.numFmt = '#,##0';
+      }
+      row.height = 19;
+    }
+  }
+  function markSumRow(ws, r, nCol){
+    const row = ws.getRow(r);
+    for(let c = 1; c <= nCol; c++){
+      const cell = row.getCell(c);
+      cell.fill = SUM_FILL;
+      cell.font = { bold:true, size:10.5 };
+    }
+  }
+  function sectionTitle(ws, text, color){
+    const row = ws.addRow([text]);
+    row.getCell(1).font = { bold:true, size:12, color:{ argb: color || 'FF3C3489' } };
+    row.height = 22;
+    return row.number;
   }
 
   /* ---------- ① 파트너스 목록 다운로드 ---------- */
-  function downloadPartners(){
+  async function downloadPartners(){
     const rows = getFilteredPartners();
     if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
-    save([{ name:'파트너스', header:P_FIELDS, rows: toSheet(rows, P_FIELDS) }],
-         `파트너스_관리대장_${today()}.xlsx`);
+    if(!hasExcelJS()){ save([{ name:'파트너스', header:P_FIELDS, rows: toSheet(rows, P_FIELDS) }], `파트너스_관리대장_${today()}.xlsx`); return; }
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('파트너스');
+    ws.addRow(P_FIELDS);
+    rows.forEach(r => ws.addRow(P_FIELDS.map(k => (r[k]===null||r[k]===undefined) ? '' : String(r[k]))));
+    ws.columns = P_FIELDS.map(k => ({ width: Math.max(11, k.length * 2 + 3) }));
+    styleRange(ws, 1, rows.length + 1, P_FIELDS.length, { header:true });
+    ws.views = [{ state:'frozen', ySplit:1 }];
+    ws.autoFilter = { from:{ row:1, column:1 }, to:{ row:1, column:P_FIELDS.length } };
+
+    await writeWb(wb, `파트너스_관리대장_${today()}.xlsx`);
     showToast(`${rows.length}건을 엑셀로 저장했습니다`,'ok');
   }
 
   /* ---------- ② 지점장 정보 다운로드 ---------- */
-  function downloadMgr(){
+  async function downloadMgr(){
     const rows = MGR.getList();
     if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
-    save([{ name:'지점장정보', header:M_FIELDS, rows: toSheet(rows, M_FIELDS) }],
-         `지점장_정보_${today()}.xlsx`);
+    if(!hasExcelJS()){ save([{ name:'지점장정보', header:M_FIELDS, rows: toSheet(rows, M_FIELDS) }], `지점장_정보_${today()}.xlsx`); return; }
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('지점장정보');
+    ws.addRow(M_FIELDS);
+    rows.forEach(r => ws.addRow(M_FIELDS.map(k => (r[k]===null||r[k]===undefined) ? '' : String(r[k]))));
+    ws.columns = [{width:12},{width:12},{width:14},{width:9},{width:12},{width:8},{width:28},{width:28},{width:28}];
+    styleRange(ws, 1, rows.length + 1, M_FIELDS.length, { header:true });
+    ws.views = [{ state:'frozen', ySplit:1 }];
+
+    await writeWb(wb, `지점장_정보_${today()}.xlsx`);
     showToast(`${rows.length}명을 엑셀로 저장했습니다`,'ok');
   }
 
-  /* ---------- ③ 통계 결과 다운로드 (한 시트에 화면 그대로) ---------- */
-  function downloadStats(){
-    if(typeof XLSX === 'undefined'){ showToast('엑셀 기능을 불러오지 못했습니다. 새로고침 후 다시 시도하세요.','err'); return; }
-
+  /* ---------- ③ 통계 결과 다운로드 (한 시트 · 표에 선 포함) ---------- */
+  async function downloadStats(){
     const g = id => { const e = document.getElementById(id); return e ? e.value : ''; };
     const fy = g('st-year'), fm = g('st-month'), fc = g('st-center'), fp = g('st-person'), ft = g('st-tenure');
     const baseKey = `${fy}-${fm}`;
@@ -2006,55 +2071,74 @@ var XL = (function(){
     const a1 = calcApply(P, baseKey), a2 = calcApply(P, nextKey);
     const s0 = calcSalesMonth(R, prevKey), s1 = calcSalesMonth(R, baseKey);
 
-    const bm = Number(fm);
-    const nm = Number(nextKey.split('-')[1]);
-    const pm = Number(prevKey.split('-')[1]);
+    const bm = Number(fm), nm = Number(nextKey.split('-')[1]), pm = Number(prevKey.split('-')[1]);
     const scope = isAdmin ? (fc || '전체 센터') + (fp ? ' · ' + fp : '') : `${currentUser} 님`;
+    const fname = `통계_${baseKey}${fc?'_'+fc:''}${fp?'_'+fp:''}_${today()}.xlsx`;
 
-    const A = [];                       // 시트 전체 (행 단위)
-    const blank = () => A.push([]);
+    if(!hasExcelJS()){ showToast('엑셀 기능을 불러오지 못했습니다. 새로고침 후 다시 시도하세요.','err'); return; }
 
-    A.push([`통계 리포트  ·  ${baseKey}`]);
-    A.push([`조회 범위: ${scope}   |   지점장 차월: ${tLabel}   |   출력: ${new Date().toLocaleString()}`]);
-    blank();
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('통계');
+    ws.columns = [{width:16},{width:24},{width:16},{width:18},{width:18},{width:18},{width:18},{width:18},{width:14},{width:16},{width:16}];
+
+    /* 제목 */
+    const tr = ws.addRow([`통계 리포트   ·   ${baseKey}`]);
+    tr.getCell(1).font = { bold:true, size:16, color:{ argb:'FF2A2440' } };
+    tr.height = 26;
+    const sr = ws.addRow([`조회 범위: ${scope}     |     지점장 차월: ${tLabel}     |     출력: ${new Date().toLocaleString()}`]);
+    sr.getCell(1).font = { size:10, color:{ argb:'FF888888' } };
+    ws.addRow([]);
 
     /* ── 파트너스 신청 현황 ── */
-    A.push(['■ 파트너스 신청 현황']);
-    A.push(['월', '구분', '신청(명)', '보장분석 동의(명)', '가계약(명)']);
+    sectionTitle(ws, '■ 파트너스 신청 현황');
+    let r1 = ws.rowCount + 1;
+    ws.addRow(['월','구분','신청(명)','보장분석 동의(명)','가계약(명)']);
+    const sums = [];
     [[`${bm}월 (당월)`, a1], [`${nm}월 (익월)`, a2]].forEach(([label, st])=>{
-      A.push([label, '선행',      st.a.cnt,   st.a.ok,   st.a.ga]);
-      A.push(['',    '정규 + 후속', st.b.cnt,   st.b.ok,   st.b.ga]);
-      A.push(['',    '합계',      st.sum.cnt, st.sum.ok, st.sum.ga]);
+      ws.addRow([label, '선행',        st.a.cnt,   st.a.ok,   st.a.ga]);
+      ws.addRow(['',    '정규 + 후속', st.b.cnt,   st.b.ok,   st.b.ga]);
+      ws.addRow(['',    '합계',        st.sum.cnt, st.sum.ok, st.sum.ga]);
+      sums.push(ws.rowCount);
     });
-    blank();
+    styleRange(ws, r1, ws.rowCount, 5, { header:true });
+    sums.forEach(r => markSumRow(ws, r, 5));
+    ws.addRow([]);
 
     /* ── 매출 현황 ── */
-    A.push(['■ 매출 현황']);
-    A.push(['월', '예정 매출(원)', '실제 매출(원)', '매출 달성율', '유실적 예상(명)', '유실적 현재(명)', '유실적 달성율']);
-    A.push([`${pm}월 (전월)`, s0.plan, s0.real, pctStr(s0.real, s0.plan), s0.planCnt, s0.realCnt, pctStr(s0.realCnt, s0.planCnt)]);
-    A.push([`${bm}월 (당월)`, s1.plan, s1.real, pctStr(s1.real, s1.plan), s1.planCnt, s1.realCnt, pctStr(s1.realCnt, s1.planCnt)]);
-    A.push(['※ 유실적 = 인보험 인정 · 파트너스별 합산 5만원 이상']);
-    blank();
+    sectionTitle(ws, '■ 매출 현황', 'FF0A5540');
+    r1 = ws.rowCount + 1;
+    ws.addRow(['월','예정 매출(원)','실제 매출(원)','매출 달성율','유실적 예상(명)','유실적 현재(명)','유실적 달성율']);
+    ws.addRow([`${pm}월 (전월)`, s0.plan, s0.real, pctStr(s0.real,s0.plan), s0.planCnt, s0.realCnt, pctStr(s0.realCnt,s0.planCnt)]);
+    ws.addRow([`${bm}월 (당월)`, s1.plan, s1.real, pctStr(s1.real,s1.plan), s1.planCnt, s1.realCnt, pctStr(s1.realCnt,s1.planCnt)]);
+    styleRange(ws, r1, ws.rowCount, 7, { header:true });
+    markSumRow(ws, ws.rowCount, 7);
+    const nr = ws.addRow(['※ 유실적 = 인보험 인정 · 파트너스별 합산 5만원 이상']);
+    nr.getCell(1).font = { size:9.5, color:{ argb:'FFAAAAAA' } };
+    ws.addRow([]);
 
     /* ── 주단위 매출 ── */
-    A.push([`■ ${bm}월 주단위 매출  (월요일 ~ 일요일)`]);
-    A.push(['주차', '기간', '예정 매출(원)', '실제 매출(원)', '달성율']);
+    sectionTitle(ws, `■ ${bm}월 주단위 매출  (월요일 ~ 일요일)`, 'FF0A5540');
+    r1 = ws.rowCount + 1;
+    ws.addRow(['주차','기간','예정 매출(원)','실제 매출(원)','달성율']);
     weeksOfMonth(baseKey).forEach(w=>{
       const s = calcSalesRange(R, w.from, w.to);
-      A.push([`${w.no}주차`, `${w.from} ~ ${w.to}`, s.plan, s.real, pctStr(s.real, s.plan)]);
+      ws.addRow([`${w.no}주차`, `${w.from} ~ ${w.to}`, s.plan, s.real, pctStr(s.real, s.plan)]);
     });
-    A.push(['합계', '-', s1.plan, s1.real, pctStr(s1.real, s1.plan)]);
-    blank();
+    ws.addRow(['합계','-', s1.plan, s1.real, pctStr(s1.real, s1.plan)]);
+    styleRange(ws, r1, ws.rowCount, 5, { header:true });
+    markSumRow(ws, ws.rowCount, 5);
+    ws.addRow([]);
 
     /* ── 지점장별 상세 (관리자만) ── */
     if(isAdmin){
       const names = collectManagers(fc, ft);
       if(names.length){
-        A.push(['■ 지점장별 상세']);
-        A.push(['센터', '지점장', '차월',
-                `${bm}월 신청(명)`, `${bm}월 보장분석(명)`, `${bm}월 가계약(명)`,
-                `${bm}월 예정 매출(원)`, `${bm}월 실제 매출(원)`, '달성율',
-                '유실적 예상(명)', '유실적 현재(명)']);
+        sectionTitle(ws, '■ 지점장별 상세');
+        r1 = ws.rowCount + 1;
+        ws.addRow(['센터','지점장','차월',
+          `${bm}월 신청(명)`, `${bm}월 보장분석(명)`, `${bm}월 가계약(명)`,
+          `${bm}월 예정 매출(원)`, `${bm}월 실제 매출(원)`, '달성율',
+          '유실적 예상(명)','유실적 현재(명)']);
         names.forEach(n=>{
           const pRows = P.filter(d=>d.담당자 === n);
           const rRows = R.filter(r=>r.mgr === n);
@@ -2062,19 +2146,16 @@ var XL = (function(){
           const sm = calcSalesMonth(rRows, baseKey);
           const ct = (pRows[0] && pRows[0].센터) || (rRows[0] && rRows[0].center) || mgrCenter(n) || '';
           const tv = mgrTenure(n);
-          A.push([ct, n, (tv === null ? '-' : tv),
-                  ap.sum.cnt, ap.sum.ok, ap.sum.ga,
-                  sm.plan, sm.real, pctStr(sm.real, sm.plan),
-                  sm.planCnt, sm.realCnt]);
+          ws.addRow([ct, n, (tv === null ? '-' : tv),
+            ap.sum.cnt, ap.sum.ok, ap.sum.ga,
+            sm.plan, sm.real, pctStr(sm.real, sm.plan),
+            sm.planCnt, sm.realCnt]);
         });
+        styleRange(ws, r1, ws.rowCount, 11, { header:true });
       }
     }
 
-    const ws = XLSX.utils.aoa_to_sheet(A);
-    ws['!cols'] = [{wch:16},{wch:22},{wch:16},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:14},{wch:16},{wch:16}];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '통계');
-    XLSX.writeFile(wb, `통계_${baseKey}${fc?'_'+fc:''}${fp?'_'+fp:''}_${today()}.xlsx`);
+    await writeWb(wb, fname);
     showToast('통계를 엑셀로 저장했습니다','ok');
   }
 
