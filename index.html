@@ -1246,19 +1246,29 @@ function isO(v){ return String(v||'').trim().toUpperCase()==='O'; }
 function won(n){ return (Number(n)||0).toLocaleString('ko-KR'); }
 function pctStr(cur, exp){ return exp>0 ? (cur/exp*100).toFixed(1)+'%' : '-'; }
 
-/* 기준월의 주(월~일) 목록 */
+/* 기준월의 주(월~일) 목록 — 영업 기준은 1일~말일이므로 첫 주·마지막 주는 그 달 안으로 자릅니다 */
 function weeksOfMonth(key){
   const [y,m] = key.split('-').map(Number);
   const first = new Date(y, m-1, 1), last = new Date(y, m, 0);
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const out = [];
+
   let cur = new Date(first);
   cur.setDate(cur.getDate() - ((cur.getDay()+6)%7));   // 그 주 월요일
   let i = 1;
   while(cur <= last){
-    const s = new Date(cur), e = new Date(cur); e.setDate(e.getDate()+6);
-    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    out.push({ no:i++, from:fmt(s), to:fmt(e),
-      label:`${s.getMonth()+1}.${s.getDate()} ~ ${e.getMonth()+1}.${e.getDate()}` });
+    let s = new Date(cur);
+    let e = new Date(cur); e.setDate(e.getDate()+6);   // 그 주 일요일
+
+    // ★ 달 밖으로 나가는 부분은 잘라냄 (1일 이전 / 말일 이후 제외)
+    if(s < first) s = new Date(first);
+    if(e > last)  e = new Date(last);
+
+    out.push({
+      no: i++,
+      from: fmt(s), to: fmt(e),
+      label: `${s.getMonth()+1}.${s.getDate()} ~ ${e.getMonth()+1}.${e.getDate()}`
+    });
     cur.setDate(cur.getDate()+7);
   }
   return out;
