@@ -266,7 +266,7 @@ tr.today-row td{background:#fdf8ee}
       <select id="filter-년" onchange="updateMonthFilter();renderTable()" style="width:105px"><option value="">응시년 전체</option></select>
       <select id="filter-월" onchange="renderTable()" style="width:100px"><option value="">응시월 전체</option></select>
       <select id="filter-구분" onchange="renderTable()" style="width:115px"><option value="">구분 전체</option><option>선행</option><option>정규</option><option>후속</option></select>
-      <select id="filter-경력" onchange="renderTable()" style="width:115px"><option value="">경력 전체</option><option>신인</option><option>경력</option></select>
+      <select id="filter-경력" onchange="renderTable()" style="width:115px"><option value="">경력 전체</option><option>신인</option><option>경력</option><option>재등록</option></select>
       <select id="filter-재통화" onchange="renderTable()" style="width:125px">
         <option value="">재통화 전체</option>
         <option value="today">오늘</option>
@@ -303,8 +303,8 @@ tr.today-row td{background:#fdf8ee}
         <div class="form-group"><label>가코드</label><input type="text" id="f-가코드" placeholder="예) 925373737"></div>
         <div class="form-group"><label>파트너스명 *</label><input type="text" id="f-파트너스명" placeholder="이름 입력"></div>
         <div class="form-group"><label>생년월일</label><input type="date" id="f-생년월일"></div>
-        <div class="form-group"><label>경력 구분</label><select id="f-경력구분"><option value="">선택</option><option>신인</option><option>경력</option></select></div>
-        <div class="form-group"><label>직업</label><select id="f-직업"><option value="">선택</option><option>직장인</option><option>자영업</option><option>주부</option><option>학생</option><option>기타</option></select></div>
+        <div class="form-group"><label>경력 구분</label><select id="f-경력구분"><option value="">선택</option><option>신인</option><option>경력</option><option>재등록</option></select></div>
+        <div class="form-group"><label>직업</label><input type="text" id="f-직업" list="job-options" placeholder="선택 또는 직접 입력" autocomplete="off"><datalist id="job-options"><option>직장인</option><option>자영업</option><option>주부</option><option>학생</option><option>전업</option><option>기타</option></datalist></div>
       </div>
     </div>
     <div class="section" style="margin-top:1rem">
@@ -332,6 +332,7 @@ tr.today-row td{background:#fdf8ee}
               <option value="11">11시</option>
               <option value="12">12시</option>
             </select>
+            <select id="f-재통화일정-min" style="flex:1;min-width:70px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff"><option value="00">00분</option><option value="10">10분</option><option value="20">20분</option><option value="30">30분</option><option value="40">40분</option><option value="50">50분</option></select>
           </div>
         </div>
         <div class="form-group full"><label>상담이력 및 특이사항</label><textarea id="f-상담이력" placeholder="* 데시보드 1차 상담이력 입력 必&#10;* 전화/톡 모두 가능&#10;* 온라인후보자대시보드 상담내용 복,붙"></textarea></div>
@@ -345,7 +346,7 @@ tr.today-row td{background:#fdf8ee}
         <div class="form-group"><label>지역</label><select id="f-지역"><option value="">선택</option><option>서울</option><option>수원</option><option>대전</option><option>대구</option><option>광주</option><option>부산</option><option>인천</option><option>강릉</option><option>원주</option><option>전주</option><option>울산</option><option>순천</option><option>창원</option><option>제주</option><option>포항</option></select></div>
         <div class="form-group"><label>시험시간</label><input type="text" id="f-시험시간" placeholder="D-2,3에 공지됨"></div>
         <div class="form-group"><label>합격(날짜)</label><input type="date" id="f-합격날짜"></div>
-        <div class="form-group"><label>배정 지점장</label><input type="text" id="f-배정지점장"></div>
+        <div class="form-group"><label>담당EM</label><input type="text" id="f-배정지점장" placeholder="담당 EM 이름"></div>
         <div class="form-group"><label>위촉 여부</label><select id="f-위촉여부"><option value="">선택</option><option>위촉</option><option>미위촉</option></select></div>
         <div class="form-group"><label>위촉코드</label><input type="text" id="f-위촉코드" placeholder="위촉 후 부여되는 코드"></div>
       </div>
@@ -394,7 +395,7 @@ tr.today-row td{background:#fdf8ee}
     <section class="tbl-wrap">
       <table>
         <thead><tr>
-          <th>No.</th><th>도움요청</th><th>센터</th><th>지점장</th><th>파트너스</th><th>조직코드</th><th>경력</th><th>차월</th><th>상태</th><th>인보험</th><th>매출(금액)</th><th>수정P</th><th>계약자</th><th>피보험자</th><th>상품명</th><th>매출예정일</th><th>실매출일</th><th>비고</th><th></th>
+          <th>No.</th><th>도움요청</th><th>센터</th><th>지점장</th><th>파트너스</th><th>조직코드</th><th>구코드</th><th>경력</th><th>차월</th><th>상태</th><th>인보험여부</th><th>매출(금액)</th><th>수정P</th><th>계약자</th><th>피보험자</th><th>상품명</th><th>매출예정일</th><th>실매출일</th><th>비고</th><th></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -415,11 +416,12 @@ tr.today-row td{background:#fdf8ee}
       <div class="fld"><label>센터</label><select id="f_center"></select></div>
       <div class="fld"><label>지점장명</label><select id="f_mgr"></select></div>
       <div class="fld"><label>파트너스명</label><input id="f_partner"></div>
-      <div class="fld"><label>조직코드</label><input id="f_code"></div>
+      <div class="fld"><label>조직코드 (위촉코드)</label><input id="f_code"></div>
+      <div class="fld"><label>구코드 (가코드)</label><input id="f_oldcode"></div>
       <div class="fld"><label>경력구분</label><select id="f_career"><option value="">선택</option><option>신규</option><option>경력</option><option>재등록</option></select></div>
       <div class="fld"><label>차월</label><input type="number" id="f_month"></div>
       <div class="fld"><label>조직상태</label><select id="f_status"><option value="">선택</option><option>정상</option><option>폐쇄</option></select></div>
-      <div class="fld"><label>인보험</label><select id="f_active"><option value="1">인정</option><option value="0">불인정</option></select></div>
+      <div class="fld"><label>인보험여부</label><select id="f_active"><option value="1">인보험</option><option value="0">인보험 외</option></select></div>
       <div class="fld"><label>매출(금액)</label><input type="number" id="f_amt"></div>
       <div class="fld"><label>수정P</label><input type="number" id="f_pcorr"></div>
       <div class="fld"><label>계약자명</label><input id="f_holder"></div>
@@ -551,8 +553,8 @@ tr.today-row td{background:#fdf8ee}
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">가코드</label><input type="text" id="e-가코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">파트너스명 *</label><input type="text" id="e-파트너스명" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">생년월일</label><input type="date" id="e-생년월일" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">경력구분</label><select id="e-경력구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>신인</option><option>경력</option></select></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">직업</label><select id="e-직업" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>직장인</option><option>자영업</option><option>주부</option><option>학생</option><option>기타</option></select></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">경력구분</label><select id="e-경력구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>신인</option><option>경력</option><option>재등록</option></select></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">직업</label><input type="text" id="e-직업" list="job-options" placeholder="선택 또는 직접 입력" autocomplete="off" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">전화번호</label><input type="text" id="e-전화번호" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">상담가능시간</label><input type="text" id="e-상담가능시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">재통화일정</label>
@@ -564,6 +566,7 @@ tr.today-row td{background:#fdf8ee}
     <select id="e-재통화일정-hour" style="flex:1;min-width:60px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff">
       <option value="1">1시</option><option value="2">2시</option><option value="3">3시</option><option value="4">4시</option><option value="5">5시</option><option value="6">6시</option><option value="7">7시</option><option value="8">8시</option><option value="9">9시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option>
     </select>
+    <select id="e-재통화일정-min" style="flex:1;min-width:70px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff"><option value="00">00분</option><option value="10">10분</option><option value="20">20분</option><option value="30">30분</option><option value="40">40분</option><option value="50">50분</option></select>
   </div>
 </div>
         <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">상담이력 및 특이사항</label><textarea id="e-상담이력" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px;min-height:60px;resize:vertical;font-family:inherit"></textarea></div>
@@ -572,7 +575,7 @@ tr.today-row td{background:#fdf8ee}
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">지역</label><select id="e-지역" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>서울</option><option>수원</option><option>대전</option><option>대구</option><option>광주</option><option>부산</option><option>인천</option><option>강릉</option><option>원주</option><option>전주</option><option>울산</option><option>순천</option><option>창원</option><option>제주</option><option>포항</option></select></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">시험시간</label><input type="text" id="e-시험시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">합격날짜</label><input type="date" id="e-합격날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">배정지점장</label><input type="text" id="e-배정지점장" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">담당EM</label><input type="text" id="e-배정지점장" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉여부</label><select id="e-위촉여부" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>위촉</option><option>미위촉</option></select></div>
         <div style="padding:10px 12px;grid-column:2/-1;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉코드</label><input type="text" id="e-위촉코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 사전준비</label></div>
@@ -617,7 +620,7 @@ tr.today-row td{background:#fdf8ee}
 /* ★★ 1. 지점장용 파트너스 시트의 Apps Script 웹 앱 URL ★★
    (새로 만든 '지점장 원노트' 스프레드시트에 파트너스_시트코드.gs를 넣고 배포한 뒤 그 URL을 붙여넣으세요) */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUjef00IG7016fh5iOh6f9So6OJ9Y0ohZe-10nusOQrVVIGtGAKxk66oA2J__roEj74Q/exec';
-const ADMINS = ['김세인', '황교성'];              // 파트너스 관리대장에서 전체 조회 가능한 관리자
+const ADMINS = ['김세인'];                       // 파트너스 관리대장에서 전체 조회 가능한 관리자
 const SALES_ADMIN = '김세인';                    // 매출관리 최고 관리자 (비밀번호 관리 권한)
 /* ★★ 2. 매출관리 Apps Script 웹 앱 URL ★★ (기존 매출관리 시트에 doPost 추가 후 재배포한 URL) */
 const SALES_GAS_URL = 'https://script.google.com/macros/s/AKfycbwEcxsF7OlE2tfoIY9ow9KmExM6cWW49QheVZw3QNrRYJ_38J_w99is1y6e6ZKm_w_B1Q/exec';
@@ -633,19 +636,21 @@ function cleanDate(v){
 
 // 재통화 값 파싱 (날짜 + 오전/오후 n시)
 function parseRecall(val){
-  if(!val) return {date:'',ampm:'오전',hour:'1'};
-  const parts = val.split(' ');
+  if(!val) return {date:'',ampm:'오전',hour:'1',min:'00'};
+  const parts = String(val).split(' ');
   const date = cleanDate(parts[0])||'';
   const ampm = parts[1]||'오전';
   const hour = parts[2]?parts[2].replace('시',''):'1';
-  return {date,ampm,hour};
+  const min  = parts[3]?String(parts[3]).replace('분','').padStart(2,'0'):'00';
+  return {date,ampm,hour,min};
 }
-function buildRecall(dateEl, ampmEl, hourEl){
+function buildRecall(dateEl, ampmEl, hourEl, minEl){
   const d = document.getElementById(dateEl)?.value||'';
   const a = document.getElementById(ampmEl)?.value||'오전';
   const h = document.getElementById(hourEl)?.value||'1';
+  const m = document.getElementById(minEl)?.value||'00';
   if(!d) return '';
-  return `${d} ${a} ${h}시`;
+  return `${d} ${a} ${h}시 ${m}분`;
 }
 let data = [];
 let currentUser = null;
@@ -678,7 +683,8 @@ async function loadFromSheet(showPopup=false){
     if(showPopup) showRecallPopup();
   }catch(e){
     setSyncStatus('err','연결 실패');
-    showToast('구글 시트 연결에 실패했습니다.','err');
+    showToast('시트 연결 실패: '+(e.message||e),'err');
+    console.error('loadFromSheet 오류:',e);
   }
 }
 
@@ -710,14 +716,21 @@ async function saveToSheet(){
   try{
     const res=await fetch(GAS_URL,{
       method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain'},
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({action:'save_all',data})
     });
+    const txt=await res.text();
+    let j; try{ j=JSON.parse(txt); }catch(e){
+      console.error('시트 응답 원문:',txt);
+      throw new Error('시트 응답을 읽지 못했습니다. (Apps Script 배포 설정 확인)');
+    }
+    if(!j.ok) throw new Error(j.error||'저장 실패');
     setSyncStatus('ok','저장 완료 ✓');
     return true;
   }catch(e){
     setSyncStatus('err','저장 실패');
+    showToast('저장 실패: '+e.message,'err');
+    console.error(e);
     return false;
   }
 }
@@ -738,13 +751,21 @@ function salesCall(action, payload){
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: action, role: AUTH.role, name: AUTH.name, pw: AUTH.pw, payload: payload || {} })
   }).then(r => r.text()).then(s => {
-    let j; try { j = JSON.parse(s); } catch(e){ throw new Error('매출관리 서버 응답 오류 (웹앱 URL과 배포 설정을 확인하세요)'); }
+    let j;
+    try { j = JSON.parse(s); }
+    catch(e){
+      console.error('서버 응답 원문:', s);
+      throw new Error('매출관리 서버에 연결할 수 없습니다. (배포 설정: 액세스=모든 사용자 확인 필요)');
+    }
     if (j.ok) return j;
     throw new Error(j.error || '요청 실패');
+  }).catch(err => {
+    if (err instanceof TypeError) throw new Error('네트워크 연결 실패. 매출관리 웹앱 URL을 확인해 주세요.');
+    throw err;
   });
 }
 
-function doLogin(){
+function doLogin(restoring){
   const errEl = document.getElementById('login-err');
   const name = document.getElementById('login-name').value.trim();
   const pw = document.getElementById('login-pw').value;
@@ -773,12 +794,36 @@ function doLogin(){
     document.getElementById('account-btn').textContent = (AUTH.role==='admin') ? '🔑 설정' : '🔑 비밀번호 변경';
     document.getElementById('screen-login').style.display='none';
     document.getElementById('screen-main').style.display='block';
-    loadFromSheet(true);
+    saveSession(name, pw, currentCenter);
+    loadFromSheet(!restoring);
   }).catch(e=>{
     AUTH=null;
+    clearSession();
     errEl.textContent=e.message;
   });
 }
+
+/* ---- 세션 유지: 새로고침해도 로그인 상태 보존 (브라우저 탭 닫으면 해제) ---- */
+function saveSession(name, pw, center){
+  try{ sessionStorage.setItem('EM_AUTH', JSON.stringify({name:name, pw:pw, center:center||''})); }catch(e){}
+}
+function clearSession(){
+  try{ sessionStorage.removeItem('EM_AUTH'); }catch(e){}
+}
+function restoreSession(){
+  let raw=null;
+  try{ raw = sessionStorage.getItem('EM_AUTH'); }catch(e){ return; }
+  if(!raw) return;
+  let s;
+  try{ s = JSON.parse(raw); }catch(e){ clearSession(); return; }
+  if(!s || !s.name || !s.pw) return;
+  document.getElementById('login-name').value = s.name;
+  document.getElementById('login-pw').value = s.pw;
+  checkAdminInput();
+  if(s.center) document.getElementById('login-center').value = s.center;
+  doLogin(true);
+}
+window.addEventListener('load', restoreSession);
 
 /* 비밀번호 관리: 개인=내 비밀번호 변경 / 관리자=설정(변경·초기화·월마감) */
 function openAccount(){
@@ -789,14 +834,22 @@ function openAccount(){
 /* 파트너스 행 → 해당 파트너스 매출만 보기 (가코드/위촉코드 매칭) */
 function openPartnerSales(idx){
   const d = data[idx];
-  const codes = [d.가코드, d.위촉코드].map(v=>String(v===null||v===undefined?'':v).trim()).filter(Boolean);
+  const v = x => String(x===null||x===undefined?'':x).trim();
+  const codes = [v(d.가코드), v(d.위촉코드)].filter(Boolean);
   if(!codes.length){ alert('이 파트너스는 가코드/위촉코드가 없어 매출을 연결할 수 없습니다.\n먼저 가코드 또는 위촉코드를 입력해 주세요.'); return; }
   switchTab('sales');
-  S.filterByCodes(codes, d.파트너스명||'');
+  S.filterByCodes(codes, v(d.파트너스명), {
+    partner: v(d.파트너스명),
+    code:    v(d.위촉코드),   // 매출 '조직코드' ← 관리대장 위촉코드
+    oldcode: v(d.가코드),     // 매출 '구코드'   ← 관리대장 가코드
+    center:  v(d.센터),
+    career:  v(d.경력구분)==='신인' ? '신규' : (v(d.경력구분)||'')
+  });
 }
 
 function doLogout(){
   AUTH=null;
+  clearSession();
   S.reset();
   currentUser=null; isAdmin=false; currentCenter='';
   document.getElementById('login-name').value='';
@@ -904,7 +957,7 @@ function renderTable(){
   tbody.innerHTML=filtered.map((d,fi)=>{
     const ri=data.indexOf(d),rs=recallStatus(d.재통화일정);
     const rowCls=rs==='today'?' class="today-row"':'';
-    const 경력B=d.경력구분==='신인'?'badge-new':'badge-career';
+    const 경력B=d.경력구분==='신인'?'badge-new':(d.경력구분==='재등록'?'badge-exp':'badge-career');
     const 구분B=d.구분==='선행'?'badge-sun':d.구분==='정규'?'badge-exp':'badge-pass';
     let recallCell='-';
     if(d.재통화일정){
@@ -1022,7 +1075,7 @@ async function saveEntry(){
   const entry={
     담당자:currentUser, 센터:currentCenter, 인입날짜:get('f-인입날짜'), 가코드:get('f-가코드'), 파트너스명:get('f-파트너스명'),
     생년월일:get('f-생년월일'), 경력구분:get('f-경력구분'), 직업:get('f-직업'),
-    전화번호:get('f-전화번호'), 상담가능시간:get('f-상담가능시간'), 재통화일정:buildRecall('f-재통화일정-date','f-재통화일정-ampm','f-재통화일정-hour'),
+    전화번호:get('f-전화번호'), 상담가능시간:get('f-상담가능시간'), 재통화일정:buildRecall('f-재통화일정-date','f-재통화일정-ampm','f-재통화일정-hour','f-재통화일정-min'),
     상담이력:get('f-상담이력'), 응시날짜:get('f-응시날짜'), 구분:get('f-구분'),
     지역:get('f-지역'), 시험시간:get('f-시험시간'), 합격날짜:get('f-합격날짜'),
     배정지점장:get('f-배정지점장'), 위촉여부:get('f-위촉여부'), 위촉코드:get('f-위촉코드'),
@@ -1042,7 +1095,7 @@ async function saveEntry(){
 }
 
 function clearForm(){
-  ['f-인입날짜','f-가코드','f-파트너스명','f-생년월일','f-경력구분','f-직업','f-전화번호','f-상담가능시간','f-재통화일정-date','f-상담이력','f-응시날짜','f-구분','f-지역','f-시험시간','f-합격날짜','f-배정지점장','f-위촉여부','f-위촉코드','f-보장분석동의','f-브릿지콜','f-가계약']
+  ['f-인입날짜','f-가코드','f-파트너스명','f-생년월일','f-경력구분','f-직업','f-전화번호','f-상담가능시간','f-재통화일정-date','f-상담이력','f-응시날짜','f-구분','f-지역','f-시험시간','f-합격날짜','f-배정지점장','f-위촉여부','f-위촉코드','f-보장분석동의','f-브릿지콜','f-가계약','f-직업']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 
@@ -1059,7 +1112,7 @@ async function deleteEntry(idx){
 function openDetail(idx){
   const d=data[idx];
   document.getElementById('modal-title').textContent=d.파트너스명||'상세 정보';
-  const fields=[['담당자',d.담당자],['센터',d.센터],['인입날짜',d.인입날짜],['가코드',d.가코드],['생년월일',d.생년월일],['경력 구분',d.경력구분],['직업',d.직업],['전화번호',d.전화번호],['상담 가능시간',d.상담가능시간],['재통화 일정',d.재통화일정],['상담이력 및 특이사항',d.상담이력],['응시날짜',d.응시날짜],['구분',d.구분],['지역',d.지역],['시험시간',d.시험시간],['합격(날짜)',d.합격날짜],['배정 지점장',d.배정지점장],['위촉 여부',d.위촉여부],['위촉코드',d.위촉코드],['보장분석 동의',d.보장분석동의],['브릿지콜',d.브릿지콜],['가계약',d.가계약],['등록일시',d.등록일시]];
+  const fields=[['담당자',d.담당자],['센터',d.센터],['인입날짜',d.인입날짜],['가코드',d.가코드],['생년월일',d.생년월일],['경력 구분',d.경력구분],['직업',d.직업],['전화번호',d.전화번호],['상담 가능시간',d.상담가능시간],['재통화 일정',d.재통화일정],['상담이력 및 특이사항',d.상담이력],['응시날짜',d.응시날짜],['구분',d.구분],['지역',d.지역],['시험시간',d.시험시간],['합격(날짜)',d.합격날짜],['담당EM',d.배정지점장],['위촉 여부',d.위촉여부],['위촉코드',d.위촉코드],['보장분석 동의',d.보장분석동의],['브릿지콜',d.브릿지콜],['가계약',d.가계약],['등록일시',d.등록일시]];
   document.getElementById('modal-body').innerHTML=fields.map(([k,v])=>`<div class="modal-field"><span class="modal-key">${k}</span><span>${v||'-'}</span></div>`).join('');
   const canDel=isAdmin||d.담당자===currentUser;
   document.getElementById('modal-del-btn').style.display=canDel?'':'none';
@@ -1073,7 +1126,7 @@ function openDetail(idx){
 function openEdit(idx){
   const d=data[idx];
   document.getElementById('edit-modal').dataset.idx=idx;
-  const rp=parseRecall(d.재통화일정);document.getElementById('e-재통화일정-date').value=rp.date;document.getElementById('e-재통화일정-ampm').value=rp.ampm;document.getElementById('e-재통화일정-hour').value=rp.hour;
+  const rp=parseRecall(d.재통화일정);document.getElementById('e-재통화일정-date').value=rp.date;document.getElementById('e-재통화일정-ampm').value=rp.ampm;document.getElementById('e-재통화일정-hour').value=rp.hour;document.getElementById('e-재통화일정-min').value=rp.min;
   const fields={'e-인입날짜':cleanDate(d.인입날짜),'e-가코드':d.가코드,'e-파트너스명':d.파트너스명,'e-생년월일':cleanDate(d.생년월일),'e-경력구분':d.경력구분,'e-직업':d.직업,'e-전화번호':d.전화번호,'e-상담가능시간':d.상담가능시간,'e-재통화일정':d.재통화일정,'e-상담이력':d.상담이력,'e-응시날짜':cleanDate(d.응시날짜),'e-구분':d.구분,'e-지역':d.지역,'e-시험시간':d.시험시간,'e-합격날짜':cleanDate(d.합격날짜),'e-배정지점장':d.배정지점장,'e-위촉여부':d.위촉여부,'e-위촉코드':d.위촉코드,'e-보장분석동의':d.보장분석동의,'e-브릿지콜':d.브릿지콜,'e-가계약':d.가계약};
   Object.entries(fields).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||''});
   document.getElementById('edit-modal').classList.add('open');
@@ -1086,7 +1139,7 @@ async function saveEdit(){
   const d=data[idx];
   d.인입날짜=get('e-인입날짜');d.가코드=get('e-가코드');d.파트너스명=get('e-파트너스명');
   d.생년월일=get('e-생년월일');d.경력구분=get('e-경력구분');d.직업=get('e-직업');
-  d.전화번호=get('e-전화번호');d.상담가능시간=get('e-상담가능시간');d.재통화일정=buildRecall('e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour');
+  d.전화번호=get('e-전화번호');d.상담가능시간=get('e-상담가능시간');d.재통화일정=buildRecall('e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min');
   d.상담이력=get('e-상담이력');d.응시날짜=get('e-응시날짜');d.구분=get('e-구분');
   d.지역=get('e-지역');d.시험시간=get('e-시험시간');d.합격날짜=get('e-합격날짜');
   d.배정지점장=get('e-배정지점장');d.위촉여부=get('e-위촉여부');d.위촉코드=get('e-위촉코드');
@@ -1444,8 +1497,8 @@ function renderStatsPage(keepFilters=false){
 <script>
 /* ===================== 매출관리 모듈 (S) ===================== */
 var S = (function(){
-var SKEYS = ["center","mgr","partner","code","career","month","status","active","amt","pcorr","holder","insured","product","proposal","planDate","saleDate","note","help"];
-var SHEADERS = ["센터","지점장명","파트너스명","조직코드","경력구분","차월","조직상태","인보험","매출(금액)▶","수정p","계약자명","피보험자명","상품명","제안내용(상품, 조건 등등)","매출예정일","실매출일","매출특이사항","도움요청"];
+var SKEYS = ["center","mgr","partner","code","career","month","status","active","amt","pcorr","holder","insured","product","proposal","planDate","saleDate","note","help","oldcode"];
+var SHEADERS = ["센터","지점장명","파트너스명","조직코드","경력구분","차월","조직상태","인보험여부","매출(금액)▶","수정p","계약자명","피보험자명","상품명","제안내용(상품, 조건 등등)","매출예정일","실매출일","매출특이사항","도움요청","구코드"];
 var ASSIGNEES = ["김세인","배정은","김한길","이명우"];
 var CENTERS = ["서울센터","경인센터","부경센터","대경센터","호남센터","강남센터","충청센터"];
 var CAREERS = ["신규","경력","재등록"];
@@ -1507,8 +1560,10 @@ function refresh(){
     rows = j.rows || [];
     pruneFilters();
     render();
-  }).catch(function(e){ alert("매출 데이터 불러오기 실패: " + e.message); })
-    .finally(function(){ $("refreshBtn").disabled = false; });
+  }).catch(function(e){
+    console.error('매출 불러오기 오류:', e);
+    showToast("매출 불러오기 실패: " + e.message, 'err');
+  }).finally(function(){ $("refreshBtn").disabled = false; });
 }
 function startAutoRefresh(){
   if (autoTimer) clearInterval(autoTimer);
@@ -1533,19 +1588,21 @@ function startAutoRefresh(){
 }
 
 /* ----- 파트너스 코드 연동 필터 ----- */
-function filterByCodes(codes, label){
+var partnerCtx = null;   // 관리대장에서 넘어온 파트너스 정보 (건 추가 시 자동 입력)
+function filterByCodes(codes, label, ctx){
   F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: codes.map(String), pFrom: "", pTo: "", sFrom: "", sTo: "" };
   codeLabel = label || "";
+  partnerCtx = ctx || null;
   page = 1;
   var apply = function(){
-    $("codeBannerTxt").textContent = "💰 「" + codeLabel + "」 파트너스 관련 매출만 표시 중 (가코드/위촉코드 기준: " + F.codes.join(", ") + ")";
+    $("codeBannerTxt").textContent = "💰 「" + codeLabel + "」 매출만 표시 중 · 위촉코드/구코드: " + F.codes.join(" · ");
     $("codeBanner").classList.remove("hidden");
     render();
   };
   if (!entered) enter().then(apply); else apply();
 }
 function clearCodeFilter(){
-  F.codes = []; codeLabel = ""; page = 1;
+  F.codes = []; codeLabel = ""; partnerCtx = null; page = 1;
   $("codeBanner").classList.add("hidden");
   render();
 }
@@ -1701,7 +1758,11 @@ function renderPStats(list, filtered){
 /* ----- 필터 적용/렌더 ----- */
 function filteredRows(){
   return rows.filter(function(r){
-    if (F.codes.length && F.codes.indexOf(String(r.code)) < 0) return false;
+    if (F.codes.length){
+      var c1 = String(r.code === null || r.code === undefined ? '' : r.code).trim();
+      var c2 = String(r.oldcode === null || r.oldcode === undefined ? '' : r.oldcode).trim();
+      if (F.codes.indexOf(c1) < 0 && F.codes.indexOf(c2) < 0) return false;
+    }
     if (F.center.length && F.center.indexOf(r.center) < 0) return false;
     if (F.mgr.length && F.mgr.indexOf(r.mgr) < 0) return false;
     if (F.partner.length && F.partner.indexOf(r.partner) < 0) return false;
@@ -1748,10 +1809,11 @@ function render(){
       + '<td class="num mono">' + no + '</td>'
       + '<td onclick="event.stopPropagation()" style="text-align:center"><input type="checkbox" class="help-ck" title="' + helpTitle + '"' + (isHelp ? ' checked' : '') + ' onchange="S.toggleHelp(\'' + esc(r.id) + '\',this.checked)"></td>'
       + '<td>' + esc(r.center) + '</td><td>' + esc(r.mgr) + '</td><td>' + esc(r.partner) + '</td>'
-      + '<td class="mono">' + esc(r.code) + '</td><td>' + careerTag + '</td>'
+      + '<td class="mono">' + esc(r.code) + '</td>'
+      + '<td class="mono">' + esc(r.oldcode) + '</td><td>' + careerTag + '</td>'
       + '<td class="num">' + esc(r.month) + '</td>'
       + '<td>' + (r.status === "폐쇄" ? '<span class="tag tg-cl">폐쇄</span>' : esc(r.status)) + '</td>'
-      + '<td>' + (Number(r.active) === 1 ? '<span class="tag tg-new">인정</span>' : '<span style="color:#9AA8A2;font-size:11px">불인정</span>') + '</td>'
+      + '<td>' + (Number(r.active) === 1 ? '<span class="tag tg-new">인보험</span>' : '<span style="color:#9AA8A2;font-size:11px">인보험 외</span>') + '</td>'
       + '<td class="num strong">' + fmt(r.amt) + '</td><td class="num">' + fmt(r.pcorr) + '</td>'
       + '<td>' + esc(r.holder) + '</td><td>' + esc(r.insured) + '</td>'
       + '<td class="ellip" title="' + esc(r.product) + '">' + esc(r.product) + '</td>'
@@ -1760,8 +1822,8 @@ function render(){
       + '<td class="ellip" title="' + esc(r.note) + '">' + esc(r.note) + '</td>'
       + '<td class="edit-cell">수정</td></tr>';
   });
-  if (!pr.length && rows.length) html = '<tr><td colspan="19" class="empty-row">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 \'건 추가\'로 입력하세요.</td></tr>';
-  if (!pr.length && !rows.length) html = '<tr><td colspan="19" class="empty-row">매출 데이터가 없습니다. \'건 추가\' 또는 엑셀 업로드로 입력하세요.</td></tr>';
+  if (!pr.length && rows.length) html = '<tr><td colspan="20" class="empty-row">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 \'건 추가\'로 입력하세요.</td></tr>';
+  if (!pr.length && !rows.length) html = '<tr><td colspan="20" class="empty-row">매출 데이터가 없습니다. \'건 추가\' 또는 엑셀 업로드로 입력하세요.</td></tr>';
   $("tbody").innerHTML = html;
   $("pageInfo").textContent = page + " / " + total + " 페이지 · 총 " + fmt(f.length) + "건";
   $("prevBtn").disabled = page <= 1; $("nextBtn").disabled = page >= total;
@@ -1778,8 +1840,16 @@ function openEdit(id){
   var isNew = id === null;
   var r;
   if (isNew){
-    r = { id: "", center: "", mgr: "", partner: "", code: "", career: "신규", month: "", status: "정상", active: 1, amt: "", pcorr: "", holder: "", insured: "", product: "", proposal: "", planDate: "", saleDate: "", note: "" };
+    r = { id: "", center: "", mgr: "", partner: "", code: "", oldcode: "", career: "신규", month: "", status: "정상", active: 1, amt: "", pcorr: "", holder: "", insured: "", product: "", proposal: "", planDate: "", saleDate: "", note: "" };
     if (AUTH.role === "mgr"){ r.mgr = AUTH.name; r.center = rows.length ? rows[0].center : (typeof currentCenter!=="undefined" && currentCenter ? currentCenter : ""); }
+    /* 관리대장에서 특정 파트너스를 눌러 들어온 경우 → 자동으로 채워줌 */
+    if (partnerCtx){
+      r.partner = partnerCtx.partner || r.partner;
+      r.code    = partnerCtx.code    || r.code;
+      r.oldcode = partnerCtx.oldcode || r.oldcode;
+      if (partnerCtx.center) r.center = partnerCtx.center;
+      if (partnerCtx.career) r.career = partnerCtx.career;
+    }
   } else {
     r = rows.filter(function(x){ return String(x.id) === String(id); })[0];
     if (!r) return;
@@ -1815,12 +1885,21 @@ function doSaveRow(){
   var o = collectRow();
   if (!o.center || !o.mgr){ alert("센터와 지점장명은 필수입니다."); return; }
   $("saveBtn").disabled = true; $("saveBtn").textContent = "저장 중…";
-  call(editing.isNew ? "add" : "update", { row: o }).then(function(){
+  var wasNew = editing.isNew;
+  var savedCode = String(o.code || "").trim();
+  var savedOld  = String(o.oldcode || "").trim();
+  call(wasNew ? "add" : "update", { row: o }).then(function(){
     closeModal("editModal");
-    flash(editing.isNew ? "구글 시트에 추가되었습니다" : "구글 시트에 저장되었습니다");
+    /* 코드 필터가 걸려 있는데 방금 넣은 건의 코드가 다르면, 안 보이므로 필터를 넓혀준다 */
+    if (F.codes.length && savedCode && F.codes.indexOf(savedCode) < 0 && F.codes.indexOf(savedOld) < 0){
+      F.codes.push(savedCode);
+      if (savedOld) F.codes.push(savedOld);
+      $("codeBannerTxt").textContent = "💰 「" + codeLabel + "」 매출만 표시 중 · 위촉코드/구코드: " + F.codes.join(" · ");
+    }
+    flash(wasNew ? "구글 시트에 추가되었습니다" : "구글 시트에 저장되었습니다");
     return refresh();
-  }).catch(function(e){ alert(e.message); })
-    .finally(function(){ $("saveBtn").disabled = false; });
+  }).catch(function(e){ alert("저장 실패: " + e.message); })
+    .finally(function(){ $("saveBtn").disabled = false; $("saveBtn").textContent = wasNew ? "추가" : "저장"; });
 }
 function doDelete(){
   if (!confirm("이 건을 삭제할까요?")) return;
