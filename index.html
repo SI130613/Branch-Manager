@@ -201,6 +201,10 @@ tr.today-row td{background:#fdf8ee}
 #salesRoot tbody tr.help td{background:#FCE3EE}
 #salesRoot tbody tr.help:hover td{background:#F9D3E4}
 #salesRoot .help-ck{width:16px;height:16px;cursor:pointer;accent-color:#D14D8B}
+#salesRoot .hb{border:1px solid #DFE7E2;background:#fff;color:#6B6560;border-radius:20px;font-size:11px;font-weight:700;padding:3px 10px;cursor:pointer;white-space:nowrap;font-family:inherit}
+#salesRoot .hb:hover{border-color:#D14D8B;color:#B03A72}
+#salesRoot .hb.req{background:#FCE3EE;border-color:#F3C6DC;color:#B03A72}
+#salesRoot .hb.done{background:#E3F0EB;border-color:#C9E4DA;color:#0A5540}
 #salesRoot .sel-ck{width:16px;height:16px;cursor:pointer;accent-color:#B4372F;margin:0}
 #salesRoot tbody tr.sel td{background:#FDECEA}
 #salesRoot tbody tr.sel:hover td{background:#FBDDD9}
@@ -436,6 +440,18 @@ tr.today-row td{background:#fdf8ee}
         </table>
       </div>
     </div>
+
+    <!-- 관리자 명단 -->
+    <div class="section" style="margin-top:1.2rem">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <div class="section-title" style="margin:0">관리자 명단</div>
+        <span style="font-size:11.5px;color:#888">코드는 비워도 됩니다. 로그인 시 관리자는 코드를 입력하지 않아도 됩니다.</span>
+        <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="ADM.add()">+ 관리자 추가</button>
+        <button class="btn btn-sm btn-primary" onclick="ADM.save()">💾 저장</button>
+      </div>
+      <div id="adm-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px"></div>
+      <div id="adm-msg" style="font-size:12px;margin-top:8px"></div>
+    </div>
   </div>
 
 <!-- ===== 매출관리 (통합) ===== -->
@@ -486,7 +502,10 @@ tr.today-row td{background:#fdf8ee}
     <div class="mo-grid">
       <div class="fld"><label>센터</label><select id="f_center"></select></div>
       <div class="fld"><label>지점장명</label><select id="f_mgr"></select></div>
-      <div class="fld"><label>파트너스명</label><input id="f_partner"></div>
+      <div class="fld"><label>파트너스명 <span style="color:#0E6B52;font-size:10px">(목록에서 선택하면 자동 입력)</span></label>
+        <input id="f_partner" list="sales-partner-list" autocomplete="off" oninput="S.onPartnerPick(this.value)">
+        <datalist id="sales-partner-list"></datalist>
+      </div>
       <div class="fld"><label>조직코드 (위촉코드)</label><input id="f_code"></div>
       <div class="fld"><label>구코드 (가코드)</label><input id="f_oldcode"></div>
       <div class="fld"><label>경력구분</label><select id="f_career"><option value="">선택</option><option>신규</option><option>경력</option><option>재등록</option></select></div>
@@ -500,7 +519,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="fld"><label>상품명</label><input id="f_product"></div>
       <div class="fld"><label>매출예정일</label><input type="date" id="f_planDate"></div>
       <div class="fld"><label>실매출일</label><input type="date" id="f_saleDate"></div>
-      <div class="fld fld-w"><label>제안내용 (상품, 조건 등)</label><input id="f_proposal"></div>
+      <div class="fld fld-w"><label>설계특이사항 (병력, 플랜 등)</label><input id="f_proposal"></div>
       <div class="fld fld-w"><label>매출특이사항</label><input id="f_note"></div>
     </div>
     <div class="mo-foot">
@@ -508,6 +527,41 @@ tr.today-row td{background:#fdf8ee}
       <div class="mo-sp"></div>
       <button class="btn btn-g" onclick="S.closeModal('editModal')">취소</button>
       <button class="btn btn-p" id="saveBtn" onclick="S.doSaveRow()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 도움요청 모달 -->
+<div class="overlay" id="help-modal">
+  <div class="modal-box" style="max-width:600px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h3>🙋 도움요청</h3>
+      <button class="btn btn-sm" onclick="closeModal('help-modal')">✕</button>
+    </div>
+    <div id="hp-who" style="font-size:12px;color:#888;margin-bottom:14px"></div>
+
+    <div style="border:1px solid #F3C6DC;background:#FFF7FB;border-radius:10px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:800;color:#B03A72">요청 내용</label>
+        <span id="hp-req-meta" style="font-size:11px;color:#aaa"></span>
+      </div>
+      <textarea id="hp-req" rows="4" placeholder="어떤 도움이 필요한지 적어주세요." style="width:100%;border:1px solid #F3C6DC;border-radius:8px;padding:8px;font-size:13px;font-family:inherit"></textarea>
+    </div>
+
+    <div style="border:1px solid #C9E4DA;background:#F5FBF8;border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:800;color:#0A5540">해결 내용 <span style="color:#888;font-weight:600">(관리자만 입력)</span></label>
+        <span id="hp-ans-meta" style="font-size:11px;color:#aaa"></span>
+      </div>
+      <textarea id="hp-ans" rows="4" placeholder="답변 · 처리 결과를 적어주세요." style="width:100%;border:1px solid #C9E4DA;border-radius:8px;padding:8px;font-size:13px;font-family:inherit"></textarea>
+    </div>
+
+    <div id="hp-msg" style="font-size:12px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-sm btn-danger" id="hp-clear" onclick="HELP.clear()">요청 취소</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-sm" onclick="closeModal('help-modal')">닫기</button>
+      <button class="btn btn-sm btn-primary" id="hp-save" onclick="HELP.save()">💾 저장</button>
     </div>
   </div>
 </div>
@@ -686,11 +740,13 @@ tr.today-row td{background:#fdf8ee}
     <div id="xl-res" style="display:none;background:#F6F5FF;border-radius:8px;padding:12px;margin-bottom:12px">
       <div id="xl-cnt" style="font-weight:700;font-size:13.5px;color:#3C3489;margin-bottom:8px"></div>
       <div id="xl-mode">
-        <label style="font-size:13px;display:flex;gap:7px;align-items:center;margin-bottom:5px">
-          <input type="radio" name="xlMode" value="append" checked style="width:auto;margin:0"> 기존 데이터에 <b>추가</b>
+        <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;cursor:pointer">
+          <input type="radio" name="xlMode" value="append" checked style="width:auto;margin:3px 0 0"> 
+          <span><b>추가</b> — 기존 데이터는 그대로 두고 뒤에 붙입니다 <span style="color:#0A5540;font-size:11px">(권장)</span></span>
         </label>
-        <label style="font-size:13px;display:flex;gap:7px;align-items:center">
-          <input type="radio" name="xlMode" value="replace" style="width:auto;margin:0"> <span id="xl-replace-label">전체 교체</span>
+        <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;cursor:pointer">
+          <input type="radio" name="xlMode" value="replace" style="width:auto;margin:3px 0 0"> 
+          <span><b id="xl-replace-label">전체 교체</b> <span style="color:#B4372F;font-size:11px">— 기존 데이터를 모두 지우고 새로 넣습니다</span></span>
         </label>
       </div>
     </div>
@@ -766,7 +822,9 @@ tr.today-row td{background:#fdf8ee}
    (새로 만든 '지점장 원노트' 스프레드시트에 파트너스_시트코드.gs를 넣고 배포한 뒤 그 URL을 붙여넣으세요) */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUjef00IG7016fh5iOh6f9So6OJ9Y0ohZe-10nusOQrVVIGtGAKxk66oA2J__roEj74Q/exec';
 const CENTERS_ALL = ['강남센터','서울센터','경인센터','충청센터','호남센터','부경센터','대경센터'];
-const ADMINS = ['김세인'];                       // 파트너스 관리대장에서 전체 조회 가능한 관리자
+let ADMIN_LIST = [{name:'김세인', code:''}];      // 서버(관리자 탭)에서 받아옴
+function adminNames(){ return ADMIN_LIST.map(a=>a.name); }
+const ADMINS = { includes: n => adminNames().includes(n) };   // 기존 코드 호환                       // 파트너스 관리대장에서 전체 조회 가능한 관리자
 const SALES_ADMIN = '김세인';                    // 매출관리 최고 관리자 (비밀번호 관리 권한)
 /* ★★ 2. 매출관리 Apps Script 웹 앱 URL ★★ (기존 매출관리 시트에 doPost 추가 후 재배포한 URL) */
 const SALES_GAS_URL = 'https://script.google.com/macros/s/AKfycbwEcxsF7OlE2tfoIY9ow9KmExM6cWW49QheVZw3QNrRYJ_38J_w99is1y6e6ZKm_w_B1Q/exec';
@@ -915,20 +973,33 @@ function doLogin(restoring){
   const pw = document.getElementById('login-pw').value;
   if(!name){ errEl.textContent='이름을 입력해 주세요.'; return; }
   if(!pw){ errEl.textContent='비밀번호를 입력해 주세요.'; return; }
-  const adminLogin = (name === SALES_ADMIN);
   let center = '';
   errEl.textContent='확인 중...';
 
-  /* ① 위촉코드 확인 → ② 비밀번호 확인 순서 */
+  /* ① 위촉코드 확인 → ② 비밀번호 확인 (역할은 서버가 판단) */
   verifyCode(name, code)
    .then(info=>{
     if(info && info.center) center = info.center;   // 등록된 센터를 우선 사용
-    AUTH = { role: adminLogin ? 'admin' : 'mgr', name: name, pw: pw, code: code };
-    return salesCall('login').then(()=>{
+    AUTH = { role: 'auto', name: name, pw: pw, code: code };
+
+    /* 서버가 역할을 알려주면 그대로 사용.
+       (구버전 백엔드는 role='auto'를 모르므로 이름 기준으로 한 번 더 시도) */
+    const guess = () => adminNames().includes(name) ? 'admin' : 'mgr';
+    const login = () => salesCall('login').catch(e=>{
+      if(String(e.message||'').indexOf('역할') >= 0){
+        AUTH.role = guess();
+        return salesCall('login');
+      }
+      throw e;
+    });
+
+    return login().then(j=>{
+    AUTH.role = j.role || guess();
+    if(j.admins && j.admins.length) ADMIN_LIST = j.admins;
     errEl.textContent='';
-    isAdmin = ADMINS.includes(name);
+    isAdmin = (AUTH.role === 'admin');
     currentUser = name;
-    currentCenter = adminLogin ? '' : center;
+    currentCenter = isAdmin ? '' : center;
     const av=document.getElementById('user-avatar');
     av.textContent=name[0]; av.className='avatar '+(isAdmin?'avatar-admin':'avatar-user');
     document.getElementById('user-name-display').textContent = (isAdmin || !currentCenter) ? name : (name+' · '+currentCenter);
@@ -962,6 +1033,8 @@ function doLogin(restoring){
    · 지점장 정보에 위촉코드이 등록돼 있으면 → 반드시 일치해야 로그인
    · 아직 위촉코드이 등록되지 않은 사람은 → 위촉코드 없이도 로그인 (초기 운영 배려)      */
 function verifyCode(name, code){
+  /* 관리자는 코드 없이도 로그인 (나중에 코드를 넣어도 로그인 시 요구하지 않음) */
+  if(adminNames().includes(name)) return Promise.resolve(null);
   return fetch(GAS_URL + '?type=mgr&t=' + Date.now())
     .then(r=>r.json())
     .then(list=>{
@@ -1496,9 +1569,7 @@ const TENURE = [
 function isMgrName(n){
   const s = String(n||'').trim();
   if(!s) return false;
-  if(s === SALES_ADMIN) return false;
-  if(ADMINS.includes(s)) return false;
-  return true;
+  return !adminNames().includes(s);
 }
 
 /* 지점장 이름 → 센터 (지점장정보 시트 기준) */
@@ -1888,6 +1959,7 @@ var MGR = (function(){
   }
 
   function enter(){
+    if(typeof ADM!=='undefined') ADM.render();
     if(loaded){ fillCenters(); render(); return; }
     document.getElementById('mi-body').innerHTML = '<tr><td colspan="11" class="empty">불러오는 중…</td></tr>';
     ensure()
@@ -2281,8 +2353,9 @@ var XL = (function(){
     mode = 'mgr';
     document.getElementById('xl-title').textContent = '지점장 정보 엑셀 업로드';
     document.getElementById('xl-hint').innerHTML =
-      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다.<br>(센터, 지점장명, 위촉코드, 기수, 입사월, 차월, 교육이수, 경력사항, 특이사항)<br>업로드하면 <b>기존 명단을 전부 교체</b>합니다.';
-    document.getElementById('xl-mode').style.display = 'none';
+      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다.<br>(센터, 지점장명, 위촉코드, 기수, 입사월, 차월, 교육이수, 경력사항, 특이사항)';
+    document.getElementById('xl-replace-label').textContent = '전체 교체 (기존 명단 삭제 후 새로 등록)';
+    document.getElementById('xl-mode').style.display = '';
     resetUpload();
     document.getElementById('xl-modal').classList.add('open');
   }
@@ -2364,12 +2437,25 @@ var XL = (function(){
     btn.disabled = true; btn.textContent = '반영 중…';
 
     if(mode === 'mgr'){
-      if(!confirm(`지점장 명단을 ${parsed.length}명으로 전부 교체합니다. 계속할까요?`)){
-        btn.disabled = false; btn.textContent = '반영하기'; return;
+      const mm = document.querySelector('input[name="xlMode"]:checked').value;
+      let next;
+      if(mm === 'replace'){
+        if(!confirm(`지점장 명단을 ${parsed.length}명으로 전부 교체합니다.\n기존 명단은 삭제됩니다. 계속할까요?`)){
+          btn.disabled = false; btn.textContent = '반영하기'; return;
+        }
+        next = parsed.slice();
+      } else {
+        /* 추가: 같은 이름이 있으면 덮어쓰고, 없으면 뒤에 붙임 */
+        next = MGR.getList().slice();
+        parsed.forEach(o=>{
+          const i = next.findIndex(x=>String(x.지점장명||'').trim() === String(o.지점장명||'').trim());
+          if(i >= 0) next[i] = Object.assign({}, next[i], o);
+          else next.push(o);
+        });
       }
-      MGR.replaceAll(parsed).then(()=>{
+      MGR.replaceAll(next).then(()=>{
         closeModal('xl-modal');
-        showToast(`지점장 ${parsed.length}명이 반영되었습니다`,'ok');
+        showToast(`지점장 ${next.length}명이 반영되었습니다`,'ok');
       }).catch(e=>showToast('실패: '+(e.message||e),'err'))
         .finally(()=>{ btn.disabled = false; btn.textContent = '반영하기'; });
       return;
@@ -2412,12 +2498,139 @@ var XL = (function(){
   return { downloadPartners, downloadMgr, downloadStats, openPartnerUpload, openMgrUpload, apply };
 })();
 
+
+/* ═══════════════════ 관리자 명단 (관리자 전용) ═══════════════════ */
+var ADM = (function(){
+  function render(){
+    const box = document.getElementById('adm-list');
+    if(!box) return;
+    box.innerHTML = ADMIN_LIST.map((a,i)=>`
+      <div style="display:flex;gap:6px;align-items:center;border:1px solid #d8d8d4;border-radius:8px;padding:8px 10px;background:#fff">
+        <input type="text" value="${(a.name||'').replace(/"/g,'&quot;')}" placeholder="이름 *"
+          oninput="ADM.set(${i},'name',this.value)"
+          style="flex:1.1;border:1px solid #e5e4e0;border-radius:6px;padding:6px 8px;font-size:13px;margin-top:0">
+        <input type="text" value="${(a.code||'').replace(/"/g,'&quot;')}" placeholder="코드 (선택)"
+          oninput="ADM.set(${i},'code',this.value)"
+          style="flex:1;border:1px solid #e5e4e0;border-radius:6px;padding:6px 8px;font-size:13px;margin-top:0">
+        <button class="btn btn-sm btn-danger" onclick="ADM.remove(${i})" title="삭제">🗑</button>
+      </div>`).join('');
+  }
+  function set(i, k, v){ ADMIN_LIST[i][k] = v; }
+  function add(){ ADMIN_LIST.push({name:'', code:''}); render(); }
+  function remove(i){
+    if(ADMIN_LIST.length <= 1){ alert('관리자는 최소 1명 이상이어야 합니다.'); return; }
+    if(!confirm(`"${ADMIN_LIST[i].name||'(이름없음)'}" 관리자를 삭제할까요?`)) return;
+    ADMIN_LIST.splice(i,1); render();
+  }
+  function save(){
+    const msg = document.getElementById('adm-msg');
+    const list = ADMIN_LIST.filter(a=>String(a.name||'').trim());
+    if(!list.length){ msg.textContent='이름을 최소 1명 입력해 주세요.'; msg.style.color='#B4372F'; return; }
+    const names = list.map(a=>a.name.trim());
+    if(new Set(names).size !== names.length){ msg.textContent='이름이 중복되었습니다.'; msg.style.color='#B4372F'; return; }
+    msg.textContent='저장 중…'; msg.style.color='#888';
+    salesCall('saveAdmins', { admins: list.map(a=>({name:a.name.trim(), code:String(a.code||'').trim()})) })
+      .then(j=>{
+        if(j.admins) ADMIN_LIST = j.admins;
+        render();
+        msg.textContent = `✓ 관리자 ${list.length}명 저장되었습니다.`;
+        msg.style.color = '#0A5540';
+        showToast('관리자 명단이 저장되었습니다','ok');
+      })
+      .catch(e=>{ msg.textContent = '실패: ' + e.message; msg.style.color='#B4372F'; });
+  }
+  return { render, set, add, remove, save };
+})();
+
+/* ═══════════════════ 도움요청 (요청 / 해결) ═══════════════════ */
+var HELP = (function(){
+  let curId = null;
+
+  function stamp(){
+    const d = new Date(), p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function open(id){
+    const r = S.getRows().find(x=>String(x.id)===String(id));
+    if(!r) return;
+    curId = id;
+    document.getElementById('hp-who').textContent =
+      `${r.center||''} · ${r.mgr||''} · ${r.partner||''}${r.holder? ' · 계약자 '+r.holder : ''}`;
+
+    document.getElementById('hp-req').value = r.helpMsg || '';
+    document.getElementById('hp-ans').value = r.ansMsg || '';
+    document.getElementById('hp-req-meta').textContent = r.helpAt ? `${r.helpBy||''} · ${r.helpAt}` : '';
+    document.getElementById('hp-ans-meta').textContent = r.ansAt  ? `${r.ansBy||''} · ${r.ansAt}`  : '';
+
+    const ans = document.getElementById('hp-ans');
+    ans.disabled = !isAdmin;
+    ans.placeholder = isAdmin ? '답변 · 처리 결과를 적어주세요.' : '관리자만 입력할 수 있습니다.';
+    ans.style.background = isAdmin ? '#fff' : '#f4f4f2';
+
+    document.getElementById('hp-clear').style.display = (r.helpMsg || r.ansMsg) ? '' : 'none';
+    document.getElementById('hp-msg').textContent = '';
+    document.getElementById('help-modal').classList.add('open');
+  }
+
+  function save(){
+    const r = S.getRows().find(x=>String(x.id)===String(curId));
+    if(!r) return;
+    const req = document.getElementById('hp-req').value.trim();
+    const ans = document.getElementById('hp-ans').value.trim();
+    const msg = document.getElementById('hp-msg');
+
+    if(!req){ msg.textContent='요청 내용을 입력해 주세요.'; msg.style.color='#B4372F'; return; }
+
+    const o = {};
+    Object.keys(r).forEach(k=>{ o[k] = r[k]; });
+
+    /* 요청 내용이 새로 쓰이거나 바뀐 경우 → 작성자·일시 갱신 */
+    if(req !== (r.helpMsg||'')){
+      o.helpMsg = req;
+      o.helpBy  = currentUser;
+      o.helpAt  = stamp();
+    }
+    /* 해결 내용 (관리자만) */
+    if(isAdmin && ans !== (r.ansMsg||'')){
+      o.ansMsg = ans || null;
+      o.ansBy  = ans ? currentUser : null;
+      o.ansAt  = ans ? stamp() : null;
+    }
+    o.help = (o.ansMsg ? 2 : 1);     // 1=요청중, 2=완료
+
+    const btn = document.getElementById('hp-save');
+    btn.disabled = true; btn.textContent = '저장 중…';
+    S.saveHelp(o).then(()=>{
+      closeModal('help-modal');
+      showToast(o.help === 2 ? '해결 내용이 저장되었습니다' : '도움요청이 등록되었습니다','ok');
+    }).catch(e=>{ msg.textContent='실패: '+e.message; msg.style.color='#B4372F'; })
+      .finally(()=>{ btn.disabled = false; btn.textContent = '💾 저장'; });
+  }
+
+  function clear(){
+    const r = S.getRows().find(x=>String(x.id)===String(curId));
+    if(!r) return;
+    if(!confirm('도움요청 내용을 모두 지울까요?')) return;
+    const o = {};
+    Object.keys(r).forEach(k=>{ o[k] = r[k]; });
+    o.help = null; o.helpMsg = null; o.helpBy = null; o.helpAt = null;
+    o.ansMsg = null; o.ansBy = null; o.ansAt = null;
+    S.saveHelp(o).then(()=>{
+      closeModal('help-modal');
+      showToast('도움요청이 취소되었습니다','ok');
+    }).catch(e=>alert('실패: '+e.message));
+  }
+
+  return { open, save, clear };
+})();
+
 </script>
 <script>
 /* ===================== 매출관리 모듈 (S) ===================== */
 var S = (function(){
-var SKEYS = ["center","mgr","partner","code","career","month","status","active","amt","pcorr","holder","insured","product","proposal","planDate","saleDate","note","help","oldcode"];
-var SHEADERS = ["센터","지점장명","파트너스명","조직코드","경력구분","차월","조직상태","인보험여부","매출(금액)▶","수정p","계약자명","피보험자명","상품명","제안내용(상품, 조건 등등)","매출예정일","실매출일","매출특이사항","도움요청","구코드"];
+var SKEYS = ["center","mgr","partner","code","career","month","status","active","amt","pcorr","holder","insured","product","proposal","planDate","saleDate","note","help","oldcode","helpMsg","helpBy","helpAt","ansMsg","ansBy","ansAt"];
+var SHEADERS = ["센터","지점장명","파트너스명","조직코드","경력구분","차월","조직상태","인보험여부","매출(금액)▶","수정p","계약자명","피보험자명","상품명","설계특이사항(병력, 플랜 등)","매출예정일","실매출일","매출특이사항","도움요청","구코드","요청내용","요청자","요청일시","해결내용","답변자","답변일시"];
 var ASSIGNEES = ["김세인","배정은","김한길","이명우"];
 var CENTERS = ["강남센터","서울센터","경인센터","충청센터","호남센터","부경센터","대경센터"];
 var CAREERS = ["신규","경력","재등록"];
@@ -2772,8 +2985,8 @@ function renderBody(){
   var html = "";
   pr.forEach(function(r, ri){
     var careerTag = r.career ? '<span class="tag ' + (r.career === "신규" ? "tg-new" : r.career === "경력" ? "tg-exp" : "tg-re") + '">' + esc(r.career) + '</span>' : "";
-    var isHelp = Number(r.help) === 1;
-    var helpTitle = AUTH.role === "admin" ? "체크 해제 = 처리완료" : "체크 = 관리자에게 도움요청";
+    var hs = helpState(r);                    // 0=없음 1=요청중 2=완료
+    var isHelp = (hs === 1);
     var no = (page - 1) * PER + ri + 1;
     var isSel = SEL[r.id] === 1;
     html += '<tr class="' + (isSel ? 'sel' : (isHelp ? 'help' : '')) + '" onclick="S.openEdit(\'' + esc(r.id) + '\')">'
@@ -2791,7 +3004,7 @@ function renderBody(){
       + '<td class="mono">' + esc(r.planDate) + '</td>'
       + '<td class="mono">' + (r.saleDate ? '<span class="done">' + esc(r.saleDate) + '</span>' : "") + '</td>'
       + '<td class="ellip" title="' + esc(r.note) + '">' + esc(r.note) + '</td>'
-      + '<td onclick="event.stopPropagation()" style="text-align:center"><input type="checkbox" class="help-ck" title="' + helpTitle + '"' + (isHelp ? ' checked' : '') + ' onchange="S.toggleHelp(\'' + esc(r.id) + '\',this.checked)"></td>'
+      + '<td onclick="event.stopPropagation()" style="text-align:center">' + helpBtn(r) + '</td>'
       + '<td class="edit-cell">수정</td></tr>';
   });
   if (!pr.length && rows.length) html = '<tr><td colspan="21" class="empty-row">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 \'건 추가\'로 입력하세요.</td></tr>';
@@ -2901,6 +3114,7 @@ function openEdit(id){
   }
   editing = { id: r.id, isNew: isNew, orig: r };
   $("editTitle").textContent = isNew ? "매출 건 추가" : "매출 건 수정";
+  fillPartnerList();
   fillSelect("f_center", CENTERS, true);
   fillSelect("f_mgr", AUTH.role === "mgr" ? [AUTH.name] : uniq(MANAGERS.concat(rows.map(function(x){return x.mgr;}))), true);
   $("f_center").disabled = AUTH.role === "mgr";
@@ -2915,6 +3129,52 @@ function openEdit(id){
   $("saveBtn").textContent = isNew ? "추가" : "저장";
   $("editModal").classList.remove("hidden");
 }
+/* 관리대장(전체목록)의 파트너스 명단을 매출 입력창에 제공 */
+function partnerBook(){
+  var list = (typeof data !== "undefined" && data) ? data : [];
+  if (AUTH.role !== "admin") list = list.filter(function(d){ return d.담당자 === AUTH.name; });
+  return list;
+}
+function fillPartnerList(){
+  var dl = $("sales-partner-list");
+  if (!dl) return;
+  var seen = {}, html = "";
+  partnerBook().forEach(function(d){
+    var n = String(d.파트너스명 || "").trim();
+    if (!n || seen[n]) return;
+    seen[n] = 1;
+    var hint = [d.위촉코드, d.가코드, d.담당자].filter(Boolean).join(" · ");
+    html += '<option value="' + esc(n) + '">' + esc(hint) + '</option>';
+  });
+  dl.innerHTML = html;
+}
+
+/* 파트너스명을 고르면 관리대장의 같은 항목을 그대로 가져옴 */
+function onPartnerPick(name){
+  var n = String(name || "").trim();
+  if (!n) return;
+  var d = partnerBook().filter(function(x){ return String(x.파트너스명 || "").trim() === n; })[0];
+  if (!d) return;
+
+  var setIf = function(id, v){
+    var el = $(id);
+    if (el && v !== undefined && v !== null && String(v).trim() !== "") el.value = v;
+  };
+  setIf("f_code",    d.위촉코드);                      // 조직코드 ← 위촉코드
+  setIf("f_oldcode", d.가코드);                        // 구코드   ← 가코드
+  setIf("f_center",  d.센터);
+  if (AUTH.role === "admin") setIf("f_mgr", d.담당자);
+
+  /* 경력구분: 관리대장(신인/경력/재등록) → 매출(신규/경력/재등록) */
+  var c = String(d.경력구분 || "").trim();
+  if (c) setIf("f_career", c === "신인" ? "신규" : c);
+
+  /* 조직상태: 위촉되어 있으면 정상 */
+  if (String(d.위촉여부 || "").trim() === "위촉") setIf("f_status", "정상");
+
+  showToast("「" + n + "」 관리대장 정보를 불러왔습니다", "ok");
+}
+
 function collectRow(){
   var o = { id: editing.id };
   SKEYS.forEach(function(k){
@@ -2954,6 +3214,31 @@ function doDelete(){
   }).catch(function(e){ alert(e.message); })
     .finally(function(){ $("delBtn").disabled = false; });
 }
+/* 도움요청 상태: 0=없음, 1=요청중, 2=완료 */
+function helpState(r){
+  if (r.ansMsg && String(r.ansMsg).trim()) return 2;
+  if (Number(r.help) === 2) return 2;
+  if ((r.helpMsg && String(r.helpMsg).trim()) || Number(r.help) === 1) return 1;
+  return 0;
+}
+function helpBtn(r){
+  var s = helpState(r);
+  var cls = s === 2 ? 'hb done' : (s === 1 ? 'hb req' : 'hb');
+  var txt = s === 2 ? '완료' : (s === 1 ? '요청중' : '도움요청');
+  var tip = s === 2 ? '해결 완료 · 눌러서 내용 보기'
+          : (s === 1 ? '답변 대기중 · 눌러서 내용 보기' : '눌러서 도움을 요청하세요');
+  return '<button class="' + cls + '" title="' + tip + '" onclick="HELP.open(\'' + esc(r.id) + '\')">' + txt + '</button>';
+}
+
+/* 도움요청 저장 (요청/해결 공용) */
+function saveHelp(o){
+  return call("update", { row: o }).then(function(){
+    var i = rows.findIndex(function(x){ return String(x.id) === String(o.id); });
+    if (i >= 0) rows[i] = o;
+    render();
+  });
+}
+
 function toggleHelp(id, checked){
   var r = rows.filter(function(x){ return String(x.id) === String(id); })[0];
   if (!r) return;
@@ -3166,11 +3451,12 @@ function ensureRows(force){
 
 return {
   enter: enter, reset: reset, refresh: refresh,
-  getRows: getRows, ensureRows: ensureRows,
+  getRows: getRows, ensureRows: ensureRows, saveHelp: saveHelp,
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
   toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected,
+  onPartnerPick: onPartnerPick,
   toggleMs: toggleMs, renderPop: renderPop, renderPopList: renderPopList,
   toggleVal: toggleVal, clearVals: clearVals,
   setDate: setDate, resetFilters: resetFilters,
