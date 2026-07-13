@@ -618,20 +618,34 @@ tr.today-row td{background:#fdf8ee}
   <div class="mo mo-sm">
     <div class="mo-head"><h3>관리자 설정</h3><button class="mo-x" onclick="S.closeModal('setModal')">✕</button></div>
     <div class="up-body">
+      <div class="set-sec" style="border-color:#0E6B52;background:#F5FBF8">
+        <div class="set-title" style="color:#0A5540">🔑 내 비밀번호 변경 <span id="myNameLbl" style="color:#888;font-weight:600"></span></div>
+        <p class="up-hint" style="margin:0">나만 쓰는 비밀번호를 만듭니다. 설정하면 공통 비밀번호 대신 이것으로만 로그인됩니다.</p>
+        <div class="fld"><label>새 비밀번호</label><input type="password" id="admMyNew"></div>
+        <div class="fld"><label>새 비밀번호 확인</label><input type="password" id="admMyNew2"></div>
+        <button class="btn btn-p" id="admMyBtn" onclick="S.doChangeMyPwAdmin()">내 비밀번호 변경</button>
+        <div id="admMyMsg" class="hidden"></div>
+      </div>
+
       <div class="set-sec">
-        <div class="set-title">비밀번호 변경</div>
+        <div class="set-title">공통 비밀번호 변경</div>
+        <p class="up-hint" style="margin:0">개인 비밀번호를 따로 설정하지 않은 사람들이 쓰는 비밀번호입니다.</p>
         <div class="fld"><label>변경 대상</label>
-          <select id="pwTarget"><option value="mgr">지점장 공통 비밀번호</option><option value="admin">관리자(김세인) 비밀번호</option></select>
+          <select id="pwTarget">
+            <option value="mgr">지점장 공통 비밀번호 (기본 1234)</option>
+            <option value="admin">관리자 공통 비밀번호 (기본 admin1234)</option>
+          </select>
         </div>
         <div class="fld"><label>새 비밀번호</label><input type="password" id="pwNew"></div>
         <div class="fld"><label>새 비밀번호 확인</label><input type="password" id="pwNew2"></div>
-        <button class="btn btn-p" id="pwBtn" onclick="S.doChangePw()">비밀번호 변경</button>
+        <button class="btn btn-p" id="pwBtn" onclick="S.doChangePw()">공통 비밀번호 변경</button>
         <div id="pwMsg" class="hidden"></div>
       </div>
+
       <div class="set-sec">
         <div class="set-title">개별 비밀번호 초기화</div>
-        <p class="up-hint" style="margin:0">본인 비밀번호를 잊은 사람을 공통 비밀번호로 되돌립니다. 명단에 없는 이름은 직접 입력할 수 있습니다.</p>
-        <div class="fld"><label>지점장 선택</label><select id="rstMgr"></select></div>
+        <p class="up-hint" style="margin:0">비밀번호를 잊은 사람을 공통 비밀번호로 되돌립니다. 지점장·관리자 모두 가능합니다.</p>
+        <div class="fld"><label>대상 선택</label><select id="rstMgr"></select></div>
         <div class="fld"><label>직접 입력 (명단에 없을 때)</label><input type="text" id="rstMgrManual" placeholder="이름 직접 입력"></div>
         <button class="btn btn-g" id="rstBtn" onclick="S.doResetMgrPw()">공통 비밀번호로 초기화</button>
         <div id="rstMsg" class="hidden"></div>
@@ -3435,18 +3449,55 @@ function saveAssign(mgr, person){
 function openSettings(){
   $("pwNew").value = ""; $("pwNew2").value = ""; $("pwMsg").classList.add("hidden");
   $("rstMsg").className = "hidden"; $("rstMgrManual").value = "";
-  var names = uniq(MANAGERS.concat(rows.map(function(x){return x.mgr;})).concat(pData().map(function(d){return d.담당자;})));
-  fillSelect("rstMgr", names, false);
+  $("admMyNew").value = ""; $("admMyNew2").value = ""; $("admMyMsg").className = "hidden";
+  $("myNameLbl").textContent = "· " + AUTH.name;
+
+  /* 지점장 명단 */
+  var mgrs = uniq(
+    ((typeof MGR !== "undefined" && MGR.getList) ? MGR.getList().map(function(m){ return m.지점장명; }) : [])
+    .concat(MANAGERS)
+    .concat(rows.map(function(x){ return x.mgr; }))
+    .concat(pData().map(function(d){ return d.담당자; }))
+  ).filter(function(n){ return n && !adminNames().includes(n); });
+
+  /* 관리자 명단 */
+  var adms = adminNames();
+
+  var s = '<optgroup label="지점장">';
+  mgrs.sort(function(a,b){ return String(a).localeCompare(String(b),"ko"); })
+      .forEach(function(n){ s += '<option value="' + esc(n) + '">' + esc(n) + '</option>'; });
+  s += '</optgroup><optgroup label="관리자">';
+  adms.forEach(function(n){ s += '<option value="' + esc(n) + '">' + esc(n) + ' (관리자)</option>'; });
+  s += '</optgroup>';
+  $("rstMgr").innerHTML = s;
+
   $("setModal").classList.remove("hidden");
+}
+
+/* 관리자 본인 비밀번호 변경 */
+function doChangeMyPwAdmin(){
+  var np = $("admMyNew").value, np2 = $("admMyNew2").value, msg = $("admMyMsg");
+  function show(t, ok){ msg.textContent = t; msg.className = ok ? "okmsg" : "err"; }
+  if (np.length < 4){ show("비밀번호는 4자 이상이어야 합니다.", false); return; }
+  if (np !== np2){ show("두 비밀번호가 일치하지 않습니다.", false); return; }
+  $("admMyBtn").disabled = true;
+  call("changeMyPw", { newPw: np }).then(function(){
+    AUTH.pw = np;
+    try { saveSession(AUTH.name, np, (typeof currentCenter!=="undefined" ? currentCenter : ""), AUTH.code || ""); } catch(e){}
+    show("변경되었습니다. 다음 로그인부터 새 비밀번호를 사용하세요.", true);
+    $("admMyNew").value = ""; $("admMyNew2").value = "";
+  }).catch(function(e){ show("실패: " + e.message, false); })
+    .finally(function(){ $("admMyBtn").disabled = false; });
 }
 function pData(){ try { return (typeof data!=="undefined" && data) ? data : []; } catch(e){ return []; } }
 function doResetMgrPw(){
   var m = $("rstMgrManual").value.trim() || $("rstMgr").value, msg = $("rstMsg");
   if (!m){ msg.textContent = "이름을 선택하거나 입력해 주세요."; msg.className = "err"; return; }
-  if (!confirm(m + " 님의 개별 비밀번호를 삭제하고 공통 비밀번호로 되돌릴까요?")) return;
+  var isAdm = adminNames().includes(m);
+  if (!confirm(m + " 님의 개별 비밀번호를 삭제하고\n공통 비밀번호(" + (isAdm ? "관리자" : "지점장") + ")로 되돌릴까요?")) return;
   $("rstBtn").disabled = true;
   call("resetMgrPw", { mgr: m }).then(function(){
-    msg.textContent = m + " 님은 이제 공통 비밀번호로 로그인합니다.";
+    msg.textContent = m + " 님은 이제 " + (adminNames().includes(m) ? "관리자" : "지점장") + " 공통 비밀번호로 로그인합니다.";
     msg.className = "okmsg";
   }).catch(function(e){ msg.textContent = "실패: " + e.message; msg.className = "err"; })
     .finally(function(){ $("rstBtn").disabled = false; });
@@ -3460,7 +3511,9 @@ function doChangePw(){
   $("pwBtn").disabled = true;
   call("changePw", { target: t, newPw: np }).then(function(){
     if (t === "admin") AUTH.pw = np;
-    show(t === "admin" ? "관리자 비밀번호가 변경되었습니다." : "공통 비밀번호가 변경되었습니다. 새 비밀번호를 팀원들에게 알려주세요.", true);
+    show(t === "admin"
+      ? "관리자 공통 비밀번호가 변경되었습니다. (개인 비밀번호를 설정한 관리자는 그대로 유지)"
+      : "지점장 공통 비밀번호가 변경되었습니다. 새 비밀번호를 알려주세요.", true);
     $("pwNew").value = ""; $("pwNew2").value = "";
   }).catch(function(e){ show("실패: " + e.message, false); })
     .finally(function(){ $("pwBtn").disabled = false; });
@@ -3489,6 +3542,7 @@ return {
   filterByCodes: filterByCodes, clearCodeFilter: clearCodeFilter,
   openMyPw: openMyPw, doChangeMyPw: doChangeMyPw,
   openSettings: openSettings, doChangePw: doChangePw, doResetMgrPw: doResetMgrPw, doRollover: doRollover,
+  doChangeMyPwAdmin: doChangeMyPwAdmin,
   openAssign: openAssign, saveAssign: saveAssign
 };
 })();
