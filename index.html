@@ -2537,7 +2537,17 @@ var ADM = (function(){
         msg.style.color = '#0A5540';
         showToast('관리자 명단이 저장되었습니다','ok');
       })
-      .catch(e=>{ msg.textContent = '실패: ' + e.message; msg.style.color='#B4372F'; });
+      .catch(e=>{
+        const m = String(e.message||'');
+        if(m.indexOf('알 수 없는 요청') >= 0){
+          msg.innerHTML = '⚠️ <b>매출관리 Apps Script가 아직 구버전입니다.</b><br>'
+            + '매출관리 시트 → 확장 프로그램 → Apps Script → Code.gs를 새 버전으로 교체하고<br>'
+            + '<b>[배포] → [배포 관리] → 새 버전 → [배포]</b> 까지 해주세요.';
+        } else {
+          msg.textContent = '실패: ' + m;
+        }
+        msg.style.color='#B4372F';
+      });
   }
   return { render, set, add, remove, save };
 })();
@@ -2638,7 +2648,7 @@ var MANAGERS = ["손다혜","홍승지","김수진","이인성","민진홍","이
 
 var rows = [], page = 1, PER = 50;
 var editing = null, parsedUpload = null;
-var F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: [], pFrom: "", pTo: "", sFrom: "", sTo: "" };
+var F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: [], help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
 var openMsId = null;
 var autoTimer = null;
 var entered = false;
@@ -2678,7 +2688,7 @@ function enter(){
 function reset(){
   if (autoTimer){ clearInterval(autoTimer); autoTimer = null; }
   rows = []; parsedUpload = null; entered = false; openMsId = null; page = 1; codeLabel = ""; SEL = {};
-  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: [], pFrom: "", pTo: "", sFrom: "", sTo: "" };
+  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: [], help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
   ["editModal","uploadModal","setModal","asgModal","myPwModal"].forEach(function(id){ var el=$(id); if(el) el.classList.add("hidden"); });
   var cb=$("codeBanner"); if(cb) cb.classList.add("hidden");
   var sb=$("salesBody"); if(sb) sb.classList.add("hidden");
@@ -2723,7 +2733,7 @@ function startAutoRefresh(){
 /* ----- 파트너스 코드 연동 필터 ----- */
 var partnerCtx = null;   // 관리대장에서 넘어온 파트너스 정보 (건 추가 시 자동 입력)
 function filterByCodes(codes, label, ctx){
-  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: codes.map(String), pFrom: "", pTo: "", sFrom: "", sTo: "" };
+  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: codes.map(String), help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
   codeLabel = label || "";
   partnerCtx = ctx || null;
   page = 1;
@@ -2782,13 +2792,21 @@ function renderFilterBar(){
       + '<button class="ms-btn' + (sel.length ? ' on' : '') + '" onclick="S.toggleMs(\'' + d.id + '\',event)"><span class="ms-txt">' + esc(txt) + '</span><span>▾</span></button>'
       + '<div class="ms-pop hidden" id="pop_' + d.id + '"></div></div>';
   });
+  html += '<div style="width:130px"><div class="ms-label">도움요청</div>'
+    + '<select class="ms-btn" style="height:33px" onchange="S.setHelp(this.value)">'
+    +   '<option value=""' + (F.help === "" ? " selected" : "") + '>전체</option>'
+    +   '<option value="req"' + (F.help === "req" ? " selected" : "") + '>🩷 요청중</option>'
+    +   '<option value="done"' + (F.help === "done" ? " selected" : "") + '>✅ 완료</option>'
+    +   '<option value="any"' + (F.help === "any" ? " selected" : "") + '>요청중 + 완료</option>'
+    +   '<option value="none"' + (F.help === "none" ? " selected" : "") + '>요청 없음</option>'
+    + '</select></div>';
   html += '<div><div class="ms-label">매출예정일</div><div class="dr-row">'
     + '<input type="date" value="' + F.pFrom + '" onchange="S.setDate(\'pFrom\',this.value)"><span>~</span>'
     + '<input type="date" value="' + F.pTo + '" onchange="S.setDate(\'pTo\',this.value)"></div></div>';
   html += '<div><div class="ms-label">실매출일</div><div class="dr-row">'
     + '<input type="date" value="' + F.sFrom + '" onchange="S.setDate(\'sFrom\',this.value)"><span>~</span>'
     + '<input type="date" value="' + F.sTo + '" onchange="S.setDate(\'sTo\',this.value)"></div></div>';
-  var any = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.pFrom || F.pTo || F.sFrom || F.sTo;
+  var any = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.help || F.pFrom || F.pTo || F.sFrom || F.sTo;
   if (any) html += '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="S.resetFilters()">필터 초기화</button>';
   $("filterBar").innerHTML = html;
   if (openMsId) renderPop(openMsId);
@@ -2871,9 +2889,10 @@ function clearVals(id, ev){
   renderBody(); renderMsButton(id); renderPopList(id);
 }
 function setDate(k, v){ F[k] = v; page = 1; render(); }
+function setHelp(v){ F.help = v; page = 1; render(); }
 function resetFilters(){
-  var codes = F.codes;
-  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: codes, pFrom: "", pTo: "", sFrom: "", sTo: "" };
+  var codes = F.codes, hp = F.help;
+  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: codes, help: hp, pFrom: "", pTo: "", sFrom: "", sTo: "" };
   openMsId = null; page = 1; render();
 }
 document.addEventListener("click", function(){ if (entered && openMsId){ openMsId = null; renderFilterBar(); } });
@@ -2948,6 +2967,13 @@ function filteredRows(){
     if (F.insured.length && F.insured.indexOf(r.insured) < 0) return false;
     if (F.career.length && F.career.indexOf(r.career) < 0) return false;
     if (F.month.length && F.month.indexOf(String(r.month)) < 0) return false;
+    if (F.help){
+      var hs = helpState(r);
+      if (F.help === "req"  && hs !== 1) return false;
+      if (F.help === "done" && hs !== 2) return false;
+      if (F.help === "any"  && hs === 0) return false;
+      if (F.help === "none" && hs !== 0) return false;
+    }
     if (F.pFrom && (!r.planDate || r.planDate < F.pFrom)) return false;
     if (F.pTo && (!r.planDate || r.planDate > F.pTo)) return false;
     if (F.sFrom && (!r.saleDate || r.saleDate < F.sFrom)) return false;
@@ -2964,7 +2990,7 @@ function render(){
 function renderBody(){
   if (!AUTH) return;
   var f = filteredRows();
-  var anyF = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.codes.length || F.pFrom || F.pTo || F.sFrom || F.sTo;
+  var anyF = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.codes.length || F.help || F.pFrom || F.pTo || F.sFrom || F.sTo;
   renderPStats(f, !!anyF);
   var amt = 0, pc = 0, actMap = {};
   f.forEach(function(r){
@@ -3459,7 +3485,7 @@ return {
   onPartnerPick: onPartnerPick,
   toggleMs: toggleMs, renderPop: renderPop, renderPopList: renderPopList,
   toggleVal: toggleVal, clearVals: clearVals,
-  setDate: setDate, resetFilters: resetFilters,
+  setDate: setDate, setHelp: setHelp, resetFilters: resetFilters,
   filterByCodes: filterByCodes, clearCodeFilter: clearCodeFilter,
   openMyPw: openMyPw, doChangeMyPw: doChangeMyPw,
   openSettings: openSettings, doChangePw: doChangePw, doResetMgrPw: doResetMgrPw, doRollover: doRollover,
