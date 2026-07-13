@@ -827,7 +827,7 @@ function adminNames(){ return ADMIN_LIST.map(a=>a.name); }
 const ADMINS = { includes: n => adminNames().includes(n) };   // 기존 코드 호환                       // 파트너스 관리대장에서 전체 조회 가능한 관리자
 const SALES_ADMIN = '김세인';                    // 매출관리 최고 관리자 (비밀번호 관리 권한)
 /* ★★ 2. 매출관리 Apps Script 웹 앱 URL ★★ (기존 매출관리 시트에 doPost 추가 후 재배포한 URL) */
-const SALES_GAS_URL = 'https://script.google.com/macros/s/AKfycbwEcxsF7OlE2tfoIY9ow9KmExM6cWW49QheVZw3QNrRYJ_38J_w99is1y6e6ZKm_w_B1Q/exec';
+const SALES_GAS_URL = 'https://script.google.com/macros/s/AKfycbwTdRbIzeNj80ikKHWwtCzLXDeo-rykRtQG9qnckzQOQiYKxiaHMilzgzvAwQFgrIejSg/exec';
 let AUTH = null; // 통합 로그인 정보 {role, name, pw}
 
 // 날짜 정제: T 이후 시간 제거, 날짜만 반환
