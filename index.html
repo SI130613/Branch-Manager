@@ -929,28 +929,39 @@ function updateMonthFilter(){
   sel.innerHTML='<option value="">응시월 전체</option>'+months.map(m=>`<option value="${m}" ${m===cur?'selected':''}>응시 ${parseInt(m)}월</option>`).join('');
 }
 
-async function saveToSheet(){
+/* ── 파트너스 시트 API (한 줄씩 처리 → 여러 명이 동시에 써도 안전) ── */
+async function gasCall(body){
   setSyncStatus('loading','저장 중...');
   try{
     const res=await fetch(GAS_URL,{
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'save_all',data})
+      body:JSON.stringify(body)
     });
     const txt=await res.text();
     let j; try{ j=JSON.parse(txt); }catch(e){
       console.error('시트 응답 원문:',txt);
-      throw new Error('시트 응답을 읽지 못했습니다. (Apps Script 배포 설정 확인)');
+      throw new Error('시트 응답을 읽지 못했습니다. (Apps Script를 새 버전으로 배포했는지 확인해 주세요)');
     }
     if(!j.ok) throw new Error(j.error||'저장 실패');
     setSyncStatus('ok','저장 완료 ✓');
-    return true;
+    return j;
   }catch(e){
     setSyncStatus('err','저장 실패');
     showToast('저장 실패: '+e.message,'err');
     console.error(e);
-    return false;
+    return null;
   }
+}
+async function addRow(row){     const j=await gasCall({action:'add',    row:row});  if(j&&j.id) row.id=j.id; return !!j; }
+async function updateRow(row){  if(!row.id){ showToast('저장 실패: 이 건에는 id가 없습니다. 새로고침 후 다시 시도하세요.','err'); return false; }
+                                return !!(await gasCall({action:'update', row:row})); }
+async function deleteRow(id){   return !!(await gasCall({action:'delete', id:id})); }
+
+/* 구버전 호출부 호환 (엑셀 교체 등에서만 사용) */
+async function saveToSheet(){
+  const j = await gasCall({action:'replace', rows:data});
+  return !!j;
 }
 
 let currentCenter = '';
@@ -1032,6 +1043,7 @@ function doLogin(restoring){
     document.getElementById('screen-main').style.display='block';
     saveSession(name, pw, currentCenter, code);
     loadFromSheet(!restoring);
+    startPartnerAutoRefresh();
     if(!isAdmin && !currentCenter){
       setTimeout(()=>showToast('센터 정보가 없습니다. 신규 입력 시 센터를 직접 선택해 주세요.','err'), 900);
     }
@@ -1070,6 +1082,24 @@ function verifyCode(name, code){
       if(e && e.message && (e.message.indexOf('위촉코드') >= 0)) throw e;
       return null;                                        // 명단을 못 읽으면 위촉코드 검증 건너뜀
     });
+}
+
+/* ---- 다른 사람이 입력한 데이터도 자동으로 반영 (60초마다) ---- */
+let partnerTimer = null;
+function startPartnerAutoRefresh(){
+  if(partnerTimer) clearInterval(partnerTimer);
+  partnerTimer = setInterval(()=>{
+    if(!AUTH) return;
+    /* 입력/수정 중에는 건너뜀 */
+    const busy = ['edit-modal','detail-modal','mi-modal','xl-modal','help-modal','recall-modal']
+      .some(id=>{ const el=document.getElementById(id); return el && el.classList.contains('open'); });
+    if(busy) return;
+    if(document.getElementById('tab-add').style.display !== 'none') return;   // 신규 입력 중
+    loadFromSheet(false);
+  }, 60000);
+}
+function stopPartnerAutoRefresh(){
+  if(partnerTimer){ clearInterval(partnerTimer); partnerTimer = null; }
 }
 
 /* ---- 세션 유지: 새로고침해도 로그인 상태 보존 (브라우저 탭 닫으면 해제) ---- */
@@ -1119,6 +1149,7 @@ function openPartnerSales(idx){
 function doLogout(){
   AUTH=null;
   clearSession();
+  stopPartnerAutoRefresh();
   S.reset();
   currentUser=null; isAdmin=false; currentCenter='';
   document.getElementById('login-name').value='';
@@ -1364,7 +1395,7 @@ async function recallDone(idx){
   if(row){row.style.opacity='0.4';row.style.pointerEvents='none';
     row.querySelector('.recall-name').insertAdjacentHTML('afterend','<span style="font-size:11px;color:#27500A;font-weight:600"> ✅ 완료처리됨</span>');
   }
-  await saveToSheet();
+  await updateRow(data[idx]);
   renderTable(); renderStatsBar();
   // 완료 후 남은 건 없으면 팝업 자동 닫기
   setTimeout(()=>{
@@ -1384,7 +1415,7 @@ async function recallReschedule(idx){
   if(row){row.style.opacity='0.4';row.style.pointerEvents='none';
     row.querySelector('.recall-name').insertAdjacentHTML('afterend',`<span style="font-size:11px;color:#534AB7;font-weight:600"> 📅 ${newDate}로 변경됨</span>`);
   }
-  await saveToSheet();
+  await updateRow(data[idx]);
   renderTable(); renderStatsBar();
 }
 
@@ -1404,8 +1435,8 @@ async function saveEntry(){
     보장분석동의:get('f-보장분석동의'), 브릿지콜:get('f-브릿지콜'), 가계약:get('f-가계약'),
     등록일시:new Date().toLocaleString()
   };
-  data.push(entry);
-  const ok=await saveToSheet();
+  const ok=await addRow(entry);
+  if(ok) data.push(entry);
   btn.disabled=false; btn.style.cursor='pointer'; btn.textContent='저장하기';
   if(ok){
     showToast('✓ 구글 시트에 저장되었습니다!','ok');
@@ -1425,10 +1456,13 @@ function clearForm(){
 async function deleteEntry(idx){
   if(!isAdmin&&data[idx].담당자!==currentUser){alert('본인 데이터만 삭제할 수 있습니다.');return;}
   if(!confirm(`"${data[idx].파트너스명}" 데이터를 삭제하시겠습니까?`))return;
-  data.splice(idx,1);
-  const ok=await saveToSheet();
-  if(ok){showToast('삭제되었습니다.','ok');renderTable();renderStatsBar();}
-  else{showToast('삭제 실패.','err');}
+  const target=data[idx];
+  const ok=await deleteRow(target.id);
+  if(ok){
+    const i=data.indexOf(target);
+    if(i>=0) data.splice(i,1);
+    showToast('삭제되었습니다.','ok');renderTable();renderStatsBar();
+  }
   closeModal('detail-modal');
 }
 
@@ -1487,9 +1521,8 @@ async function saveEdit(){
   d.배정지점장=get('e-배정지점장');d.위촉여부=get('e-위촉여부');d.위촉코드=get('e-위촉코드');
   d.보장분석동의=get('e-보장분석동의');d.브릿지콜=get('e-브릿지콜');d.가계약=get('e-가계약');
   d.수정일시=new Date().toLocaleString();
-  const ok=await saveToSheet();
+  const ok=await updateRow(d);
   if(ok){showToast('✓ 수정되었습니다!','ok');closeModal('edit-modal');renderTable();renderStatsBar();updateYearFilter();}
-  else showToast('수정 저장 실패.','err');
 }
 
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -2480,27 +2513,24 @@ var XL = (function(){
     const stamp = new Date().toLocaleString();
     parsed.forEach(o=>{ if(!o.등록일시) o.등록일시 = stamp; });
 
-    let next;
+    let job;
     if(m === 'replace'){
       const label = isAdmin ? '전체 데이터' : '본인 데이터';
       if(!confirm(`${label}를 업로드한 ${parsed.length}건으로 교체합니다.\n되돌릴 수 없습니다. 계속할까요?`)){
         btn.disabled = false; btn.textContent = '반영하기'; return;
       }
-      next = isAdmin ? parsed.slice() : data.filter(d=>d.담당자 !== currentUser).concat(parsed);
+      /* 관리자=전체 교체 / 지점장=본인 것만 교체 (남의 데이터는 그대로 보존) */
+      const keep = isAdmin ? [] : data.filter(d=>d.담당자 !== currentUser);
+      job = gasCall({ action:'replace', rows: keep.concat(parsed) });
     } else {
-      next = data.concat(parsed);
+      job = gasCall({ action:'append', rows: parsed });
     }
 
-    const backup = data;
-    data = next;
-    saveToSheet().then(ok=>{
-      if(ok){
-        closeModal('xl-modal');
-        renderTable(); renderStatsBar();
-        showToast(`${parsed.length}건이 반영되었습니다`,'ok');
-      } else {
-        data = backup;
-      }
+    job.then(j=>{
+      if(!j) return;
+      closeModal('xl-modal');
+      showToast(`${parsed.length}건이 반영되었습니다`,'ok');
+      return loadFromSheet(false);          // 시트에서 다시 읽어와 화면 갱신
     }).finally(()=>{ btn.disabled = false; btn.textContent = '반영하기'; });
   }
 
