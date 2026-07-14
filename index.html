@@ -301,6 +301,16 @@ tr.today-row td{background:#fdf8ee}
     <div class="stats" id="stats-bar"></div>
     <div class="search-bar">
       <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." oninput="renderTable()">
+
+      <!-- 관리자 전용: 센터 · 지점장 (드롭다운 + 직접 입력) -->
+      <input type="text" id="filter-센터" list="list-센터" class="admin-filter" placeholder="🏢 센터 전체"
+             autocomplete="off" oninput="onCenterFilter()" style="display:none;width:130px">
+      <datalist id="list-센터"></datalist>
+
+      <input type="text" id="filter-담당자" list="list-담당자" class="admin-filter" placeholder="👤 지점장 전체"
+             autocomplete="off" oninput="renderTable()" style="display:none;width:130px">
+      <datalist id="list-담당자"></datalist>
+
       <select id="filter-년" onchange="updateMonthFilter();renderTable()" style="width:105px"><option value="">응시년 전체</option></select>
       <select id="filter-월" onchange="renderTable()" style="width:100px"><option value="">응시월 전체</option></select>
       <select id="filter-구분" onchange="renderTable()" style="width:115px"><option value="">구분 전체</option><option>선행</option><option>정규</option><option>후속</option></select>
@@ -312,8 +322,6 @@ tr.today-row td{background:#fdf8ee}
         <option value="past">지난 미완료</option>
       </select>
       <select id="filter-합격" onchange="renderTable()" style="width:115px"><option value="">합격 전체</option><option value="y">합격</option><option value="n">미합격</option></select>
-      <button class="btn btn-sm" onclick="XL.downloadPartners()" title="현재 화면에 보이는 목록을 엑셀로 저장">⬇ 엑셀 다운로드</button>
-      <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
       <select id="filter-사전준비" onchange="renderTable()" style="width:150px">
         <option value="">사전준비 전체</option>
         <option value="보장분석동의">보장분석 동의 O</option>
@@ -321,6 +329,14 @@ tr.today-row td{background:#fdf8ee}
         <option value="가계약">가계약 O</option>
         <option value="미완료">사전준비 미완료</option>
       </select>
+      <button class="btn btn-sm" id="filter-reset" onclick="resetListFilters()" style="display:none">↺ 필터 초기화</button>
+    </div>
+
+    <!-- 엑셀 -->
+    <div style="display:flex;gap:8px;margin:-4px 0 12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-sm" onclick="XL.downloadPartners()" title="현재 화면에 보이는 목록을 엑셀로 저장">⬇ 엑셀 다운로드</button>
+      <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
+      <span id="list-count" style="font-size:12px;color:#888;margin-left:auto"></span>
     </div>
     <div class="section" style="padding:0;overflow:hidden">
       <div class="table-wrap">
@@ -917,6 +933,66 @@ async function loadFromSheet(showPopup=false, silent=false){
   }
 }
 
+/* 관리자 전용 필터(센터·지점장) 표시 및 목록 채우기 */
+function syncListFilters(){
+  const cEl=document.getElementById('filter-센터');
+  const mEl=document.getElementById('filter-담당자');
+  const rst=document.getElementById('filter-reset');
+  if(!cEl||!mEl)return;
+
+  if(!isAdmin){
+    cEl.style.display='none'; mEl.style.display='none';
+    if(rst) rst.style.display='none';
+    return;
+  }
+  cEl.style.display=''; mEl.style.display='';
+
+  /* 센터 목록: 고정 7개 + 데이터에 있는 기타 */
+  const extra=[...new Set(data.map(d=>d.센터||'').filter(Boolean))].filter(c=>!CENTERS_ALL.includes(c));
+  const centers=CENTERS_ALL.concat(extra.sort());
+  document.getElementById('list-센터').innerHTML=centers.map(c=>`<option value="${c}">`).join('');
+
+  /* 지점장 목록: 센터를 고르면 그 센터 소속만 */
+  const fc=(cEl.value||'').trim();
+  const names=collectManagers(fc);
+  document.getElementById('list-담당자').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+
+  /* 센터를 바꿔서 지점장이 소속에 없으면 지점장 선택 해제 */
+  const cur=(mEl.value||'').trim();
+  if(fc&&cur&&!names.includes(cur)) mEl.value='';
+
+  /* 필터 초기화 버튼 */
+  const anyF = document.getElementById('search').value
+    || fc || mEl.value
+    || document.getElementById('filter-년').value
+    || document.getElementById('filter-월').value
+    || document.getElementById('filter-구분').value
+    || document.getElementById('filter-경력').value
+    || document.getElementById('filter-재통화').value
+    || document.getElementById('filter-합격').value
+    || document.getElementById('filter-사전준비').value;
+  if(rst) rst.style.display = anyF ? '' : 'none';
+}
+
+/* 센터 선택 시 → 지점장 목록 갱신 후 다시 그림 */
+function onCenterFilter(){
+  const mEl=document.getElementById('filter-담당자');
+  const fc=(document.getElementById('filter-센터').value||'').trim();
+  const names=collectManagers(fc);
+  const cur=(mEl.value||'').trim();
+  if(fc&&cur&&!names.includes(cur)) mEl.value='';
+  renderTable();
+}
+
+/* 필터 전부 해제 */
+function resetListFilters(){
+  ['search','filter-센터','filter-담당자','filter-년','filter-월',
+   'filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  updateMonthFilter();
+  renderTable();
+}
+
 function updateYearFilter(){
   const years=[...new Set(data.map(d=>{
     const date=d.응시날짜?d.응시날짜.substring(0,10):'';
@@ -1323,6 +1399,7 @@ let lastFiltered = [];
 function getFilteredPartners(){ return lastFiltered; }
 
 function renderTable(){
+  syncListFilters();
   const vis=getVisibleData();
   const q=document.getElementById('search').value.toLowerCase();
   const fg=document.getElementById('filter-구분').value,fe=document.getElementById('filter-경력').value;
@@ -1330,8 +1407,14 @@ function renderTable(){
   const fp=document.getElementById('filter-사전준비').value;
   const fy=document.getElementById('filter-년').value,fm=document.getElementById('filter-월').value;
   const weekEnd=getWeekEnd();
+  /* 관리자 전용: 센터 · 지점장 */
+  const fc=(document.getElementById('filter-센터')?.value||'').trim();
+  const fmgr=(document.getElementById('filter-담당자')?.value||'').trim();
+
   const filtered=lastFiltered=vis.filter(d=>{
-    if(q&&![(d.파트너스명||''),(d.전화번호||''),(d.가코드||''),(d.담당자||'')].join(' ').toLowerCase().includes(q))return false;
+    if(isAdmin&&fc&&String(d.센터||'')!==fc)return false;
+    if(isAdmin&&fmgr&&String(d.담당자||'')!==fmgr)return false;
+    if(q&&![(d.파트너스명||''),(d.전화번호||''),(d.가코드||''),(d.담당자||''),(d.센터||'')].join(' ').toLowerCase().includes(q))return false;
     if(fg&&d.구분!==fg)return false;if(fe&&d.경력구분!==fe)return false;
     if(fh==='y'&&!d.합격날짜)return false;if(fh==='n'&&d.합격날짜)return false;
     if(fp){
@@ -1352,6 +1435,8 @@ function renderTable(){
     return true;
   });
   const tbody=document.getElementById('table-body');
+  const cntEl=document.getElementById('list-count');
+  if(cntEl) cntEl.textContent = `총 ${filtered.length.toLocaleString()}건` + (filtered.length!==vis.length ? ` (전체 ${vis.length.toLocaleString()}건 중)` : '');
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="21" class="empty">데이터가 없습니다</td></tr>`;return;}
   tbody.innerHTML=filtered.map((d,fi)=>{
     const ri=data.indexOf(d),rs=recallStatus(d.재통화일정);
