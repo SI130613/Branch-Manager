@@ -105,6 +105,8 @@ tr.today-row td{background:#fdf8ee}
 .prep-th{background:#F6F5FF !important;color:#534AB7 !important}
 /* 파랑 버튼 */
 .btn-blue{background:#1565C0 !important;border:1px solid #1565C0 !important;color:#fff !important;font-weight:700}
+.p-sel{width:15px !important;height:15px;cursor:pointer;accent-color:#B4372F;margin:0}
+#table-body tr.sel td{background:#FDECEA !important}
 .btn-blue:hover{background:#0D47A1 !important;border-color:#0D47A1 !important}
 /* 전체목록 다중선택 필터 (매출관리와 동일한 방식) */
 .pf{position:relative;width:145px;flex-shrink:0}
@@ -255,9 +257,15 @@ tr.today-row td{background:#fdf8ee}
 #salesRoot .mo-sp{flex:1}
 #salesRoot .up-body{display:flex;flex-direction:column;gap:12px}
 #salesRoot .up-hint{font-size:12.5px;color:var(--ink2);margin:0;line-height:1.5}
-#salesRoot .up-res{background:var(--soft);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
-#salesRoot .up-cnt{font-weight:700;font-size:13.5px;color:var(--brand2)}
-#salesRoot .up-radio{font-size:13px;display:flex;gap:7px;align-items:center}
+#salesRoot .up-res{background:var(--soft);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+#salesRoot .up-cnt{font-weight:800;font-size:14px;color:var(--brand2);padding-bottom:8px;border-bottom:1px solid #C9E4DA}
+#salesRoot .up-radio{font-size:13.5px;display:flex;gap:9px;align-items:flex-start;cursor:pointer;line-height:1.5;
+  padding:8px 10px;border:1px solid transparent;border-radius:8px;background:#fff}
+#salesRoot .up-radio:hover{border-color:var(--brand);background:#F7FCFA}
+#salesRoot .up-radio input[type=radio]{width:15px !important;height:15px;flex:0 0 auto;margin:2px 0 0;accent-color:var(--brand)}
+#salesRoot .up-radio b{color:var(--ink);font-weight:800}
+#salesRoot .up-radio .sub{display:block;font-size:11.5px;color:#8A948F;font-weight:500;margin-top:1px}
+#salesRoot #upFile{width:100%;padding:9px;border:1px dashed var(--line);border-radius:8px;background:#FAFCFB;font-size:13px;margin-bottom:2px}
 #salesRoot .set-sec{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
 #salesRoot .set-title{font-size:13px;font-weight:800}
 #salesRoot .sales-loading{display:flex;align-items:center;justify-content:center;padding:60px 0;color:var(--ink2);font-size:13px}
@@ -366,13 +374,14 @@ tr.today-row td{background:#fdf8ee}
     <div style="display:flex;gap:8px;margin:-4px 0 12px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-sm" onclick="XL.downloadPartners()" title="현재 화면에 보이는 목록을 엑셀로 저장">⬇ 엑셀 다운로드</button>
       <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
+      <button class="btn btn-sm btn-danger" id="p-del-btn" onclick="DEL.confirm()" disabled>🗑 선택 삭제</button>
       <span id="list-count" style="font-size:12px;color:#888;margin-left:auto"></span>
     </div>
     <div class="section" style="padding:0;overflow:hidden">
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>No.</th><th>담당자</th><th>센터</th><th>인입날짜</th><th>가코드</th><th>파트너스명</th><th>경력구분</th><th>직업</th><th>전화번호</th><th>재통화일정</th><th>응시일</th><th>구분</th><th>지역</th><th>합격여부</th><th class="prep-th">보장분석<br>동의</th><th class="prep-th">브릿지콜</th><th class="prep-th">가계약</th><th style="width:90px">상담이력</th><th>위촉여부</th><th>위촉코드</th><th>관리</th></tr>
+            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th>담당자</th><th>센터</th><th>인입날짜</th><th>가코드</th><th>파트너스명</th><th>경력구분</th><th>직업</th><th>전화번호</th><th>재통화일정</th><th>응시일</th><th>구분</th><th>지역</th><th>합격여부</th><th class="prep-th">보장분석<br>동의</th><th class="prep-th">브릿지콜</th><th class="prep-th">가계약</th><th style="width:90px">상담이력</th><th>위촉여부</th><th>위촉코드</th><th>관리</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -614,6 +623,26 @@ tr.today-row td{background:#fdf8ee}
   </div>
 </div>
 
+<!-- 삭제 확인 모달 -->
+<div class="overlay" id="del-modal">
+  <div class="modal-box" style="max-width:440px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="color:#B4372F">🗑 삭제 확인</h3>
+      <button class="btn btn-sm" onclick="closeModal('del-modal')">✕</button>
+    </div>
+    <div style="background:#FCEBEB;border:1px solid #F0C9C5;border-radius:10px;padding:16px;text-align:center;margin-bottom:14px">
+      <div style="font-size:30px;font-weight:900;color:#B4372F;line-height:1.1" id="del-count">0</div>
+      <div style="font-size:13px;color:#791F1F;font-weight:700;margin-top:3px">건을 삭제합니다</div>
+    </div>
+    <div id="del-list" style="max-height:150px;overflow:auto;font-size:12.5px;color:#666;background:#faf9f7;border-radius:8px;padding:10px;margin-bottom:12px;line-height:1.7"></div>
+    <p style="font-size:12px;color:#B4372F;font-weight:700;margin:0 0 14px">⚠️ 삭제하면 되돌릴 수 없습니다.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-sm" onclick="closeModal('del-modal')">취소</button>
+      <button class="btn btn-sm btn-danger" id="del-ok" onclick="DEL.run()">삭제하기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 엑셀 업로드 모달 -->
 <div id="uploadModal" class="mo-bg hidden">
   <div class="mo mo-sm">
@@ -624,8 +653,14 @@ tr.today-row td{background:#fdf8ee}
       <div id="upErr" class="err hidden"></div>
       <div id="upRes" class="up-res hidden">
         <div class="up-cnt" id="upCnt"></div>
-        <label class="up-radio"><input type="radio" name="upMode" value="append" checked> 기존 데이터에 추가</label>
-        <label class="up-radio"><input type="radio" name="upMode" value="replace"> <span id="upReplaceLabel">전체 데이터 교체</span></label>
+        <label class="up-radio">
+          <input type="radio" name="upMode" value="append" checked>
+          <span><b>기존 데이터에 추가</b><span class="sub">지금 있는 데이터는 그대로 두고 뒤에 붙입니다 (권장)</span></span>
+        </label>
+        <label class="up-radio">
+          <input type="radio" name="upMode" value="replace">
+          <span><b id="upReplaceLabel">전체 데이터 교체</b><span class="sub" style="color:#B4372F">지금 있는 데이터를 모두 지우고 새로 넣습니다</span></span>
+        </label>
       </div>
     </div>
     <div class="mo-foot">
@@ -1411,6 +1446,7 @@ function doLogout(){
   AUTH=null;
   clearSession();
   stopPartnerAutoRefresh();
+  if(typeof DEL!=='undefined') DEL.reset();
   S.reset();
   currentUser=null; isAdmin=false; currentCenter='';
   document.getElementById('login-name').value='';
@@ -1573,9 +1609,10 @@ function renderTable(){
     return true;
   });
   const tbody=document.getElementById('table-body');
+  DEL.sync(filtered);
   const cntEl=document.getElementById('list-count');
   if(cntEl) cntEl.textContent = `총 ${filtered.length.toLocaleString()}건` + (filtered.length!==vis.length ? ` (전체 ${vis.length.toLocaleString()}건 중)` : '');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="21" class="empty">데이터가 없습니다</td></tr>`;return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="22" class="empty">데이터가 없습니다</td></tr>`;return;}
   tbody.innerHTML=filtered.map((d,fi)=>{
     const ri=data.indexOf(d),rs=recallStatus(d.재통화일정);
     const rowCls=rs==='today'?' class="today-row"':'';
@@ -1592,7 +1629,11 @@ function renderTable(){
       recallCell=`<span class="badge ${bc}">${rDate}</span><br><span style="font-size:10px;color:#666">${rTime}</span> <span style="font-size:10px;color:#aaa">${lb}</span>`;
     }
     const canEdit=isAdmin||d.담당자===currentUser;
-    return`<tr${rowCls}>
+    const isSel=DEL.has(d.id);
+    return`<tr${isSel?' class="sel"':rowCls}>
+      <td style="text-align:center" onclick="event.stopPropagation()">${
+        canEdit ? `<input type="checkbox" class="p-sel" ${isSel?'checked':''} onchange="DEL.pick('${d.id}',this.checked)">` : ''
+      }</td>
       <td style="color:#aaa;text-align:center">${fi+1}</td>
       <td><span class="badge ${ADMINS.includes(d.담당자)?'badge-admin':'badge-new'}">${d.담당자||'-'}</span></td>
       <td style="font-size:11px">${d.센터||'-'}</td>
@@ -2841,6 +2882,86 @@ var XL = (function(){
 })();
 
 
+/* ═══════════════════ 파트너스 다중 선택 삭제 ═══════════════════ */
+var DEL = (function(){
+  const SEL = new Set();
+
+  function has(id){ return SEL.has(String(id)); }
+  function count(){ return SEL.size; }
+
+  function pick(id, on){
+    if(on) SEL.add(String(id)); else SEL.delete(String(id));
+    renderTable();
+  }
+
+  function toggleAll(on){
+    const list = getFilteredPartners().filter(d=>isAdmin || d.담당자===currentUser);
+    list.forEach(d=>{ if(on) SEL.add(String(d.id)); else SEL.delete(String(d.id)); });
+    renderTable();
+  }
+
+  /* 삭제 버튼 · 전체선택 체크박스 상태 갱신 */
+  function sync(filtered){
+    const btn = document.getElementById('p-del-btn');
+    const all = document.getElementById('pSelAll');
+    if(btn){
+      btn.disabled = SEL.size === 0;
+      btn.textContent = SEL.size ? `🗑 선택 삭제 (${SEL.size})` : '🗑 선택 삭제';
+    }
+    if(all){
+      const usable = (filtered||[]).filter(d=>isAdmin || d.담당자===currentUser);
+      const picked = usable.filter(d=>SEL.has(String(d.id))).length;
+      all.checked = usable.length>0 && picked===usable.length;
+      all.indeterminate = picked>0 && picked<usable.length;
+    }
+  }
+
+  function reset(){ SEL.clear(); }
+
+  /* 확인 팝업 */
+  function confirmDelete(){
+    if(!SEL.size) return;
+    const rows = data.filter(d=>SEL.has(String(d.id)));
+    document.getElementById('del-count').textContent = rows.length.toLocaleString();
+    document.getElementById('del-list').innerHTML =
+      rows.slice(0,30).map(d=>`· ${d.파트너스명||'(이름없음)'} <span style="color:#aaa">(${d.담당자||''})</span>`).join('<br>')
+      + (rows.length>30 ? `<br><b>… 외 ${rows.length-30}건</b>` : '');
+    const ok = document.getElementById('del-ok');
+    ok.disabled = false;
+    ok.textContent = `${rows.length}건 삭제하기`;
+    ok.setAttribute('onclick', 'DEL.run()');      // ★ 매출 삭제와 섞이지 않도록 항상 재지정
+    document.getElementById('del-modal').classList.add('open');
+  }
+
+  /* 실제 삭제 */
+  async function run(){
+    const ids = [...SEL];
+    if(!ids.length) return;
+    const ok = document.getElementById('del-ok');
+    ok.disabled = true;
+
+    let done = 0; const fail = [];
+    for(let i=0; i<ids.length; i++){
+      ok.textContent = `삭제 중… (${i+1}/${ids.length})`;
+      const r = await gasCall({ action:'delete', id: ids[i] });
+      if(r) done++; else fail.push(ids[i]);
+    }
+
+    /* 화면에서 제거 */
+    data = data.filter(d=>!SEL.has(String(d.id)) || fail.includes(String(d.id)));
+    SEL.clear();
+    lastSnapshot = '';
+    closeModal('del-modal');
+    renderTable(); renderStatsBar();
+    ok.disabled = false; ok.textContent = '삭제하기';
+
+    if(fail.length) showToast(`${done}건 삭제 완료 · ${fail.length}건 실패`,'err');
+    else showToast(`${done}건이 삭제되었습니다`,'ok');
+  }
+
+  return { has, count, pick, toggleAll, sync, reset, confirm: confirmDelete, run };
+})();
+
 /* ═══════════════════ 관리자 명단 (관리자 전용) ═══════════════════ */
 var ADM = (function(){
   function render(){
@@ -3427,31 +3548,52 @@ function toggleAll(on){
   render();
 }
 
+/* 선택 삭제 → 확인 팝업 (파트너스와 동일한 방식) */
 function deleteSelected(){
   var ids = Object.keys(SEL);
   if (!ids.length) return;
-  if (!confirm("선택한 " + ids.length + "건을 삭제할까요?\n삭제하면 되돌릴 수 없습니다.")) return;
 
-  var btn = $("delSelBtn");
-  btn.disabled = true; btn.textContent = "삭제 중…";
+  var picked = rows.filter(function(r){ return SEL[r.id] === 1; });
+  document.getElementById("del-count").textContent = picked.length.toLocaleString();
+  document.getElementById("del-list").innerHTML =
+    picked.slice(0, 30).map(function(r){
+      return '· ' + esc(r.partner || '(이름없음)')
+           + ' <span style="color:#aaa">(' + esc(r.mgr || '') + (r.holder ? ' · ' + esc(r.holder) : '') + ')</span>';
+    }).join('<br>')
+    + (picked.length > 30 ? '<br><b>… 외 ' + (picked.length - 30) + '건</b>' : '');
 
-  var done = 0, fail = [];
+  var ok = document.getElementById("del-ok");
+  ok.disabled = false;
+  ok.textContent = picked.length + "건 삭제하기";
+  ok.setAttribute("onclick", "S.runDelete()");        // ★ 매출 삭제로 연결 (열 때마다 재지정)
+  document.getElementById("del-modal").classList.add("open");
+}
+
+function runDelete(){
+  var ids = Object.keys(SEL);
+  if (!ids.length) return;
+  var ok = document.getElementById("del-ok");
+  ok.disabled = true;
+
+  var done = 0, fail = 0;
   var next = function(i){
     if (i >= ids.length){
       SEL = {};
+      closeModal("del-modal");
+      ok.disabled = false;
+      ok.textContent = "삭제하기";
+      ok.setAttribute("onclick", "DEL.run()");        // 원래대로 되돌림
       refresh().then(function(){
-        if (fail.length) alert(done + "건 삭제 완료.\n" + fail.length + "건 실패:\n" + fail.slice(0,5).join("\n"));
+        if (fail) showToast(done + "건 삭제 완료 · " + fail + "건 실패", "err");
         else flash(done + "건이 삭제되었습니다");
       });
       return;
     }
+    ok.textContent = "삭제 중… (" + (i + 1) + "/" + ids.length + ")";
     call("delete", { id: ids[i] })
       .then(function(){ done++; })
-      .catch(function(e){ fail.push("· " + e.message); })
-      .finally(function(){
-        btn.textContent = "삭제 중… (" + (i + 1) + "/" + ids.length + ")";
-        next(i + 1);
-      });
+      .catch(function(){ fail++; })
+      .finally(function(){ next(i + 1); });
   };
   next(0);
 }
@@ -3902,7 +4044,7 @@ return {
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
-  toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected,
+  toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected, runDelete: runDelete,
   onPartnerPick: onPartnerPick,
   toggleMs: toggleMs, renderPop: renderPop, renderPopList: renderPopList,
   toggleVal: toggleVal, clearVals: clearVals,
