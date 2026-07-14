@@ -1361,14 +1361,27 @@ function showRecallPopup(force=false){
 
   const fmt=(d,isPast)=>{
     const ri=data.indexOf(d);
+    const rp=parseRecall(d.재통화일정);      // 기존 일정(날짜·오전오후·시·분)을 그대로 표시
     return `<div class="recall-item" id="recall-row-${ri}">
       <div style="flex:1">
         <div class="recall-name">${d.파트너스명||'이름없음'} <span style="font-size:11px;color:#aaa">(담당: ${d.담당자||'-'})</span></div>
         <div class="recall-sub">${d.전화번호||'-'} · ${d.직업||''} · ${d.경력구분||''}</div>
         ${d.상담이력?`<div class="recall-sub" style="margin-top:2px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.상담이력.split('\n').join(' ')}</div>`:''}
-        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
-          <input type="date" id="new-date-${ri}" value="${todayStr}" style="padding:4px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:12px;font-family:inherit">
-          <button onclick="recallReschedule(${ri})" style="padding:4px 10px;border:1px solid #534AB7;border-radius:6px;font-size:12px;cursor:pointer;background:#EEEDFE;color:#3C3489">📅 날짜변경</button>
+        <div style="display:flex;gap:5px;margin-top:8px;align-items:center;flex-wrap:wrap">
+          <input type="date" id="new-date-${ri}" value="${rp.date||todayStr}" style="padding:4px 6px;border:1px solid #d8d8d4;border-radius:6px;font-size:12px;font-family:inherit;width:auto">
+          <select id="new-ampm-${ri}" style="padding:4px 6px;border:1px solid #d8d8d4;border-radius:6px;font-size:12px;font-family:inherit;width:auto;margin-top:0">
+            <option value="오전" ${rp.ampm==='오전'?'selected':''}>오전</option>
+            <option value="오후" ${rp.ampm==='오후'?'selected':''}>오후</option>
+          </select>
+          <select id="new-hour-${ri}" style="padding:4px 6px;border:1px solid #d8d8d4;border-radius:6px;font-size:12px;font-family:inherit;width:auto;margin-top:0">
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(x=>`<option value="${x}" ${String(rp.hour)===String(x)?'selected':''}>${x}시</option>`).join('')}
+          </select>
+          <select id="new-min-${ri}" style="padding:4px 6px;border:1px solid #d8d8d4;border-radius:6px;font-size:12px;font-family:inherit;width:auto;margin-top:0">
+            ${[0,10,20,30,40,50].map(x=>{const v=String(x).padStart(2,'0');return `<option value="${v}" ${rp.min===v?'selected':''}>${v}분</option>`;}).join('')}
+          </select>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap">
+          <button onclick="recallReschedule(${ri})" style="padding:4px 10px;border:1px solid #534AB7;border-radius:6px;font-size:12px;cursor:pointer;background:#EEEDFE;color:#3C3489">📅 일정변경</button>
           <button onclick="recallDone(${ri})" style="padding:4px 10px;border:1px solid #27500A;border-radius:6px;font-size:12px;cursor:pointer;background:#EAF3DE;color:#27500A">✅ 완료</button>
         </div>
       </div>
@@ -1406,14 +1419,14 @@ async function recallDone(idx){
 }
 
 async function recallReschedule(idx){
-  const newDate=document.getElementById('new-date-'+idx).value;
-  if(!newDate){alert('날짜를 선택해 주세요.');return;}
-  if(newDate===data[idx].재통화일정){alert('같은 날짜입니다. 다른 날짜를 선택해 주세요.');return;}
-  data[idx].재통화일정=newDate;
+  const newSchedule=buildRecall('new-date-'+idx,'new-ampm-'+idx,'new-hour-'+idx,'new-min-'+idx);
+  if(!newSchedule){alert('날짜를 선택해 주세요.');return;}
+  if(newSchedule===data[idx].재통화일정){alert('기존 일정과 같습니다. 다른 일정을 선택해 주세요.');return;}
+  data[idx].재통화일정=newSchedule;
   data[idx].재통화완료='';
   const row=document.getElementById('recall-row-'+idx);
   if(row){row.style.opacity='0.4';row.style.pointerEvents='none';
-    row.querySelector('.recall-name').insertAdjacentHTML('afterend',`<span style="font-size:11px;color:#534AB7;font-weight:600"> 📅 ${newDate}로 변경됨</span>`);
+    row.querySelector('.recall-name').insertAdjacentHTML('afterend',`<span style="font-size:11px;color:#534AB7;font-weight:600"> 📅 ${newSchedule} 로 변경됨</span>`);
   }
   await updateRow(data[idx]);
   renderTable(); renderStatsBar();
