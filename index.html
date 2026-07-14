@@ -103,6 +103,26 @@ tr.today-row td{background:#fdf8ee}
 .chart-wrap{position:relative;width:100%;height:280px}
 .stat-group{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.5rem}
 .prep-th{background:#F6F5FF !important;color:#534AB7 !important}
+/* 파랑 버튼 */
+.btn-blue{background:#1565C0 !important;border:1px solid #1565C0 !important;color:#fff !important;font-weight:700}
+.btn-blue:hover{background:#0D47A1 !important;border-color:#0D47A1 !important}
+/* 전체목록 다중선택 필터 (매출관리와 동일한 방식) */
+.pf{position:relative;width:145px;flex-shrink:0}
+.pf-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:6px;background:#fff;
+  border:1px solid #d8d8d4;border-radius:6px;padding:7px 9px;font-size:13px;cursor:pointer;color:#1a1a1a;font-family:inherit}
+.pf-btn:hover{border-color:#534AB7}
+.pf-btn.on{border-color:#534AB7;background:#EEEDFE;font-weight:600;color:#3C3489}
+.pf-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-pop{position:absolute;z-index:60;top:calc(100% + 4px);left:0;min-width:220px;width:max-content;max-width:300px;
+  background:#fff;border:1px solid #d8d8d4;border-radius:10px;box-shadow:0 10px 28px rgba(26,26,26,.16);padding:8px}
+.pf-search{width:100%;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px;margin:0 0 6px;font-family:inherit}
+.pf-list{max-height:230px;overflow:auto}
+.pf-item{display:flex;gap:8px;align-items:center;padding:5px 6px;font-size:13px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.pf-item:hover{background:#EEEDFE}
+.pf-item input[type=checkbox]{flex:0 0 auto;width:14px;height:14px;margin:0}
+.pf-item span{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis}
+.pf-empty{padding:8px;font-size:12px;color:#888}
+.pf-clear{width:100%;margin-top:6px;background:none;border:none;color:#534AB7;font-size:12px;font-weight:700;cursor:pointer;padding:4px;font-family:inherit}
 .st-bar{background:#fff;border:1px solid #d8d8d4;border-radius:10px;padding:10px 14px;margin-bottom:1rem;
   display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
 .st-bar select{width:auto !important;min-width:104px;margin-top:0;padding:7px 9px}
@@ -148,6 +168,11 @@ tr.today-row td{background:#fdf8ee}
 #salesRoot .btn-sm{padding:6px 10px;font-size:12px}#salesRoot .btn-full{width:100%;padding:11px}
 #salesRoot .fld{display:flex;flex-direction:column;gap:4px}
 #salesRoot .fld label{font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:.3px;text-transform:none}
+#salesRoot .req{color:#B4372F;font-weight:900;margin-right:2px}
+#salesRoot .fld.need input,#salesRoot .fld.need select{border-color:#E7C2BE;background:#FFFCFC}
+#salesRoot .fld.miss input,#salesRoot .fld.miss select{border-color:#B4372F !important;background:#FCEBEB !important}
+#salesRoot .req-note{font-size:11.5px;color:#B4372F;font-weight:700;margin-top:12px}
+#salesRoot .req-err{background:#FCEBEB;color:#791F1F;font-size:12.5px;font-weight:600;padding:8px 10px;border-radius:8px;margin-top:10px}
 #salesRoot .fld input,#salesRoot .fld select{border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;width:100%;margin-top:0}
 #salesRoot .fld input:focus,#salesRoot .fld select:focus{outline:2px solid var(--soft);border-color:var(--brand);box-shadow:none}
 #salesRoot .err{background:#F8E7E5;color:var(--red);font-size:12.5px;padding:8px 10px;border-radius:8px}
@@ -302,14 +327,19 @@ tr.today-row td{background:#fdf8ee}
     <div class="search-bar">
       <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." oninput="renderTable()">
 
-      <!-- 관리자 전용: 센터 · 지점장 (드롭다운 + 직접 입력) -->
-      <input type="text" id="filter-센터" list="list-센터" class="admin-filter" placeholder="🏢 센터 전체"
-             autocomplete="off" oninput="onCenterFilter()" style="display:none;width:130px">
-      <datalist id="list-센터"></datalist>
-
-      <input type="text" id="filter-담당자" list="list-담당자" class="admin-filter" placeholder="👤 지점장 전체"
-             autocomplete="off" oninput="renderTable()" style="display:none;width:130px">
-      <datalist id="list-담당자"></datalist>
+      <!-- 관리자 전용: 센터 · 지점장 (다중 선택) -->
+      <div class="pf" id="pf-wrap-center" style="display:none">
+        <button class="pf-btn" id="pf-btn-center" onclick="PF.toggle('center',event)">
+          <span class="pf-txt">🏢 센터 전체</span><span>▾</span>
+        </button>
+        <div class="pf-pop hidden" id="pf-pop-center"></div>
+      </div>
+      <div class="pf" id="pf-wrap-mgr" style="display:none">
+        <button class="pf-btn" id="pf-btn-mgr" onclick="PF.toggle('mgr',event)">
+          <span class="pf-txt">👤 지점장 전체</span><span>▾</span>
+        </button>
+        <div class="pf-pop hidden" id="pf-pop-mgr"></div>
+      </div>
 
       <select id="filter-년" onchange="updateMonthFilter();renderTable()" style="width:105px"><option value="">응시년 전체</option></select>
       <select id="filter-월" onchange="renderTable()" style="width:100px"><option value="">응시월 전체</option></select>
@@ -329,7 +359,7 @@ tr.today-row td{background:#fdf8ee}
         <option value="가계약">가계약 O</option>
         <option value="미완료">사전준비 미완료</option>
       </select>
-      <button class="btn btn-sm" id="filter-reset" onclick="resetListFilters()" style="display:none">↺ 필터 초기화</button>
+      <button class="btn btn-sm btn-blue" id="filter-reset" onclick="resetListFilters()" style="display:none">↺ 필터 초기화</button>
     </div>
 
     <!-- 엑셀 -->
@@ -518,7 +548,7 @@ tr.today-row td{background:#fdf8ee}
     <div class="mo-grid">
       <div class="fld"><label>센터</label><select id="f_center"></select></div>
       <div class="fld"><label>지점장명</label><select id="f_mgr"></select></div>
-      <div class="fld"><label>파트너스명 <span style="color:#0E6B52;font-size:10px">(목록에서 선택하면 자동 입력)</span></label>
+      <div class="fld need" id="fld_partner"><label><span class="req">*</span>파트너스명 <span style="color:#0E6B52;font-size:10px">(목록에서 선택하면 자동 입력)</span></label>
         <input id="f_partner" list="sales-partner-list" autocomplete="off" oninput="S.onPartnerPick(this.value)">
         <datalist id="sales-partner-list"></datalist>
       </div>
@@ -527,17 +557,19 @@ tr.today-row td{background:#fdf8ee}
       <div class="fld"><label>경력구분</label><select id="f_career"><option value="">선택</option><option>신규</option><option>경력</option><option>재등록</option></select></div>
       <div class="fld"><label>차월</label><input type="number" id="f_month"></div>
       <div class="fld"><label>조직상태</label><select id="f_status"><option value="">선택</option><option>정상</option><option>폐쇄</option></select></div>
-      <div class="fld"><label>인보험여부</label><select id="f_active"><option value="1">인보험</option><option value="0">인보험 외</option></select></div>
+      <div class="fld need" id="fld_active"><label><span class="req">*</span>인보험여부</label><select id="f_active"><option value="">선택</option><option value="1">인보험</option><option value="0">인보험 외</option></select></div>
       <div class="fld"><label>매출(금액)</label><input type="number" id="f_amt"></div>
       <div class="fld"><label>수정P</label><input type="number" id="f_pcorr"></div>
-      <div class="fld"><label>계약자명</label><input id="f_holder"></div>
+      <div class="fld need" id="fld_holder"><label><span class="req">*</span>계약자명</label><input id="f_holder"></div>
       <div class="fld"><label>피보험자명</label><input id="f_insured"></div>
       <div class="fld"><label>상품명</label><input id="f_product"></div>
-      <div class="fld"><label>매출예정일</label><input type="date" id="f_planDate"></div>
+      <div class="fld need" id="fld_planDate"><label><span class="req">*</span>매출예정일</label><input type="date" id="f_planDate"></div>
       <div class="fld"><label>실매출일</label><input type="date" id="f_saleDate"></div>
       <div class="fld fld-w"><label>설계특이사항 (병력, 플랜 등)</label><input id="f_proposal"></div>
       <div class="fld fld-w"><label>매출특이사항</label><input id="f_note"></div>
     </div>
+    <div id="editErr" class="req-err hidden"></div>
+    <div class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다.</div>
     <div class="mo-foot">
       <button class="btn btn-d hidden" id="delBtn" onclick="S.doDelete()">삭제</button>
       <div class="mo-sp"></div>
@@ -851,6 +883,7 @@ tr.today-row td{background:#fdf8ee}
 /* ★★ 1. 지점장용 파트너스 시트의 Apps Script 웹 앱 URL ★★
    (새로 만든 '지점장 원노트' 스프레드시트에 파트너스_시트코드.gs를 넣고 배포한 뒤 그 URL을 붙여넣으세요) */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUjef00IG7016fh5iOh6f9So6OJ9Y0ohZe-10nusOQrVVIGtGAKxk66oA2J__roEj74Q/exec';
+const APP_VERSION = 4;      // 서버가 이 버전 이상만 저장을 허용합니다
 const CENTERS_ALL = ['강남센터','서울센터','경인센터','충청센터','호남센터','부경센터','대경센터'];
 let ADMIN_LIST = [{name:'김세인', code:''}];      // 서버(관리자 탭)에서 받아옴
 function adminNames(){ return ADMIN_LIST.map(a=>a.name); }
@@ -933,37 +966,147 @@ async function loadFromSheet(showPopup=false, silent=false){
   }
 }
 
-/* 관리자 전용 필터(센터·지점장) 표시 및 목록 채우기 */
-function syncListFilters(){
-  const cEl=document.getElementById('filter-센터');
-  const mEl=document.getElementById('filter-담당자');
-  const rst=document.getElementById('filter-reset');
-  if(!cEl||!mEl)return;
+/* ═══════ 전체목록 다중선택 필터 (센터 · 지점장) — 관리자 전용 ═══════ */
+var PF = (function(){
+  const SEL = { center: [], mgr: [] };     // 선택된 값들
+  const Q   = { center: '', mgr: '' };     // 팝업 검색어
+  let openId = null;
 
-  if(!isAdmin){
-    cEl.style.display='none'; mEl.style.display='none';
-    if(rst) rst.style.display='none';
-    return;
+  function get(k){ return SEL[k]; }
+
+  function options(k){
+    if(k === 'center'){
+      const extra = [...new Set(data.map(d=>d.센터||'').filter(Boolean))].filter(c=>!CENTERS_ALL.includes(c));
+      return CENTERS_ALL.concat(extra.sort());
+    }
+    /* 지점장: 센터가 선택되면 그 센터 소속만 */
+    if(!SEL.center.length) return collectManagers('');
+    const set = new Set();
+    SEL.center.forEach(c => collectManagers(c).forEach(n => set.add(n)));
+    return [...set].sort((a,b)=>String(a).localeCompare(String(b),'ko'));
   }
-  cEl.style.display=''; mEl.style.display='';
 
-  /* 센터 목록: 고정 7개 + 데이터에 있는 기타 */
-  const extra=[...new Set(data.map(d=>d.센터||'').filter(Boolean))].filter(c=>!CENTERS_ALL.includes(c));
-  const centers=CENTERS_ALL.concat(extra.sort());
-  document.getElementById('list-센터').innerHTML=centers.map(c=>`<option value="${c}">`).join('');
+  function label(k){
+    const s = SEL[k];
+    const base = k === 'center' ? '🏢 센터' : '👤 지점장';
+    if(!s.length) return base + ' 전체';
+    if(s.length <= 2) return s.join(', ');
+    return s[0] + ' 외 ' + (s.length - 1);
+  }
 
-  /* 지점장 목록: 센터를 고르면 그 센터 소속만 */
-  const fc=(cEl.value||'').trim();
-  const names=collectManagers(fc);
-  document.getElementById('list-담당자').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+  function syncButton(k){
+    const btn = document.getElementById('pf-btn-' + k);
+    if(!btn) return;
+    btn.className = 'pf-btn' + (SEL[k].length ? ' on' : '');
+    btn.querySelector('.pf-txt').textContent = label(k);
+  }
 
-  /* 센터를 바꿔서 지점장이 소속에 없으면 지점장 선택 해제 */
-  const cur=(mEl.value||'').trim();
-  if(fc&&cur&&!names.includes(cur)) mEl.value='';
+  /* 목록만 다시 그림 → 한글 입력이 끊기지 않음 */
+  function renderList(k){
+    const box = document.getElementById('pf-list-' + k);
+    if(!box) return;
+    const q = (Q[k] || '').toLowerCase();
+    const opts = options(k).filter(o => String(o).toLowerCase().includes(q));
+    box.innerHTML = opts.length
+      ? opts.map(o=>`<label class="pf-item" onclick="event.stopPropagation()">
+            <input type="checkbox" ${SEL[k].includes(o)?'checked':''} value="${o}"
+                   onchange="PF.pick('${k}',this.value,this.checked)"><span>${o}</span></label>`).join('')
+      : '<div class="pf-empty">항목 없음</div>';
+    const cl = document.getElementById('pf-clear-' + k);
+    if(cl) cl.innerHTML = SEL[k].length
+      ? `<button class="pf-clear" onclick="PF.clear('${k}',event)">선택 해제 (${SEL[k].length})</button>` : '';
+  }
 
-  /* 필터 초기화 버튼 */
+  function openPop(k){
+    const pop = document.getElementById('pf-pop-' + k);
+    if(!pop) return;
+    pop.classList.remove('hidden');
+    if(pop.getAttribute('data-built') !== '1'){
+      pop.innerHTML = `<input class="pf-search" id="pf-q-${k}" placeholder="검색" autocomplete="off" onclick="event.stopPropagation()">
+                       <div class="pf-list" id="pf-list-${k}"></div>
+                       <div id="pf-clear-${k}"></div>`;
+      pop.setAttribute('data-built','1');
+      const inp = document.getElementById('pf-q-' + k);
+      const onType = () => { Q[k] = inp.value; renderList(k); };
+      inp.addEventListener('input', onType);
+      inp.addEventListener('compositionend', onType);   /* 한글 조합 */
+      setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 0);
+    }
+    const inp = document.getElementById('pf-q-' + k);
+    if(inp) inp.value = Q[k] || '';
+    renderList(k);
+  }
+
+  function closePop(k){
+    const pop = document.getElementById('pf-pop-' + k);
+    if(pop) pop.classList.add('hidden');
+  }
+  function closeAll(){
+    ['center','mgr'].forEach(k=>{ closePop(k); Q[k]=''; });
+    openId = null;
+  }
+
+  function toggle(k, ev){
+    ev.stopPropagation();
+    if(openId === k){ closeAll(); return; }
+    closeAll();
+    openId = k;
+    openPop(k);
+  }
+
+  function pick(k, v, on){
+    if(on){ if(!SEL[k].includes(v)) SEL[k].push(v); }
+    else  { SEL[k] = SEL[k].filter(x=>x!==v); }
+
+    /* 센터를 바꾸면, 그 센터에 없는 지점장 선택은 해제 */
+    if(k === 'center'){
+      const valid = options('mgr');
+      SEL.mgr = SEL.mgr.filter(n=>valid.includes(n));
+      syncButton('mgr');
+    }
+    syncButton(k);
+    renderList(k);
+    renderTable();
+  }
+
+  function clear(k, ev){
+    ev.stopPropagation();
+    SEL[k] = [];
+    if(k === 'center'){ SEL.mgr = SEL.mgr.filter(n=>options('mgr').includes(n)); syncButton('mgr'); }
+    syncButton(k);
+    renderList(k);
+    renderTable();
+  }
+
+  function reset(){
+    SEL.center = []; SEL.mgr = [];
+    Q.center = ''; Q.mgr = '';
+    syncButton('center'); syncButton('mgr');
+    closeAll();
+  }
+
+  function show(on){
+    ['center','mgr'].forEach(k=>{
+      const el = document.getElementById('pf-wrap-' + (k==='center'?'center':'mgr'));
+      if(el) el.style.display = on ? '' : 'none';
+    });
+    if(!on) reset();
+  }
+
+  document.addEventListener('click', ()=>{ if(openId) closeAll(); });
+
+  return { toggle, pick, clear, reset, show, get, syncButton };
+})();
+
+/* 관리자 전용 필터 표시 + 필터 초기화 버튼 노출 */
+function syncListFilters(){
+  PF.show(isAdmin);
+  PF.syncButton('center'); PF.syncButton('mgr');
+
+  const rst = document.getElementById('filter-reset');
+  if(!rst) return;
   const anyF = document.getElementById('search').value
-    || fc || mEl.value
+    || PF.get('center').length || PF.get('mgr').length
     || document.getElementById('filter-년').value
     || document.getElementById('filter-월').value
     || document.getElementById('filter-구분').value
@@ -971,24 +1114,14 @@ function syncListFilters(){
     || document.getElementById('filter-재통화').value
     || document.getElementById('filter-합격').value
     || document.getElementById('filter-사전준비').value;
-  if(rst) rst.style.display = anyF ? '' : 'none';
-}
-
-/* 센터 선택 시 → 지점장 목록 갱신 후 다시 그림 */
-function onCenterFilter(){
-  const mEl=document.getElementById('filter-담당자');
-  const fc=(document.getElementById('filter-센터').value||'').trim();
-  const names=collectManagers(fc);
-  const cur=(mEl.value||'').trim();
-  if(fc&&cur&&!names.includes(cur)) mEl.value='';
-  renderTable();
+  rst.style.display = anyF ? '' : 'none';
 }
 
 /* 필터 전부 해제 */
 function resetListFilters(){
-  ['search','filter-센터','filter-담당자','filter-년','filter-월',
-   'filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비']
+  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  PF.reset();
   updateMonthFilter();
   renderTable();
 }
@@ -1018,6 +1151,7 @@ function updateMonthFilter(){
 
 /* ── 파트너스 시트 API (한 줄씩 처리 → 여러 명이 동시에 써도 안전) ── */
 async function gasCall(body){
+  body = Object.assign({ v: APP_VERSION }, body);   // 화면 버전 동봉
   busySaving = true;
   setSyncStatus('loading','저장 중...');
   showBusy(true);
@@ -1046,6 +1180,13 @@ async function gasCall(body){
     const msg = (e.name === 'AbortError')
       ? '응답이 너무 늦습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.'
       : e.message;
+
+    /* 오래된 화면이면 강제로 새로고침 */
+    if(String(msg).indexOf('오래된 화면') >= 0){
+      alert('프로그램이 업데이트되었습니다.\n확인을 누르면 최신 화면으로 새로고침합니다.');
+      location.reload(true);
+      return null;
+    }
     showToast('저장 실패: '+msg,'err');
     console.error(e);
     return null;
@@ -1080,11 +1221,8 @@ async function updateRow(row){  if(!row.id){ showToast('저장 실패: 이 건�
                                 return !!(await gasCall({action:'update', row:row})); }
 async function deleteRow(id){   return !!(await gasCall({action:'delete', id:id})); }
 
-/* 구버전 호출부 호환 (엑셀 교체 등에서만 사용) */
-async function saveToSheet(){
-  const j = await gasCall({action:'replace', rows:data});
-  return !!j;
-}
+/* ⚠️ 전체 덮어쓰기(saveToSheet)는 데이터 유실 위험이 있어 제거했습니다.
+   추가/수정/삭제는 addRow · updateRow · deleteRow 만 사용합니다. */
 
 let currentCenter = '';
 
@@ -1407,13 +1545,13 @@ function renderTable(){
   const fp=document.getElementById('filter-사전준비').value;
   const fy=document.getElementById('filter-년').value,fm=document.getElementById('filter-월').value;
   const weekEnd=getWeekEnd();
-  /* 관리자 전용: 센터 · 지점장 */
-  const fc=(document.getElementById('filter-센터')?.value||'').trim();
-  const fmgr=(document.getElementById('filter-담당자')?.value||'').trim();
+  /* 관리자 전용: 센터 · 지점장 (다중 선택) */
+  const fcs = isAdmin ? PF.get('center') : [];
+  const fms = isAdmin ? PF.get('mgr')    : [];
 
   const filtered=lastFiltered=vis.filter(d=>{
-    if(isAdmin&&fc&&String(d.센터||'')!==fc)return false;
-    if(isAdmin&&fmgr&&String(d.담당자||'')!==fmgr)return false;
+    if(fcs.length && !fcs.includes(String(d.센터||'')))return false;
+    if(fms.length && !fms.includes(String(d.담당자||'')))return false;
     if(q&&![(d.파트너스명||''),(d.전화번호||''),(d.가코드||''),(d.담당자||''),(d.센터||'')].join(' ').toLowerCase().includes(q))return false;
     if(fg&&d.구분!==fg)return false;if(fe&&d.경력구분!==fe)return false;
     if(fh==='y'&&!d.합격날짜)return false;if(fh==='n'&&d.합격날짜)return false;
@@ -2669,7 +2807,19 @@ var XL = (function(){
       }
       /* 관리자=전체 교체 / 지점장=본인 것만 교체 (남의 데이터는 그대로 보존) */
       const keep = isAdmin ? [] : data.filter(d=>d.담당자 !== currentUser);
-      job = gasCall({ action:'replace', rows: keep.concat(parsed) });
+      const finalRows = keep.concat(parsed);
+
+      /* 안전장치: 화면에 데이터가 없는 상태(불러오기 실패 등)에서는 교체 금지 */
+      if(!data.length){
+        alert('현재 목록을 불러오지 못한 상태입니다.\n새로고침 후 다시 시도해 주세요. (데이터 유실 방지)');
+        btn.disabled = false; btn.textContent = '반영하기'; return;
+      }
+      if(finalRows.length < data.length * 0.5){
+        if(!confirm(`데이터가 ${data.length}건 → ${finalRows.length}건 으로 크게 줄어듭니다.\n정말 진행할까요?`)){
+          btn.disabled = false; btn.textContent = '반영하기'; return;
+        }
+      }
+      job = gasCall({ action:'replace', rows: finalRows, confirm: true });
     } else {
       job = gasCall({ action:'append', rows: parsed });
     }
@@ -3342,7 +3492,17 @@ function openEdit(id){
     if (!el) return;
     el.value = r[k] === null || r[k] === undefined ? "" : r[k];
   });
-  $("f_active").value = String(Number(r.active) === 1 ? 1 : 0);
+  /* 인보험여부: 신규는 반드시 직접 고르도록 비워둠 */
+  if (isNew) $("f_active").value = "";
+  else $("f_active").value = (r.active === null || r.active === undefined || r.active === "")
+        ? "" : String(Number(r.active) === 1 ? 1 : 0);
+
+  /* 필수 표시 초기화 */
+  $("editErr").classList.add("hidden");
+  ["fld_partner","fld_holder","fld_active","fld_planDate"].forEach(function(id){
+    var el = $(id); if (el) el.classList.remove("miss");
+  });
+
   $("delBtn").classList.toggle("hidden", isNew);
   $("saveBtn").textContent = isNew ? "추가" : "저장";
   $("editModal").classList.remove("hidden");
@@ -3404,8 +3564,38 @@ function collectRow(){
   });
   return o;
 }
+/* 필수 항목: 파트너스명 · 계약자명 · 인보험여부 · 매출예정일 */
+var REQUIRED = [
+  { key: "partner",  fld: "fld_partner",  label: "파트너스명" },
+  { key: "holder",   fld: "fld_holder",   label: "계약자명" },
+  { key: "active",   fld: "fld_active",   label: "인보험여부" },
+  { key: "planDate", fld: "fld_planDate", label: "매출예정일" }
+];
+
 function doSaveRow(){
   var o = collectRow();
+
+  /* 필수 항목 검사 */
+  var miss = [];
+  REQUIRED.forEach(function(r){
+    var v = $("f_" + r.key).value;
+    var empty = (v === null || v === undefined || String(v).trim() === "");
+    var el = $(r.fld);
+    if (el) el.classList.toggle("miss", empty);
+    if (empty) miss.push(r.label);
+  });
+  if (miss.length){
+    var err = $("editErr");
+    err.textContent = "필수 항목을 입력해 주세요 → " + miss.join(" · ");
+    err.classList.remove("hidden");
+    var first = $("f_" + REQUIRED.filter(function(r){
+      return String($("f_" + r.key).value || "").trim() === "";
+    })[0].key);
+    if (first) try { first.focus(); } catch(e){}
+    return;
+  }
+  $("editErr").classList.add("hidden");
+
   if (!o.center || !o.mgr){ alert("센터와 지점장명은 필수입니다."); return; }
   $("saveBtn").disabled = true; $("saveBtn").textContent = "저장 중…";
   var wasNew = editing.isNew;
