@@ -378,9 +378,9 @@ tr.today-row td{background:#fdf8ee}
       <span id="list-count" style="font-size:12px;color:#888;margin-left:auto"></span>
     </div>
     <style>
-      th[data-psort],th[data-msort]{cursor:pointer;user-select:none;white-space:nowrap}
-      th[data-psort]:hover,th[data-msort]:hover{color:#3C3489;background:#F6F5FF}
-      th[data-psort] .sort-arrow,th[data-msort] .sort-arrow{font-size:9px;color:#3C3489;margin-left:2px}
+      th[data-psort],th[data-msort],th[data-ssort]{cursor:pointer;user-select:none;white-space:nowrap}
+      th[data-psort]:hover,th[data-msort]:hover,th[data-ssort]:hover{color:#3C3489;background:#F6F5FF}
+      th[data-psort] .sort-arrow,th[data-msort] .sort-arrow,th[data-ssort] .sort-arrow{font-size:9px;color:#3C3489;margin-left:2px}
     </style>
     <div class="section" style="padding:0;overflow:hidden">
       <div class="table-wrap">
@@ -494,7 +494,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>No.</th><th data-msort="센터">센터</th><th data-msort="지점장명">지점장명</th><th data-msort="위촉코드">위촉코드</th><th data-msort="입사월">입사월</th><th data-msort="기수">기수</th><th data-msort="차월">차월</th>
+            <th>No.</th><th data-msort="센터">센터</th><th data-msort="지점장명">지점장명</th><th data-msort="상태">상태</th><th data-msort="위촉코드">위촉코드</th><th data-msort="입사월">입사월</th><th data-msort="기수">기수</th><th data-msort="차월">차월</th>
             <th>교육 이수 내용</th><th>경력사항</th><th>특이사항</th><th>관리</th>
           </tr></thead>
           <tbody id="mi-body"></tbody>
@@ -533,6 +533,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="stat"><div class="stat-k">수정P 합계</div><div class="stat-v"><span id="sPc">0</span></div></div>
       <div class="actions">
         <button class="btn btn-p" onclick="S.openEdit(null)">+ 건 추가</button>
+        <button class="btn btn-g" onclick="S.openTargets()">🎯 목표달성</button>
         <button class="btn btn-g" onclick="S.openUpload()">엑셀 업로드</button>
         <button class="btn btn-g" onclick="S.downloadXlsx()">엑셀 다운로드</button>
         <button class="btn btn-g hidden" id="asgBtn" onclick="S.openAssign()">담당자 관리</button>
@@ -543,7 +544,7 @@ tr.today-row td{background:#fdf8ee}
     <section class="tbl-wrap">
       <table>
         <thead><tr>
-          <th style="width:34px"><input type="checkbox" id="selAll" class="sel-ck" title="현재 화면 전체 선택" onclick="S.toggleAll(this.checked)"></th><th>No.</th><th>센터</th><th>지점장</th><th>파트너스</th><th>조직코드</th><th>구코드</th><th>경력</th><th>차월</th><th>상태</th><th>인보험여부</th><th>매출(금액)</th><th>수정P</th><th>계약자</th><th>피보험자</th><th>상품명</th><th>매출예정일</th><th>실매출일</th><th>비고</th><th>도움요청</th><th></th>
+          <th style="width:34px"><input type="checkbox" id="selAll" class="sel-ck" title="현재 화면 전체 선택" onclick="S.toggleAll(this.checked)"></th><th>No.</th><th data-ssort="center">센터</th><th data-ssort="mgr">지점장</th><th data-ssort="partner">파트너스</th><th data-ssort="code">조직코드</th><th data-ssort="oldcode">구코드</th><th data-ssort="career">경력</th><th data-ssort="month">차월</th><th data-ssort="status">상태</th><th data-ssort="active">인보험여부</th><th data-ssort="amt">매출(금액)</th><th data-ssort="pcorr">수정P</th><th data-ssort="holder">계약자</th><th data-ssort="insured">피보험자</th><th data-ssort="product">상품명</th><th data-ssort="planDate">매출예정일</th><th data-ssort="saleDate">실매출일</th><th>비고</th><th>도움요청</th><th></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -553,6 +554,34 @@ tr.today-row td{background:#fdf8ee}
       <span id="pageInfo"></span>
       <button class="btn btn-g btn-sm" id="nextBtn" onclick="S.setPage(1,true)">다음</button>
     </footer>
+  </div>
+</div>
+
+<!-- 지점장별 목표 달성 모달 -->
+<div id="targetModal" class="mo-bg hidden">
+  <div class="mo" style="max-width:960px">
+    <div class="mo-head"><h3>🎯 차월별 매출 달성 진척현황</h3><button class="mo-x" onclick="S.closeModal('targetModal')">✕</button></div>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;flex-wrap:wrap">
+      <span style="font-size:12px;color:#888">매출 진척 = 현재 매출 시트의 지점장별 실매출 합계(천원) · 정렬: 차월 → 센터 → 이름 · 폐쇄 지점장 제외</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-g btn-sm" onclick="S.targetsDown()">⬇ 엑셀 다운로드</button>
+      <button class="btn btn-g btn-sm hidden" id="tgUpBtn" onclick="document.getElementById('tgFile').click()">⬆ 목표 엑셀 업로드</button>
+      <input type="file" id="tgFile" accept=".xlsx,.xls" style="display:none" onchange="S.targetsUp(this)">
+    </div>
+    <div style="max-height:60vh;overflow:auto;border:1px solid #EEE;border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap">
+        <thead><tr style="background:#F2F1FB;position:sticky;top:0;z-index:1">
+          <th style="padding:7px 8px">차월</th><th style="padding:7px 8px">센터</th><th style="text-align:left;padding:7px 8px">지점장</th><th style="padding:7px 8px">코드</th>
+          <th style="text-align:right;padding:7px 8px">월 매출 목표(천원)</th><th style="text-align:right;padding:7px 8px">매출 목표(천원)</th>
+          <th style="text-align:right;padding:7px 8px">매출 진척(천원)</th><th style="text-align:right;padding:7px 8px">부족 금액(천원)</th>
+          <th style="text-align:right;padding:7px 8px">월 매출 달성률(%)</th><th style="text-align:left;padding:7px 8px">담당코치</th>
+        </tr></thead>
+        <tbody id="tgBody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
+      <button class="btn btn-g btn-sm" onclick="S.closeModal('targetModal')">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -883,6 +912,13 @@ tr.today-row td{background:#fdf8ee}
       </div>
       <div class="form-group"><label>입사월</label><input type="month" id="mi-f-입사월" onchange="MGR.calcMonth()"></div>
       <div class="form-group"><label>차월 (입사월 기준 자동)</label><input type="number" id="mi-f-차월" placeholder="입사월 입력 시 자동"></div>
+      <div class="form-group"><label>월 매출 목표 (천원)</label><input type="number" id="mi-f-월매출목표" placeholder="예: 804"></div>
+      <div class="form-group"><label>매출 목표 (천원)</label><input type="number" id="mi-f-매출목표" placeholder="예: 257"></div>
+      <div class="form-group"><label>담당코치</label><input type="text" id="mi-f-담당코치" placeholder="예: 배정은"></div>
+      <div class="form-group"><label>상태</label>
+        <select id="mi-f-상태"><option value="정상">정상</option><option value="폐쇄">폐쇄</option></select>
+      </div>
+      <div class="form-group"><label>폐쇄일 (폐쇄 시)</label><input type="date" id="mi-f-폐쇄일"></div>
       <div class="form-group full"><label>교육 이수 내용</label><textarea id="mi-f-교육이수" style="min-height:52px"></textarea></div>
       <div class="form-group full"><label>경력사항</label><textarea id="mi-f-경력사항" style="min-height:52px"></textarea></div>
       <div class="form-group full"><label>특이사항</label><textarea id="mi-f-특이사항" style="min-height:52px"></textarea></div>
@@ -1380,8 +1416,11 @@ function verifyCode(name, code){
     .then(r=>r.json())
     .then(list=>{
       if(!Array.isArray(list)){ window._mgrNameSet = null; return null; }
-      /* ★ 등록 사용자 명단 저장 (로그인 최종 단계에서 미등록자 차단에 사용) */
-      window._mgrNameSet = new Set(list.map(m=>String(m.지점장명||'').trim()).filter(Boolean));
+      /* ★ 등록 사용자 명단 저장 (로그인 최종 단계에서 미등록자 차단에 사용)
+         폐쇄(퇴사) 처리된 지점장은 명단에서 제외 → 로그인 불가 */
+      window._mgrNameSet = new Set(list
+        .filter(m=>String(m.상태||'').trim()!=='폐쇄')
+        .map(m=>String(m.지점장명||'').trim()).filter(Boolean));
       const rows = list.filter(m=>String(m.지점장명||'').trim() === name);
       if(!rows.length) return null;                       // 명단에 없음 → 아래 최종 단계에서 차단됨
 
@@ -1670,7 +1709,46 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.querySelectorAll('th[data-msort]').forEach(th=>{
     th.addEventListener('click', ()=>setMSort(th.getAttribute('data-msort')));
   });
+  document.querySelectorAll('th[data-ssort]').forEach(th=>{
+    th.addEventListener('click', ()=>setSSort(th.getAttribute('data-ssort')));
+  });
 });
+
+/* ── 폐쇄(퇴사) 지점장 판별: 입력 화면·통계에서 자동 제외 (과거 기록은 유지) ── */
+function closedMgrSet(){
+  const s = new Set();
+  try{
+    ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
+      if(String(m.상태||'').trim()==='폐쇄'){ const n=String(m.지점장명||'').trim(); if(n) s.add(n); }
+    });
+  }catch(e){}
+  return s;
+}
+function isClosedMgr(name){ return closedMgrSet().has(String(name||'').trim()); }
+
+/* ── 매출관리: 헤더 클릭 정렬 ── */
+let SSORT = { key:'', dir:1 };
+function setSSort(k){
+  if(SSORT.key === k){
+    if(SSORT.dir === 1) SSORT.dir = -1;
+    else { SSORT.key=''; SSORT.dir=1; }
+  }else{
+    SSORT.key = k; SSORT.dir = 1;
+  }
+  updateSSortArrows();
+  if(typeof S !== 'undefined' && S.render) S.render();
+}
+function updateSSortArrows(){
+  document.querySelectorAll('th[data-ssort]').forEach(th=>{
+    th.querySelector('.sort-arrow')?.remove();
+    if(th.getAttribute('data-ssort') === SSORT.key){
+      const s = document.createElement('span');
+      s.className = 'sort-arrow';
+      s.textContent = SSORT.dir === 1 ? '▲' : '▼';
+      th.appendChild(s);
+    }
+  });
+}
 
 /* ── 지점장 정보: 헤더 클릭 정렬 ── */
 let MSORT = { key:'', dir:1 };
@@ -2048,6 +2126,7 @@ function collectManagers(fc, ft){
   // ① 지점장정보 시트
   (typeof MGR!=='undefined' && MGR.getList ? MGR.getList() : []).forEach(m=>{
     if(!isMgrName(m.지점장명)) return;
+    if(String(m.상태||'').trim()==='폐쇄') return;   /* 폐쇄(퇴사) 지점장 제외 */
     if(fc && (m.센터||'') !== fc) return;
     set.add(String(m.지점장명).trim());
   });
@@ -2483,12 +2562,12 @@ var MGR = (function(){
       reload();   /* ★ 다른 관리자가 바꾼 최신 명단으로 조용히 갱신 (덮어쓰기 사고 예방) */
       return;
     }
-    document.getElementById('mi-body').innerHTML = '<tr><td colspan="11" class="empty">불러오는 중…</td></tr>';
+    document.getElementById('mi-body').innerHTML = '<tr><td colspan="12" class="empty">불러오는 중…</td></tr>';
     ensure()
       .then(()=>{ fillCenters(); render(); })
       .catch(e=>{
         document.getElementById('mi-body').innerHTML =
-          `<tr><td colspan="11" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
+          `<tr><td colspan="12" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
       });
   }
 
@@ -2545,7 +2624,7 @@ var MGR = (function(){
     }
     if(typeof updateMSortArrows === 'function') updateMSortArrows();
     const tb = document.getElementById('mi-body');
-    if(!f.length){ tb.innerHTML = '<tr><td colspan="11" class="empty">데이터가 없습니다</td></tr>'; return; }
+    if(!f.length){ tb.innerHTML = '<tr><td colspan="12" class="empty">데이터가 없습니다</td></tr>'; return; }
     tb.innerHTML = f.map((x,i)=>{
       const ri = list.indexOf(x);
       const cha = autoMonth(x.입사월) || x.차월 || '-';
@@ -2553,6 +2632,9 @@ var MGR = (function(){
         <td style="color:#aaa;text-align:center">${i+1}</td>
         <td style="font-size:11px">${x.센터||'-'}</td>
         <td style="font-weight:600">${x.지점장명||'-'}</td>
+        <td style="text-align:center">${String(x.상태||'').trim()==='폐쇄'
+          ? `<span class="badge" style="background:#FBE4E4;color:#B3251E" title="폐쇄일: ${x.폐쇄일||'미입력'}">폐쇄</span>`
+          : '<span class="badge" style="background:#E4F3EC;color:#0E6B52">정상</span>'}</td>
         <td>${x.위촉코드 ? `<span class="badge badge-admin" style="font-variant-numeric:tabular-nums">${x.위촉코드}</span>` : '<span style="color:#ddd">미등록</span>'}</td>
         <td>${x.입사월||'-'}</td>
         <td style="text-align:center">${x.기수 ? `<span class="badge badge-career">${x.기수}</span>` : '-'}</td>
@@ -2567,7 +2649,7 @@ var MGR = (function(){
 
   function openEdit(idx){
     editIdx = idx;
-    const x = idx>=0 ? list[idx] : {센터:'',지점장명:'',위촉코드:'',기수:'',입사월:'',차월:'',교육이수:'',경력사항:'',특이사항:''};
+    const x = idx>=0 ? list[idx] : {센터:'',지점장명:'',위촉코드:'',기수:'',입사월:'',차월:'',교육이수:'',경력사항:'',특이사항:'',월매출목표:'',매출목표:'',담당코치:'',상태:'정상',폐쇄일:''};
     document.getElementById('mi-title').textContent = idx>=0 ? `${x.지점장명} 정보 수정` : '지점장 추가';
     document.getElementById('mi-f-센터').value = x.센터||'';
     document.getElementById('mi-f-지점장명').value = x.지점장명||'';
@@ -2575,6 +2657,11 @@ var MGR = (function(){
     document.getElementById('mi-f-기수').value = x.기수||'';
     document.getElementById('mi-f-입사월').value = x.입사월||'';
     document.getElementById('mi-f-차월').value = x.차월||'';
+    document.getElementById('mi-f-월매출목표').value = x.월매출목표||'';
+    document.getElementById('mi-f-매출목표').value = x.매출목표||'';
+    document.getElementById('mi-f-담당코치').value = x.담당코치||'';
+    document.getElementById('mi-f-상태').value = (String(x.상태||'').trim()==='폐쇄') ? '폐쇄' : '정상';
+    document.getElementById('mi-f-폐쇄일').value = x.폐쇄일||'';
     document.getElementById('mi-f-교육이수').value = x.교육이수||'';
     document.getElementById('mi-f-경력사항').value = x.경력사항||'';
     document.getElementById('mi-f-특이사항').value = x.특이사항||'';
@@ -2596,12 +2683,17 @@ var MGR = (function(){
   function saveFromModal(){
     const g = id => document.getElementById(id).value.trim();
     if(!g('mi-f-센터') || !g('mi-f-지점장명')){ alert('센터와 지점장명은 필수입니다.'); return; }
-    const o = {
+    /* 기존 행의 값(다른 화면에서 넣은 항목 포함)을 보존한 뒤 폼 값으로 덮어씀 */
+    const o = Object.assign(editIdx>=0 ? Object.assign({}, list[editIdx]) : {}, {
       센터:g('mi-f-센터'), 지점장명:g('mi-f-지점장명'), 위촉코드:g('mi-f-위촉코드'),
-      기수:g('mi-f-기수'), 입사월:g('mi-f-입사월'),
-      차월:g('mi-f-차월'), 교육이수:g('mi-f-교육이수'),
-      경력사항:g('mi-f-경력사항'), 특이사항:g('mi-f-특이사항')
-    };
+      기수:g('mi-f-기수'), 입사월:g('mi-f-입사월'), 차월:g('mi-f-차월'),
+      월매출목표:g('mi-f-월매출목표'), 매출목표:g('mi-f-매출목표'), 담당코치:g('mi-f-담당코치'),
+      상태:g('mi-f-상태')||'정상', 폐쇄일:g('mi-f-폐쇄일'),
+      교육이수:g('mi-f-교육이수'), 경력사항:g('mi-f-경력사항'), 특이사항:g('mi-f-특이사항')
+    });
+    if(o.상태==='폐쇄' && !o.폐쇄일){
+      if(!confirm('상태가 폐쇄인데 폐쇄일이 비어 있습니다. 그대로 저장할까요?')) return;
+    }
     /* 위촉코드 중복 확인 */
     if(o.위촉코드){
       const dup = list.some((m,i)=> i!==editIdx && String(m.위촉코드||'').trim() === o.위촉코드);
@@ -2652,7 +2744,39 @@ var MGR = (function(){
                      .catch(e=>{ list = prev; loaded = prevLoaded; render(); throw e; });
   }
 
-  return { enter, render, openEdit, save:saveFromModal, remove, calcMonth, onGisu, applyPreset, getList, ensure, replaceAll };
+  /* 목표달성 엑셀 업로드 반영: 코드→이름 순으로 매칭, 없으면 신규 등록 */
+  function applyTargetRows(items){
+    const prev = list.slice();
+    let updated = 0, added = 0;
+    const codeOf = m => String(m.위촉코드||'').replace(/[^0-9]/g,'');
+    items.forEach(it=>{
+      let idx = -1;
+      if(it.위촉코드) idx = list.findIndex(m => codeOf(m) && codeOf(m) === it.위촉코드);
+      if(idx < 0)     idx = list.findIndex(m => String(m.지점장명||'').trim() === it.지점장명);
+      if(idx >= 0){
+        const m = Object.assign({}, list[idx]);
+        m.월매출목표 = it.월매출목표;
+        m.매출목표   = it.매출목표;
+        if(it.담당코치) m.담당코치 = it.담당코치;
+        if(it.위촉코드 && !codeOf(m)) m.위촉코드 = it.위촉코드;
+        if(it.센터 && !String(m.센터||'').trim()) m.센터 = it.센터;
+        if(it.차월 && !String(m.차월||'').trim() && !String(m.입사월||'').trim()) m.차월 = it.차월;
+        list[idx] = m; updated++;
+      }else{
+        list.push({
+          센터: it.센터||'', 지점장명: it.지점장명, 위촉코드: it.위촉코드||'',
+          기수:'', 입사월:'', 차월: it.차월||'',
+          월매출목표: it.월매출목표, 매출목표: it.매출목표, 담당코치: it.담당코치||'',
+          상태:'정상', 폐쇄일:'', 교육이수:'', 경력사항:'', 특이사항:''
+        });
+        added++;
+      }
+    });
+    return save(true).then(()=>{ fillCenters(); render(); return {updated, added}; })
+                     .catch(e=>{ list = prev; render(); throw e; });
+  }
+
+  return { enter, render, openEdit, save:saveFromModal, remove, calcMonth, onGisu, applyPreset, getList, ensure, replaceAll, applyTargetRows };
 })();
 /* ═══════════════════ 엑셀 다운로드 / 업로드 ═══════════════════ */
 var XL = (function(){
@@ -3647,7 +3771,49 @@ function filteredRows(){
     if (F.sFrom && (!r.saleDate || r.saleDate < F.sFrom)) return false;
     if (F.sTo && (!r.saleDate || r.saleDate > F.sTo)) return false;
     return true;
-  });
+  }).sort(salesCmp);
+}
+/* 동률일 때 순서 고정용 */
+function sTie(a,b){
+  var da = String(a.saleDate || ""), db = String(b.saleDate || "");
+  if (da !== db) return da < db ? -1 : 1;
+  return String(a.id).localeCompare(String(b.id));
+}
+function salesCmp(a,b){
+  /* 1순위: 항목명 클릭 정렬이 걸려 있으면 그 기준 */
+  if (typeof SSORT !== "undefined" && SSORT.key){
+    var k = SSORT.key, dir = SSORT.dir;
+    var NUM = { month:1, amt:1, pcorr:1, active:1 };
+    var va = a[k], vb = b[k];
+    va = (va === null || va === undefined) ? "" : String(va).trim();
+    vb = (vb === null || vb === undefined) ? "" : String(vb).trim();
+    if (va === "" && vb === "") return sTie(a,b);
+    if (va === "") return 1;                     /* 빈 값은 항상 맨 뒤 */
+    if (vb === "") return -1;
+    if (NUM[k]){
+      var na = parseFloat(va.replace(/[^0-9.-]/g,"")), nb = parseFloat(vb.replace(/[^0-9.-]/g,""));
+      if (!isNaN(na) && !isNaN(nb) && na !== nb) return (na - nb) * dir;
+    }
+    var c = va.localeCompare(vb, "ko");
+    return c ? c * dir : sTie(a,b);
+  }
+  /* 2순위: 지점장을 선택해서 보는 중이면 → 파트너스 차월 > 파트너스명 */
+  if (F.mgr.length){
+    var ma = a.month, mb = b.month;
+    var ea = (ma === null || ma === undefined || ma === "");
+    var eb = (mb === null || mb === undefined || mb === "");
+    if (ea !== eb) return ea ? 1 : -1;           /* 차월 없는 건은 뒤로 */
+    if (!ea && !eb && Number(ma) !== Number(mb)) return Number(ma) - Number(mb);
+  }
+  /* 3순위(기본): 파트너스 이름 가나다순 · 같은 사람은 매출일순으로 묶임 */
+  var pa = String(a.partner || "").trim(), pb = String(b.partner || "").trim();
+  if (pa !== pb){
+    if (!pa) return 1;
+    if (!pb) return -1;
+    var c2 = pa.localeCompare(pb, "ko");
+    if (c2) return c2;
+  }
+  return sTie(a,b);
 }
 function render(){
   if (!AUTH) return;
@@ -3842,7 +4008,7 @@ function openEdit(id){
   $("editTitle").textContent = isNew ? "매출 건 추가" : "매출 건 수정";
   fillPartnerList();
   fillSelect("f_center", CENTERS, true);
-  fillSelect("f_mgr", AUTH.role === "mgr" ? [AUTH.name] : uniq(MANAGERS.concat(rows.map(function(x){return x.mgr;}))), true);
+  fillSelect("f_mgr", AUTH.role === "mgr" ? [AUTH.name] : uniq(MANAGERS.concat(rows.map(function(x){return x.mgr;}))).filter(function(n){ return !isClosedMgr(n); }), true);
   $("f_center").disabled = AUTH.role === "mgr";
   $("f_mgr").disabled = AUTH.role === "mgr";
   SKEYS.forEach(function(k){
@@ -4211,7 +4377,7 @@ function openSettings(){
     .concat(MANAGERS)
     .concat(rows.map(function(x){ return x.mgr; }))
     .concat(pData().map(function(d){ return d.담당자; }))
-  ).filter(function(n){ return n && !adminNames().includes(n); });
+  ).filter(function(n){ return n && !adminNames().includes(n) && !isClosedMgr(n); });
 
   /* 관리자 명단 */
   var adms = adminNames();
@@ -4281,10 +4447,179 @@ function ensureRows(force){
   return call("list").then(function(j){ rows = j.rows || []; return rows; });
 }
 
+/* ═══ 지점장별 목표 달성 (v18: 이미지 형식 + 엑셀 다운·업로드) ═══ */
+var CENTER_ORDER = ["강남센터","서울센터","경인센터","충청센터","호남센터","부경센터","대경센터"];
+function mgrCha(m){
+  var v = (typeof autoMonth === "function" ? autoMonth(m.입사월) : null) || m.차월;
+  v = String(v === null || v === undefined ? "" : v).replace(/[^0-9]/g, "");
+  return v === "" ? null : Number(v);
+}
+function normCenter(c){
+  c = String(c || "").trim();
+  if (c && c.indexOf("센터") < 0) c += "센터";
+  return c;
+}
+function tgNum(v){
+  var s = String(v === null || v === undefined ? "" : v).replace(/[^0-9.-]/g, "");
+  return s === "" ? 0 : (Number(s) || 0);
+}
+/* 표시용 데이터 계산: 폐쇄 제외, 차월→센터→이름 정렬, 진척·부족·달성률 산출 */
+function targetRows(mlist){
+  var sums = {};
+  rows.forEach(function(r){
+    var k = String(r.mgr || "").trim();
+    if (!k) return;
+    sums[k] = (sums[k] || 0) + (Number(r.amt) || 0);
+  });
+  return (mlist || []).slice()
+    .filter(function(m){ return String(m.지점장명 || "").trim() && String(m.상태 || "").trim() !== "폐쇄"; })
+    .sort(function(a,b){
+      var ca = mgrCha(a), cb = mgrCha(b);
+      if ((ca === null) !== (cb === null)) return ca === null ? 1 : -1;
+      if (ca !== null && ca !== cb) return ca - cb;
+      var ia = CENTER_ORDER.indexOf(normCenter(a.센터)), ib = CENTER_ORDER.indexOf(normCenter(b.센터));
+      if (ia < 0) ia = 99; if (ib < 0) ib = 99;
+      if (ia !== ib) return ia - ib;
+      return String(a.지점장명 || "").localeCompare(String(b.지점장명 || ""), "ko");
+    })
+    .map(function(m){
+      var name = String(m.지점장명).trim();
+      var monthTgt = tgNum(m.월매출목표);
+      var tgt = tgNum(m.매출목표);
+      var ach = Math.round((sums[name] || 0) / 1000);         /* 원 → 천원 */
+      var lack = Math.max(monthTgt - ach, 0);
+      var pct = monthTgt > 0 ? Math.round(ach / monthTgt * 100) : null;
+      return { m: m, name: name, cha: mgrCha(m), center: String(m.센터 || "").replace(/센터$/, ""),
+               code: String(m.위촉코드 || ""), monthTgt: monthTgt, tgt: tgt, ach: ach, lack: lack,
+               pct: pct, coach: String(m.담당코치 || "") };
+    });
+}
+function openTargets(){
+  $("tgBody").innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:16px">불러오는 중…</td></tr>';
+  $("targetModal").classList.remove("hidden");
+  var up = $("tgUpBtn"); if (up) up.classList.toggle("hidden", !(AUTH && AUTH.role === "admin"));
+  Promise.all([ MGR.ensure(), ensureRows() ]).then(function(res){
+    renderTargets(res[0]);
+  }).catch(function(e){
+    $("tgBody").innerHTML = '<tr><td colspan="10" style="text-align:center;color:#B3251E;padding:16px">불러오기 실패: ' + esc(e.message || e) + '</td></tr>';
+  });
+}
+function renderTargets(mlist){
+  var list = targetRows(mlist);
+  if (!list.length){
+    $("tgBody").innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:16px">표시할 지점장이 없습니다. [⬆ 목표 엑셀 업로드]로 명단·목표를 등록해 주세요.</td></tr>';
+    return;
+  }
+  /* 차월·센터 셀 병합(rowspan) 계산 — 이미지와 동일한 형태 */
+  var chaSpan = {}, ctSpan = {};
+  list.forEach(function(r, i){
+    var ck = r.cha === null ? "-" : r.cha;
+    if (i === 0 || ck !== (list[i-1].cha === null ? "-" : list[i-1].cha)){ chaSpan[i] = 1; r._chaStart = i; }
+    else { chaSpan[r._chaStart = list[i-1]._chaStart] += 1; }
+    var sameCha = i > 0 && r._chaStart === list[i-1]._chaStart;
+    if (!sameCha || r.center !== list[i-1].center){ ctSpan[i] = 1; r._ctStart = i; }
+    else { ctSpan[r._ctStart = list[i-1]._ctStart] += 1; }
+  });
+  var totM = 0, totT = 0, totA = 0;
+  var html = list.map(function(r, i){
+    totM += r.monthTgt; totT += r.tgt; totA += r.ach;
+    var pctBg = r.pct === null ? "" : (r.pct >= 100 ? "background:#DCF1E7;" : (r.pct >= 50 ? "background:#FBD9DC;" : ""));
+    var topLine = (i in chaSpan && i > 0) ? "border-top:2px solid #BBB;" : "border-top:1px solid #F0F0F0;";
+    var tds = "";
+    if (i in chaSpan) tds += '<td rowspan="' + chaSpan[i] + '" style="' + topLine + 'text-align:center;font-weight:700;background:#FAFAFA">' + (r.cha === null ? "-" : r.cha) + '</td>';
+    if (i in ctSpan)  tds += '<td rowspan="' + ctSpan[i] + '" style="' + topLine + 'text-align:center">' + esc(r.center) + '</td>';
+    tds += '<td style="' + topLine + 'padding:6px 8px">' + esc(r.name) + '</td>' +
+      '<td style="' + topLine + 'text-align:center;font-variant-numeric:tabular-nums">' + esc(r.code) + '</td>' +
+      '<td style="' + topLine + 'text-align:right;padding-right:8px">' + fmt(r.monthTgt) + '</td>' +
+      '<td style="' + topLine + 'text-align:right;padding-right:8px">' + fmt(r.tgt) + '</td>' +
+      '<td style="' + topLine + 'text-align:right;padding-right:8px">' + (r.ach ? fmt(r.ach) : "-") + '</td>' +
+      '<td style="' + topLine + 'text-align:right;padding-right:8px;color:#B3251E;font-weight:600">' + fmt(r.lack) + '</td>' +
+      '<td style="' + topLine + 'text-align:right;padding-right:8px;font-weight:700;' + pctBg + '">' + (r.pct === null ? "-" : r.pct + "%") + '</td>' +
+      '<td style="' + topLine + 'padding:6px 8px">' + esc(r.coach) + '</td>';
+    return '<tr>' + tds + '</tr>';
+  }).join("");
+  var totPct = totM > 0 ? Math.round(totA / totM * 100) + "%" : "-";
+  html += '<tr style="font-weight:700;background:#EDECF8;border-top:2px solid #999">' +
+    '<td colspan="4" style="padding:8px;text-align:center">총</td>' +
+    '<td style="padding:8px;text-align:right">' + fmt(totM) + '</td>' +
+    '<td style="padding:8px;text-align:right">' + fmt(totT) + '</td>' +
+    '<td style="padding:8px;text-align:right">' + fmt(totA) + '</td><td></td>' +
+    '<td style="padding:8px;text-align:right">' + totPct + '</td><td></td></tr>';
+  $("tgBody").innerHTML = html;
+}
+/* 엑셀 다운로드: 현재 표 그대로 */
+function targetsDown(){
+  var list = targetRows(MGR.getList());
+  var aoa = [["차월","센터","지점장명","코드","월매출목표(천원)","매출목표(천원)","매출진척(천원)","부족금액(천원)","월매출달성률(%)","담당코치"]];
+  list.forEach(function(r){
+    aoa.push([r.cha === null ? "" : r.cha, r.center, r.name, r.code, r.monthTgt, r.tgt, r.ach, r.lack, r.pct === null ? "" : r.pct, r.coach]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "목표달성");
+  XLSX.writeFile(wb, "지점장_목표달성_" + new Date().toISOString().slice(0,10) + ".xlsx");
+}
+/* 엑셀 업로드: 지점장명/코드로 매칭해 목표·담당코치 갱신, 없는 지점장은 새로 등록 */
+function targetsUp(inp){
+  var file = inp.files && inp.files[0];
+  inp.value = "";
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var arr = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: "" });
+      if (!arr.length) throw new Error("빈 파일입니다.");
+      /* 헤더 위치 찾기 (헤더명에 키워드 포함 여부로 유연하게) */
+      var hRow = -1, col = {};
+      for (var i = 0; i < Math.min(arr.length, 10); i++){
+        var joined = arr[i].map(function(x){ return String(x); }).join("|");
+        if (joined.indexOf("지점장") >= 0 && joined.indexOf("목표") >= 0){ hRow = i; break; }
+      }
+      if (hRow < 0) throw new Error("헤더(지점장명·목표 열)를 찾지 못했습니다.");
+      arr[hRow].forEach(function(h, ci){
+        h = String(h).replace(/\s/g, "");
+        if (h.indexOf("차월") >= 0) col.cha = ci;
+        else if (h.indexOf("센터") >= 0) col.center = ci;
+        else if (h.indexOf("지점장") >= 0) col.name = ci;
+        else if (h.indexOf("코드") >= 0) col.code = ci;
+        else if (h.indexOf("월") >= 0 && h.indexOf("목표") >= 0 && h.indexOf("달성") < 0) col.mTgt = ci;
+        else if (h.indexOf("매출목표") >= 0) col.tgt = ci;
+        else if (h.indexOf("담당") >= 0 || h.indexOf("담임") >= 0 || h.indexOf("코치") >= 0) col.coach = ci;
+      });
+      if (col.name === undefined) throw new Error("지점장명 열을 찾지 못했습니다.");
+      var items = [];
+      for (var r = hRow + 1; r < arr.length; r++){
+        var row = arr[r];
+        var name = String(row[col.name] || "").trim();
+        if (!name || name === "총" || name === "합계") continue;
+        items.push({
+          지점장명: name,
+          센터: col.center !== undefined ? normCenter(row[col.center]) : "",
+          위촉코드: col.code !== undefined ? String(row[col.code] || "").replace(/[^0-9]/g, "") : "",
+          차월: col.cha !== undefined ? String(row[col.cha] || "").trim() : "",
+          월매출목표: col.mTgt !== undefined ? String(tgNum(row[col.mTgt])) : "",
+          매출목표: col.tgt !== undefined ? String(tgNum(row[col.tgt])) : "",
+          담당코치: col.coach !== undefined ? String(row[col.coach] || "").trim() : ""
+        });
+      }
+      if (!items.length) throw new Error("읽어들인 데이터가 없습니다.");
+      if (!confirm(items.length + "명의 목표를 반영합니다.\n(명단에 없는 지점장은 새로 등록됩니다)\n진행할까요?")) return;
+      MGR.applyTargetRows(items).then(function(res){
+        flash("목표 반영 완료 · 갱신 " + res.updated + "명 · 신규 " + res.added + "명");
+        renderTargets(MGR.getList());
+      }).catch(function(err){ alert("저장 실패: " + (err.message || err)); });
+    }catch(ex){ alert("업로드 실패: " + (ex.message || ex)); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 return {
   enter: enter, reset: reset, refresh: refresh,
   getRows: getRows, ensureRows: ensureRows, saveHelp: saveHelp,
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp, copyRow: copyRow,
+  openTargets: openTargets, targetsDown: targetsDown, targetsUp: targetsUp, render: render,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
   toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected, runDelete: runDelete,
