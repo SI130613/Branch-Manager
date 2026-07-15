@@ -115,14 +115,14 @@ tr.today-row td{background:#fdf8ee}
 .pf-btn:hover{border-color:#534AB7}
 .pf-btn.on{border-color:#534AB7;background:#EEEDFE;font-weight:600;color:#3C3489}
 .pf-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pf-pop{position:absolute;z-index:60;top:calc(100% + 4px);left:0;min-width:220px;width:max-content;max-width:300px;
+.pf-pop{position:absolute;z-index:60;top:calc(100% + 4px);left:0;min-width:170px;width:max-content;max-width:300px;
   background:#fff;border:1px solid #d8d8d4;border-radius:10px;box-shadow:0 10px 28px rgba(26,26,26,.16);padding:8px}
 .pf-search{width:100%;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px;margin:0 0 6px;font-family:inherit}
 .pf-list{max-height:230px;overflow:auto}
-.pf-item{display:flex;gap:8px;align-items:center;padding:5px 6px;font-size:13px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.pf-item{display:flex;gap:8px;align-items:center;justify-content:flex-start;padding:6px 8px;font-size:13px;border-radius:6px;cursor:pointer;white-space:nowrap}
 .pf-item:hover{background:#EEEDFE}
 .pf-item input[type=checkbox]{flex:0 0 auto;width:14px;height:14px;margin:0}
-.pf-item span{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis}
+.pf-item span{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .pf-empty{padding:8px;font-size:12px;color:#888}
 .pf-clear{width:100%;margin-top:6px;background:none;border:none;color:#534AB7;font-size:12px;font-weight:700;cursor:pointer;padding:4px;font-family:inherit}
 .st-bar{background:#fff;border:1px solid #d8d8d4;border-radius:10px;padding:10px 14px;margin-bottom:1rem;
@@ -293,7 +293,7 @@ tr.today-row td{background:#fdf8ee}
       </div>
       <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px" onclick="doLogin()">로그인</button>
       <div class="login-err" id="login-err"></div>
-      <div style="font-size:11px;color:#aaa;margin-top:8px;line-height:1.6">비밀번호를 잊으셨나요?<br>관리자(김세인)에게 초기화를 요청하세요</div>
+      <div style="font-size:11px;color:#aaa;margin-top:8px;line-height:1.6">비밀번호를 잊으셨나요?<br>관리자에게 초기화를 요청하세요</div>
     </div>
   </div>
 </div>
@@ -377,15 +377,21 @@ tr.today-row td{background:#fdf8ee}
       <button class="btn btn-sm btn-danger" id="p-del-btn" onclick="DEL.confirm()" disabled>🗑 선택 삭제</button>
       <span id="list-count" style="font-size:12px;color:#888;margin-left:auto"></span>
     </div>
+    <style>
+      th[data-psort],th[data-msort]{cursor:pointer;user-select:none;white-space:nowrap}
+      th[data-psort]:hover,th[data-msort]:hover{color:#3C3489;background:#F6F5FF}
+      th[data-psort] .sort-arrow,th[data-msort] .sort-arrow{font-size:9px;color:#3C3489;margin-left:2px}
+    </style>
     <div class="section" style="padding:0;overflow:hidden">
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th>담당자</th><th>센터</th><th>인입날짜</th><th>가코드</th><th>파트너스명</th><th>경력구분</th><th>직업</th><th>전화번호</th><th>재통화일정</th><th>응시일</th><th>구분</th><th>지역</th><th>합격여부</th><th class="prep-th">보장분석<br>동의</th><th class="prep-th">브릿지콜</th><th class="prep-th">가계약</th><th style="width:90px">상담이력</th><th>위촉여부</th><th>위촉코드</th><th>관리</th></tr>
+            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th data-psort="담당자">담당자</th><th data-psort="센터">센터</th><th data-psort="인입날짜">인입날짜</th><th data-psort="가코드">가코드</th><th data-psort="파트너스명">파트너스명</th><th data-psort="경력구분">경력구분</th><th data-psort="직업">직업</th><th data-psort="전화번호">전화번호</th><th data-psort="재통화일정">재통화일정</th><th data-psort="응시날짜">응시일</th><th data-psort="구분">구분</th><th data-psort="지역">지역</th><th data-psort="합격날짜">합격여부</th><th class="prep-th" data-psort="보장분석동의">보장분석<br>동의</th><th class="prep-th" data-psort="브릿지콜">브릿지콜</th><th class="prep-th" data-psort="가계약">가계약</th><th style="width:90px">상담이력</th><th data-psort="위촉여부">위촉여부</th><th data-psort="위촉코드">위촉코드</th><th>관리</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
       </div>
+      <div id="p-pager" style="display:none;justify-content:center;align-items:center;gap:12px;padding:12px;font-size:13px;color:#666;border-top:1px solid #EEE"></div>
     </div>
   </div>
 
@@ -488,7 +494,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>No.</th><th>센터</th><th>지점장명</th><th>위촉코드</th><th>입사월</th><th>기수</th><th>차월</th>
+            <th>No.</th><th data-msort="센터">센터</th><th data-msort="지점장명">지점장명</th><th data-msort="위촉코드">위촉코드</th><th data-msort="입사월">입사월</th><th data-msort="기수">기수</th><th data-msort="차월">차월</th>
             <th>교육 이수 내용</th><th>경력사항</th><th>특이사항</th><th>관리</th>
           </tr></thead>
           <tbody id="mi-body"></tbody>
@@ -839,7 +845,7 @@ tr.today-row td{background:#fdf8ee}
       <div id="xl-mode">
         <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;cursor:pointer">
           <input type="radio" name="xlMode" value="append" checked style="width:auto;margin:3px 0 0"> 
-          <span><b>추가</b> — 기존 데이터는 그대로 두고 뒤에 붙입니다 <span style="color:#0A5540;font-size:11px">(권장)</span></span>
+          <span><b>추가</b> — 기존 데이터는 그대로 두고 새 건만 붙입니다. 이미 등록된 건(중복)은 자동으로 건너뜁니다 <span style="color:#0A5540;font-size:11px">(권장)</span></span>
         </label>
         <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;cursor:pointer">
           <input type="radio" name="xlMode" value="replace" style="width:auto;margin:3px 0 0"> 
@@ -1316,6 +1322,19 @@ function doLogin(restoring){
     return login().then(j=>{
     AUTH.role = j.role || guess();
     if(j.admins && j.admins.length) ADMIN_LIST = j.admins;
+
+    /* ★★ 등록된 사용자만 로그인 허용 ★★
+       관리자 명단(설정에서 등록) 또는 지점장정보 명단에 이름이 있어야만 통과.
+       'admin' 같은 임의의 이름 + 공통 비밀번호로 들어오는 것을 차단합니다. */
+    const inMgrList = (window._mgrNameSet instanceof Set) && window._mgrNameSet.has(name);
+    if(!adminNames().includes(name) && !inMgrList){
+      errEl.textContent = (window._mgrNameSet instanceof Set)
+        ? '등록되지 않은 사용자입니다. 관리자에게 지점장 명단(지점장 정보 탭) 등록을 요청하세요.'
+        : '사용자 명단을 확인할 수 없어 로그인할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+      AUTH = null; isAdmin = false; currentUser = null;
+      return;
+    }
+
     errEl.textContent='';
     isAdmin = (AUTH.role === 'admin');
     currentUser = name;
@@ -1359,9 +1378,11 @@ function verifyCode(name, code){
   return fetch(GAS_URL + '?type=mgr&t=' + Date.now())
     .then(r=>r.json())
     .then(list=>{
-      if(!Array.isArray(list)) return null;
+      if(!Array.isArray(list)){ window._mgrNameSet = null; return null; }
+      /* ★ 등록 사용자 명단 저장 (로그인 최종 단계에서 미등록자 차단에 사용) */
+      window._mgrNameSet = new Set(list.map(m=>String(m.지점장명||'').trim()).filter(Boolean));
       const rows = list.filter(m=>String(m.지점장명||'').trim() === name);
-      if(!rows.length) return null;                       // 명단에 없는 사람 → 그대로 진행
+      if(!rows.length) return null;                       // 명단에 없음 → 아래 최종 단계에서 차단됨
 
       const withCode = rows.filter(m=>String(m.위촉코드||'').trim() !== '');
       if(!withCode.length){                               // 위촉코드 미등록
@@ -1375,7 +1396,8 @@ function verifyCode(name, code){
     })
     .catch(e=>{
       if(e && e.message && (e.message.indexOf('위촉코드') >= 0)) throw e;
-      return null;                                        // 명단을 못 읽으면 위촉코드 검증 건너뜀
+      window._mgrNameSet = null;                          // 명단을 못 읽음
+      return null;
     });
 }
 
@@ -1468,7 +1490,7 @@ function switchTab(t){
     if(btn) btn.classList.toggle('active',n===t);
   });
   if(t==='stats')renderStatsPage();
-  if(t==='sales')S.enter();
+  if(t==='sales'){ S.enter(); loadFromSheet(false, true); }  /* 파트너스 명단 최신화 → 건추가 이름 목록에 삭제된 사람 안 뜸 */
   if(t==='mgrinfo')MGR.enter();
   if(t==='add')syncCenterField();
 }
@@ -1529,8 +1551,10 @@ function recallStatus(s){if(!s)return null;const d=cleanDate(s);if(d===todayStr)
 
 function renderStatsBar(){
   const vis=getVisibleData();
-  const total=vis.length,passed=vis.filter(d=>d.합격날짜).length;
   const thisMonth=todayStr.substring(0,7);
+  /* ★ 당월 기준 카운트: 파트너스=인입날짜, 합격자=합격날짜가 이번 달인 건만 */
+  const total=vis.filter(d=>d.인입날짜&&cleanDate(d.인입날짜).substring(0,7)===thisMonth).length;
+  const passed=vis.filter(d=>d.합격날짜&&cleanDate(d.합격날짜).substring(0,7)===thisMonth).length;
   // 익월 계산
   const t=new Date(today.getFullYear(),today.getMonth()+1,1);
   const nextMonth=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;
@@ -1544,7 +1568,7 @@ function renderStatsBar(){
   const 익월후속=vis.filter(d=>d.구분==='후속'&&d.응시날짜&&d.응시날짜.substring(0,7)===nextMonth).length;
   const todayR=vis.filter(d=>cleanDate(d.재통화일정)===todayStr).length;
   document.getElementById('stats-bar').innerHTML=`
-    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">${isAdmin?'전체':'내'} 파트너스</div></div>
+    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">${isAdmin?'전체':'내'} 파트너스 · 당월(${thisMonthLabel}) 인입</div></div>
     <div class="stat">
       <div style="display:flex;justify-content:center;gap:10px;align-items:baseline">
         <span><div class="stat-num" style="font-size:17px">${당월선행}</div><div class="stat-label">선행</div></span>
@@ -1561,7 +1585,7 @@ function renderStatsBar(){
       </div>
       <div class="stat-label" style="margin-top:6px">익월(${nextMonthLabel}) 응시</div>
     </div>
-    <div class="stat"><div class="stat-num">${passed}</div><div class="stat-label">합격자</div></div>
+    <div class="stat"><div class="stat-num">${passed}</div><div class="stat-label">당월(${thisMonthLabel}) 합격자</div></div>
     <div class="stat" style="cursor:pointer" onclick="showRecallPopup(true)">
       <div class="stat-num" style="color:${todayR>0?'#BA7517':'#534AB7'}">${todayR}</div>
       <div class="stat-label">오늘 재통화 📞</div>
@@ -1571,6 +1595,104 @@ function renderStatsBar(){
 /* 전체목록에서 현재 필터가 적용된 데이터 (엑셀 다운로드에서 재사용) */
 let lastFiltered = [];
 function getFilteredPartners(){ return lastFiltered; }
+
+/* ── 전체목록: 헤더 클릭 정렬 + 페이지(50개씩) ── */
+let PSORT = { key:'', dir:1 };   // dir 1=오름차순, -1=내림차순
+let PPAGE = 1;                   // 현재 페이지
+let PSIZE = 50;                  // 페이지당 표시 건수
+let _pFilterSig = '';            // 필터가 바뀌면 1페이지로 되돌리기 위한 서명
+
+function setPSort(k){
+  if(PSORT.key === k){
+    if(PSORT.dir === 1) PSORT.dir = -1;
+    else { PSORT.key=''; PSORT.dir=1; }   // 세 번째 클릭 → 정렬 해제(원래 순서)
+  }else{
+    PSORT.key = k; PSORT.dir = 1;
+  }
+  PPAGE = 1;
+  renderTable();
+}
+function setPPage(p){ PPAGE = p; renderTable(); const tw=document.querySelector('.table-wrap'); if(tw) tw.scrollTop = 0; }
+function setPSize(v){ PSIZE = (v==='all') ? 'all' : Number(v); PPAGE = 1; renderTable(); }
+
+function applyPSort(arr){
+  if(!PSORT.key) return arr;
+  const k = PSORT.key, dir = PSORT.dir;
+  return arr.slice().sort((a,b)=>{
+    let va = a[k], vb = b[k];
+    va = (va===null||va===undefined) ? '' : String(va).trim();
+    vb = (vb===null||vb===undefined) ? '' : String(vb).trim();
+    if(va==='' && vb==='') return 0;
+    if(va==='') return 1;           // 빈 값은 항상 맨 뒤
+    if(vb==='') return -1;
+    const numRe = /^-?[\d.,]+$/;
+    if(numRe.test(va) && numRe.test(vb)){
+      return (parseFloat(va.replace(/,/g,'')) - parseFloat(vb.replace(/,/g,''))) * dir;
+    }
+    return va.localeCompare(vb,'ko') * dir;
+  });
+}
+function updateSortArrows(){
+  document.querySelectorAll('th[data-psort]').forEach(th=>{
+    th.querySelector('.sort-arrow')?.remove();
+    if(th.getAttribute('data-psort') === PSORT.key){
+      const s = document.createElement('span');
+      s.className = 'sort-arrow';
+      s.textContent = PSORT.dir === 1 ? '▲' : '▼';
+      th.appendChild(s);
+    }
+  });
+}
+function renderPPager(total){
+  const el = document.getElementById('p-pager');
+  if(!el) return;
+  if(!total){ el.style.display='none'; return; }
+  const size = (PSIZE==='all') ? total : PSIZE;
+  const pages = Math.max(1, Math.ceil(total/size));
+  if(PPAGE > pages) PPAGE = pages;
+  el.style.display = 'flex';
+  el.innerHTML =
+    `<button class="btn btn-sm" ${PPAGE<=1?'disabled':''} onclick="setPPage(${PPAGE-1})">◀ 이전</button>`+
+    `<span><b>${PPAGE}</b> / ${pages} 페이지 · 총 ${total.toLocaleString()}건</span>`+
+    `<button class="btn btn-sm" ${PPAGE>=pages?'disabled':''} onclick="setPPage(${PPAGE+1})">다음 ▶</button>`+
+    `<select onchange="setPSize(this.value)" style="padding:4px 8px;border:1px solid #DDD;border-radius:6px;font-size:12px">`+
+      `<option value="50" ${PSIZE===50?'selected':''}>50개씩</option>`+
+      `<option value="100" ${PSIZE===100?'selected':''}>100개씩</option>`+
+      `<option value="200" ${PSIZE===200?'selected':''}>200개씩</option>`+
+      `<option value="all" ${PSIZE==='all'?'selected':''}>전체 보기</option>`+
+    `</select>`;
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('th[data-psort]').forEach(th=>{
+    th.addEventListener('click', ()=>setPSort(th.getAttribute('data-psort')));
+  });
+  document.querySelectorAll('th[data-msort]').forEach(th=>{
+    th.addEventListener('click', ()=>setMSort(th.getAttribute('data-msort')));
+  });
+});
+
+/* ── 지점장 정보: 헤더 클릭 정렬 ── */
+let MSORT = { key:'', dir:1 };
+function setMSort(k){
+  if(MSORT.key === k){
+    if(MSORT.dir === 1) MSORT.dir = -1;
+    else { MSORT.key=''; MSORT.dir=1; }
+  }else{
+    MSORT.key = k; MSORT.dir = 1;
+  }
+  if(typeof MGR !== 'undefined') MGR.render();
+}
+function updateMSortArrows(){
+  document.querySelectorAll('th[data-msort]').forEach(th=>{
+    th.querySelector('.sort-arrow')?.remove();
+    if(th.getAttribute('data-msort') === MSORT.key){
+      const s = document.createElement('span');
+      s.className = 'sort-arrow';
+      s.textContent = MSORT.dir === 1 ? '▲' : '▼';
+      th.appendChild(s);
+    }
+  });
+}
 
 function renderTable(){
   syncListFilters();
@@ -1608,12 +1730,27 @@ function renderTable(){
     }
     return true;
   });
+  /* 필터가 바뀌면 1페이지로 */
+  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fcs.join(','),fms.join(',')].join('|');
+  if(sig !== _pFilterSig){ _pFilterSig = sig; PPAGE = 1; }
+
+  /* 헤더 클릭 정렬 적용 */
+  const sorted = lastFiltered = applyPSort(filtered);
+  updateSortArrows();
+
   const tbody=document.getElementById('table-body');
-  DEL.sync(filtered);
+  DEL.sync(sorted);
   const cntEl=document.getElementById('list-count');
-  if(cntEl) cntEl.textContent = `총 ${filtered.length.toLocaleString()}건` + (filtered.length!==vis.length ? ` (전체 ${vis.length.toLocaleString()}건 중)` : '');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="22" class="empty">데이터가 없습니다</td></tr>`;return;}
-  tbody.innerHTML=filtered.map((d,fi)=>{
+  if(cntEl) cntEl.textContent = `총 ${sorted.length.toLocaleString()}건` + (sorted.length!==vis.length ? ` (전체 ${vis.length.toLocaleString()}건 중)` : '');
+  renderPPager(sorted.length);
+  if(!sorted.length){tbody.innerHTML=`<tr><td colspan="22" class="empty">데이터가 없습니다</td></tr>`;return;}
+
+  /* 페이지 자르기 (기본 50개씩) */
+  const pSize = (PSIZE==='all') ? sorted.length : PSIZE;
+  const pStart = (PPAGE-1) * pSize;
+  const pageRows = sorted.slice(pStart, pStart + pSize);
+
+  tbody.innerHTML=pageRows.map((d,fi)=>{
     const ri=data.indexOf(d),rs=recallStatus(d.재통화일정);
     const rowCls=rs==='today'?' class="today-row"':'';
     const 경력B=d.경력구분==='신인'?'badge-new':(d.경력구분==='재등록'?'badge-exp':'badge-career');
@@ -1634,7 +1771,7 @@ function renderTable(){
       <td style="text-align:center" onclick="event.stopPropagation()">${
         canEdit ? `<input type="checkbox" class="p-sel" ${isSel?'checked':''} onchange="DEL.pick('${d.id}',this.checked)">` : ''
       }</td>
-      <td style="color:#aaa;text-align:center">${fi+1}</td>
+      <td style="color:#aaa;text-align:center">${pStart+fi+1}</td>
       <td><span class="badge ${ADMINS.includes(d.담당자)?'badge-admin':'badge-new'}">${d.담당자||'-'}</span></td>
       <td style="font-size:11px">${d.센터||'-'}</td>
       <td>${cleanDate(d.인입날짜)||'-'}</td><td style="font-size:11px">${d.가코드||'-'}</td>
@@ -2361,6 +2498,24 @@ var MGR = (function(){
       if(q && !`${x.지점장명||''} ${x.센터||''} ${x.위촉코드||''} ${x.기수||''}`.toLowerCase().includes(q)) return false;
       return true;
     });
+    /* 헤더 클릭 정렬 */
+    if(typeof MSORT !== 'undefined' && MSORT.key){
+      const k = MSORT.key, dir = MSORT.dir;
+      const NUMK = ['차월','기수','위촉코드'];
+      const val = x => k==='차월' ? String(autoMonth(x.입사월)||x.차월||'') : String(x[k]==null?'':x[k]).trim();
+      f.sort((a,b)=>{
+        const va = val(a), vb = val(b);
+        if(va==='' && vb==='') return 0;
+        if(va==='') return 1;
+        if(vb==='') return -1;
+        if(NUMK.includes(k)){
+          const na = parseFloat(va.replace(/[^0-9.-]/g,'')), nb = parseFloat(vb.replace(/[^0-9.-]/g,''));
+          if(!isNaN(na) && !isNaN(nb)) return (na-nb)*dir;
+        }
+        return va.localeCompare(vb,'ko')*dir;
+      });
+    }
+    if(typeof updateMSortArrows === 'function') updateMSortArrows();
     const tb = document.getElementById('mi-body');
     if(!f.length){ tb.innerHTML = '<tr><td colspan="11" class="empty">데이터가 없습니다</td></tr>'; return; }
     tb.innerHTML = f.map((x,i)=>{
@@ -2400,7 +2555,8 @@ var MGR = (function(){
   }
 
   function save(silent){
-    const body = JSON.stringify({action:'save_mgr', data:list});
+    /* ★ v 누락 버그 수정: 버전을 안 보내면 서버가 '오래된 화면'으로 거부함 */
+    const body = JSON.stringify({action:'save_mgr', v: APP_VERSION, data:list});
     return fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body})
       .then(r=>r.text()).then(t=>{
         let j; try{ j=JSON.parse(t); }catch(e){ throw new Error('저장 응답 오류'); }
@@ -2426,15 +2582,20 @@ var MGR = (function(){
         if(!confirm('위촉코드가 9자리 숫자가 아닙니다: ' + o.위촉코드 + '\n그대로 저장할까요?')) return;
       }
     }
+    /* ★ 저장 실패 시 화면 목록을 원래대로 되돌림 (실패했는데 저장된 것처럼 보이는 문제 방지) */
+    const prev = list.slice();
     if(editIdx>=0) list[editIdx] = o; else list.push(o);
-    save().then(()=>{ closeModal('mi-modal'); fillCenters(); render(); });
+    save().then(()=>{ closeModal('mi-modal'); fillCenters(); render(); })
+          .catch(()=>{ list = prev; render(); });
   }
 
   function remove(){
     if(editIdx<0) return;
     if(!confirm(`"${list[editIdx].지점장명}" 정보를 삭제할까요?`)) return;
+    const prev = list.slice();
     list.splice(editIdx,1);
-    save().then(()=>{ closeModal('mi-modal'); fillCenters(); render(); });
+    save().then(()=>{ closeModal('mi-modal'); fillCenters(); render(); })
+          .catch(()=>{ list = prev; render(); });
   }
 
   /* 통계에서 지점장 명단이 필요할 때 (탭에 안 들어가도 불러옴) */
@@ -2456,9 +2617,11 @@ var MGR = (function(){
 
   /* 엑셀 업로드: 명단 전체 교체 */
   function replaceAll(rows){
+    const prev = list, prevLoaded = loaded;
     list = rows;
     loaded = true;
-    return save(true).then(()=>{ fillCenters(); render(); });
+    return save(true).then(()=>{ fillCenters(); render(); })
+                     .catch(e=>{ list = prev; loaded = prevLoaded; render(); throw e; });
   }
 
   return { enter, render, openEdit, save:saveFromModal, remove, calcMonth, onGisu, applyPreset, getList, ensure, replaceAll };
@@ -2868,7 +3031,19 @@ var XL = (function(){
     job.then(j=>{
       if(!j) return;
       closeModal('xl-modal');
-      showToast(`${parsed.length}건이 반영되었습니다`,'ok');
+      if(m === 'append' && typeof j.added === 'number'){
+        /* v4 서버: 중복 자동 건너뛰기 결과 표시 */
+        const added = j.added, skip = j.skipped || 0;
+        if(added === 0 && skip > 0){
+          showToast(`추가된 건 없음 · 전부 이미 등록된 데이터입니다 (중복 ${skip}건 건너뜀)`,'ok');
+        }else if(skip > 0){
+          showToast(`신규 ${added}건 추가 · 중복 ${skip}건 건너뜀`,'ok');
+        }else{
+          showToast(`${added}건이 반영되었습니다`,'ok');
+        }
+      }else{
+        showToast(`${parsed.length}건이 반영되었습니다`,'ok');
+      }
       return loadFromSheet(false);          // 시트에서 다시 읽어와 화면 갱신
     }).finally(()=>{ btn.disabled = false; btn.textContent = '반영하기'; });
   }
