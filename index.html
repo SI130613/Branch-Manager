@@ -587,6 +587,7 @@ tr.today-row td{background:#fdf8ee}
     <div class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다.</div>
     <div class="mo-foot">
       <button class="btn btn-d hidden" id="delBtn" onclick="S.doDelete()">삭제</button>
+      <button class="btn btn-g hidden" id="copyBtn" onclick="S.copyRow()" title="이 건의 내용을 그대로 복사해 새 건으로 추가합니다">📋 복사해서 추가</button>
       <div class="mo-sp"></div>
       <button class="btn btn-g" onclick="S.closeModal('editModal')">취소</button>
       <button class="btn btn-p" id="saveBtn" onclick="S.doSaveRow()">저장</button>
@@ -3776,7 +3777,7 @@ function deleteSelected(){
 }
 
 function runDelete(){
-  var ids = Object.keys(SEL);
+  var ids = Object.keys(SEL).filter(function(x){ return String(x).trim() !== ""; });   // ★ 빈 id 제외
   if (!ids.length) return;
   var ok = document.getElementById("del-ok");
   ok.disabled = true;
@@ -3831,6 +3832,11 @@ function openEdit(id){
   } else {
     r = rows.filter(function(x){ return String(x.id) === String(id); })[0];
     if (!r) return;
+    /* ★ id 없는 행은 수정 금지: 엉뚱한 행이 열리거나 다른 행을 덮어쓸 수 있음 */
+    if (!String(r.id || "").trim()){
+      alert("이 행은 고유번호(id)가 없어 안전하게 수정할 수 없습니다.\n(엑셀로 올린 데이터에 id가 비어있는 경우입니다)\n\n관리자에게 알려주세요 — 매출 시트의 id 정비가 필요합니다.");
+      return;
+    }
   }
   editing = { id: r.id, isNew: isNew, orig: r };
   $("editTitle").textContent = isNew ? "매출 건 추가" : "매출 건 수정";
@@ -3856,8 +3862,24 @@ function openEdit(id){
   });
 
   $("delBtn").classList.toggle("hidden", isNew);
+  var cb2 = $("copyBtn"); if (cb2) cb2.classList.toggle("hidden", isNew);   // 기존 건에서만 복사 가능
   $("saveBtn").textContent = isNew ? "추가" : "저장";
   $("editModal").classList.remove("hidden");
+}
+
+/* ★ 복사해서 추가: 현재 창의 입력 내용을 그대로 새 건으로 전환 (수정 가능) */
+function copyRow(){
+  if (!editing || editing.isNew) return;
+  var snap = collectRow();                       // 지금 화면에 보이는 값 그대로
+  var copied = {};
+  Object.keys(snap).forEach(function(k){ copied[k] = snap[k]; });
+  copied.id = "";
+  editing = { id: "", isNew: true, orig: copied, copiedFrom: copied };
+  $("editTitle").textContent = "매출 건 추가 (복사본)";
+  $("delBtn").classList.add("hidden");
+  var cb3 = $("copyBtn"); if (cb3) cb3.classList.add("hidden");
+  $("saveBtn").textContent = "추가";
+  flash("내용이 복사되었습니다. 필요한 부분을 수정한 뒤 [추가]를 누르세요");
 }
 /* 관리대장(전체목록)의 파트너스 명단을 매출 입력창에 제공 */
 function partnerBook(){
@@ -3949,6 +3971,17 @@ function doSaveRow(){
   $("editErr").classList.add("hidden");
 
   if (!o.center || !o.mgr){ alert("센터와 지점장명은 필수입니다."); return; }
+
+  /* ★ 복사본을 하나도 안 고치고 저장하는 경우 → 확인 */
+  if (editing.copiedFrom){
+    var sameAll = SKEYS.every(function(k){
+      var a = (o[k] === null || o[k] === undefined) ? "" : String(o[k]);
+      var b = (editing.copiedFrom[k] === null || editing.copiedFrom[k] === undefined) ? "" : String(editing.copiedFrom[k]);
+      return a === b;
+    });
+    if (sameAll && !confirm("변경된 내용이 없습니다. 저장하시겠습니까?\n(같은 내용의 매출 건이 하나 더 등록됩니다)")) return;
+  }
+
   $("saveBtn").disabled = true; $("saveBtn").textContent = "저장 중…";
   var wasNew = editing.isNew;
   var savedCode = String(o.code || "").trim();
@@ -3996,7 +4029,7 @@ function saveHelp(o){
     var i = rows.findIndex(function(x){ return String(x.id) === String(o.id); });
     if (i >= 0) rows[i] = o;
     render();
-  });
+  }).catch(function(e){ alert("저장 실패: " + (e.message || e)); throw e; });   // ★ 실패를 숨기지 않음
 }
 
 function toggleHelp(id, checked){
@@ -4251,7 +4284,7 @@ function ensureRows(force){
 return {
   enter: enter, reset: reset, refresh: refresh,
   getRows: getRows, ensureRows: ensureRows, saveHelp: saveHelp,
-  openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp,
+  openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp, copyRow: copyRow,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
   toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected, runDelete: runDelete,
