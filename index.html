@@ -839,7 +839,7 @@ tr.today-row td{background:#fdf8ee}
       <div id="xl-mode">
         <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;cursor:pointer">
           <input type="radio" name="xlMode" value="append" checked style="width:auto;margin:3px 0 0"> 
-          <span><b>추가</b> — 기존 데이터는 그대로 두고 뒤에 붙입니다 <span style="color:#0A5540;font-size:11px">(권장)</span></span>
+          <span><b>추가</b> — 기존 데이터는 그대로 두고 새 건만 붙입니다. 이미 등록된 건(중복)은 자동으로 건너뜁니다 <span style="color:#0A5540;font-size:11px">(권장)</span></span>
         </label>
         <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;cursor:pointer">
           <input type="radio" name="xlMode" value="replace" style="width:auto;margin:3px 0 0"> 
@@ -2868,7 +2868,19 @@ var XL = (function(){
     job.then(j=>{
       if(!j) return;
       closeModal('xl-modal');
-      showToast(`${parsed.length}건이 반영되었습니다`,'ok');
+      if(m === 'append' && typeof j.added === 'number'){
+        /* v4 서버: 중복 자동 건너뛰기 결과 표시 */
+        const added = j.added, skip = j.skipped || 0;
+        if(added === 0 && skip > 0){
+          showToast(`추가된 건 없음 · 전부 이미 등록된 데이터입니다 (중복 ${skip}건 건너뜀)`,'ok');
+        }else if(skip > 0){
+          showToast(`신규 ${added}건 추가 · 중복 ${skip}건 건너뜀`,'ok');
+        }else{
+          showToast(`${added}건이 반영되었습니다`,'ok');
+        }
+      }else{
+        showToast(`${parsed.length}건이 반영되었습니다`,'ok');
+      }
       return loadFromSheet(false);          // 시트에서 다시 읽어와 화면 갱신
     }).finally(()=>{ btn.disabled = false; btn.textContent = '반영하기'; });
   }
