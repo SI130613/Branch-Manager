@@ -588,7 +588,13 @@ tr.today-row td{background:#fdf8ee}
 <!-- 매출 편집 모달 -->
 <div id="editModal" class="mo-bg hidden">
   <div class="mo">
-    <div class="mo-head"><h3 id="editTitle">매출 건 수정</h3><button class="mo-x" onclick="S.closeModal('editModal')">✕</button></div>
+    <div class="mo-head"><h3 id="editTitle">매출 건 수정</h3>
+      <button class="btn btn-g btn-sm" id="noteOnlyBtn" onclick="S.toggleNoteOnly()" title="계약자명과 매출특이사항만으로 저장합니다 (파트너스명·매출예정일 등 생략 가능)">📝 특이사항만 입력</button>
+      <button class="mo-x" onclick="S.closeModal('editModal')">✕</button></div>
+    <div id="noteOnlyHint" class="hidden" style="background:#F3F1FF;border:1px solid #D8D3F5;border-radius:8px;padding:8px 10px;font-size:12px;color:#3C3489;margin:0 0 8px">
+      📝 특이사항만 입력 모드입니다 — <b>계약자명 + 매출특이사항</b>만 채우면 저장돼요.<br>
+      💰 이 건에 <b>실제 매출 내용을 입력</b>하려면 위의 모드 버튼을 눌러 해제한 뒤, 파트너스명·매출예정일 등을 채우고 저장하세요. 같은 건이 매출건으로 전환됩니다.
+    </div>
     <div class="mo-grid">
       <div class="fld"><label>센터</label><select id="f_center"></select></div>
       <div class="fld"><label>지점장명</label><select id="f_mgr"></select></div>
@@ -610,7 +616,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="fld need" id="fld_planDate"><label><span class="req">*</span>매출예정일</label><input type="date" id="f_planDate"></div>
       <div class="fld"><label>실매출일</label><input type="date" id="f_saleDate"></div>
       <div class="fld fld-w"><label>설계특이사항 (병력, 플랜 등)</label><input id="f_proposal"></div>
-      <div class="fld fld-w"><label>매출특이사항</label><input id="f_note"></div>
+      <div class="fld fld-w" id="fld_note"><label>매출특이사항</label><input id="f_note"></div>
     </div>
     <div id="editErr" class="req-err hidden"></div>
     <div class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다.</div>
@@ -4005,6 +4011,9 @@ function openEdit(id){
     }
   }
   editing = { id: r.id, isNew: isNew, orig: r };
+  /* 특이사항만 입력 모드: 새 건은 기본 꺼짐, 기존 건 중 파트너스명·매출예정일 없이 저장된 건은 자동 켜짐 */
+  editing.noteOnly = !isNew && !String(r.partner||"").trim() && !String(r.planDate||"").trim();
+  applyNoteOnlyUI();
   $("editTitle").textContent = isNew ? "매출 건 추가" : "매출 건 수정";
   fillPartnerList();
   fillSelect("f_center", CENTERS, true);
@@ -4033,6 +4042,32 @@ function openEdit(id){
   $("editModal").classList.remove("hidden");
 }
 
+/* ★ 특이사항만 입력 모드: 계약자명 + 매출특이사항만으로 저장 가능 */
+function toggleNoteOnly(){
+  if (!editing) return;
+  editing.noteOnly = !editing.noteOnly;
+  applyNoteOnlyUI();
+}
+function applyNoteOnlyUI(){
+  var on = !!(editing && editing.noteOnly);
+  var btn = $("noteOnlyBtn");
+  if (btn){
+    btn.style.background = on ? "#3C3489" : "";
+    btn.style.color = on ? "#fff" : "";
+    btn.textContent = on ? "📝 특이사항 모드 중 · 매출건으로 입력하려면 클릭" : "📝 특이사항만 입력";
+  }
+  var hint = $("noteOnlyHint");
+  if (hint) hint.classList.toggle("hidden", !on);
+  /* 강조 표시: 특이사항 모드에서는 계약자·특이사항이 필수 */
+  var fh = $("fld_holder"), fn = $("fld_note");
+  if (fh) fh.style.outline = on ? "2px solid #B9B3F0" : "";
+  if (fn) fn.style.outline = on ? "2px solid #B9B3F0" : "";
+  /* 기존 필수표시(miss) 초기화 */
+  REQUIRED.forEach(function(r){ var el = $(r.fld); if (el) el.classList.remove("miss"); });
+  if (fn) fn.classList.remove("miss");
+  var err = $("editErr"); if (err) err.classList.add("hidden");
+}
+
 /* ★ 복사해서 추가: 현재 창의 입력 내용을 그대로 새 건으로 전환 (수정 가능) */
 function copyRow(){
   if (!editing || editing.isNew) return;
@@ -4040,7 +4075,9 @@ function copyRow(){
   var copied = {};
   Object.keys(snap).forEach(function(k){ copied[k] = snap[k]; });
   copied.id = "";
-  editing = { id: "", isNew: true, orig: copied, copiedFrom: copied };
+  var keepNoteOnly = !!editing.noteOnly;
+  editing = { id: "", isNew: true, orig: copied, copiedFrom: copied, noteOnly: keepNoteOnly };
+  applyNoteOnlyUI();
   $("editTitle").textContent = "매출 건 추가 (복사본)";
   $("delBtn").classList.add("hidden");
   var cb3 = $("copyBtn"); if (cb3) cb3.classList.add("hidden");
@@ -4115,6 +4152,27 @@ var REQUIRED = [
 function doSaveRow(){
   var o = collectRow();
 
+  /* ★ 특이사항만 입력 모드: 계약자명 + 매출특이사항만 필수 */
+  if (editing && editing.noteOnly){
+    var nMiss = [];
+    var hEmpty = String(o.holder || "").trim() === "";
+    var nEmpty = String(o.note || "").trim() === "";
+    var fh = $("fld_holder"), fn = $("fld_note");
+    if (fh) fh.classList.toggle("miss", hEmpty);
+    if (fn) fn.classList.toggle("miss", nEmpty);
+    if (hEmpty) nMiss.push("계약자명");
+    if (nEmpty) nMiss.push("매출특이사항");
+    if (nMiss.length){
+      var nErr = $("editErr");
+      nErr.textContent = "특이사항만 입력 모드 → " + nMiss.join(" · ") + " 을(를) 입력해 주세요";
+      nErr.classList.remove("hidden");
+      return;
+    }
+    $("editErr").classList.add("hidden");
+    if (!o.center || !o.mgr){ alert("센터와 지점장명은 필수입니다."); return; }
+    return saveRowGo(o);
+  }
+
   /* 필수 항목 검사 */
   var miss = [];
   REQUIRED.forEach(function(r){
@@ -4138,6 +4196,11 @@ function doSaveRow(){
 
   if (!o.center || !o.mgr){ alert("센터와 지점장명은 필수입니다."); return; }
 
+  return saveRowGo(o);
+}
+
+/* 저장 실행 (일반 · 특이사항 모드 공용) */
+function saveRowGo(o){
   /* ★ 복사본을 하나도 안 고치고 저장하는 경우 → 확인 */
   if (editing.copiedFrom){
     var sameAll = SKEYS.every(function(k){
@@ -4619,7 +4682,7 @@ return {
   enter: enter, reset: reset, refresh: refresh,
   getRows: getRows, ensureRows: ensureRows, saveHelp: saveHelp,
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp, copyRow: copyRow,
-  openTargets: openTargets, targetsDown: targetsDown, targetsUp: targetsUp, render: render,
+  openTargets: openTargets, targetsDown: targetsDown, targetsUp: targetsUp, render: render, toggleNoteOnly: toggleNoteOnly,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
   toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected, runDelete: runDelete,
