@@ -1802,6 +1802,12 @@ function renderTable(){
 }
 
 function showRecallPopup(force=false){
+  /* ★ 전체목록 화면에서만 표시 (매출관리 등 다른 탭에서는 뜨지 않음)
+     force=true 는 전체목록의 '오늘 재통화' 카드를 직접 눌렀을 때만 사용됨 */
+  if(!force){
+    const listTab = document.getElementById('tab-list');
+    if(!listTab || listTab.style.display === 'none') return;
+  }
   const vis=getVisibleData();
   const tl=vis.filter(d=>cleanDate(d.재통화일정)===todayStr&&d.재통화완료!=='Y');
   const pl=vis.filter(d=>d.재통화일정&&cleanDate(d.재통화일정)<todayStr&&d.재통화완료!=='Y');
@@ -2471,7 +2477,11 @@ var MGR = (function(){
 
   function enter(){
     if(typeof ADM!=='undefined') ADM.render();
-    if(loaded){ fillCenters(); render(); return; }
+    if(loaded){
+      fillCenters(); render();
+      reload();   /* ★ 다른 관리자가 바꾼 최신 명단으로 조용히 갱신 (덮어쓰기 사고 예방) */
+      return;
+    }
     document.getElementById('mi-body').innerHTML = '<tr><td colspan="11" class="empty">불러오는 중…</td></tr>';
     ensure()
       .then(()=>{ fillCenters(); render(); })
@@ -2479,6 +2489,23 @@ var MGR = (function(){
         document.getElementById('mi-body').innerHTML =
           `<tr><td colspan="11" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
       });
+  }
+
+  /* 서버의 최신 지점장 명단으로 갱신 — 편집 창이 열려 있으면 건너뜀 */
+  function reload(){
+    const mm = document.getElementById('mi-modal');
+    if(mm && mm.classList.contains('open')) return Promise.resolve(list);
+    return fetch(GAS_URL + '?type=mgr&t=' + Date.now())
+      .then(r=>r.json())
+      .then(j=>{
+        if(!Array.isArray(j)) return list;
+        const mm2 = document.getElementById('mi-modal');
+        if(mm2 && mm2.classList.contains('open')) return list;   // 그 사이 편집을 시작했으면 건드리지 않음
+        list = j; loaded = true;
+        fillCenters(); render();
+        return list;
+      })
+      .catch(()=>list);
   }
 
   function fillCenters(){
@@ -3105,7 +3132,9 @@ var DEL = (function(){
     ok.disabled = false;
     ok.textContent = `${rows.length}건 삭제하기`;
     ok.setAttribute('onclick', 'DEL.run()');      // ★ 매출 삭제와 섞이지 않도록 항상 재지정
-    document.getElementById('del-modal').classList.add('open');
+    const dm = document.getElementById('del-modal');
+    dm.classList.remove('hidden');                // 혹시 남아있을 숨김 상태 해제
+    dm.classList.add('open');
   }
 
   /* 실제 삭제 */
@@ -3741,7 +3770,9 @@ function deleteSelected(){
   ok.disabled = false;
   ok.textContent = picked.length + "건 삭제하기";
   ok.setAttribute("onclick", "S.runDelete()");        // ★ 매출 삭제로 연결 (열 때마다 재지정)
-  document.getElementById("del-modal").classList.add("open");
+  var dm = document.getElementById("del-modal");
+  dm.classList.remove("hidden");                      // 혹시 남아있을 숨김 상태 해제
+  dm.classList.add("open");
 }
 
 function runDelete(){
@@ -3754,7 +3785,11 @@ function runDelete(){
   var next = function(i){
     if (i >= ids.length){
       SEL = {};
-      closeModal("del-modal");
+      /* ★ 공유 팝업(del-modal)은 파트너스 방식('open' 제거)으로 닫아야 함.
+         매출용 closeModal('hidden' 추가)로 닫으면 hidden이 남아
+         다음부터 삭제 확인창이 영영 안 열리는 버그가 있었음 */
+      var dm = document.getElementById("del-modal");
+      if (dm){ dm.classList.remove("open"); dm.classList.remove("hidden"); }
       ok.disabled = false;
       ok.textContent = "삭제하기";
       ok.setAttribute("onclick", "DEL.run()");        // 원래대로 되돌림
