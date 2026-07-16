@@ -530,7 +530,6 @@ tr.today-row td{background:#fdf8ee}
       <div class="stat"><div class="stat-k">조회 건수</div><div class="stat-v"><span id="sCnt">0</span><span class="stat-u">건</span></div></div>
       <div class="stat"><div class="stat-k">유실적 인원 (합산 5만원↑)</div><div class="stat-v"><span id="sAct">0</span><span class="stat-u">명</span></div></div>
       <div class="stat hero"><div class="stat-k">매출(금액) 합계</div><div class="stat-v"><span id="sAmt">0</span><span class="stat-u">원</span></div></div>
-      <div class="stat"><div class="stat-k">수정P 합계</div><div class="stat-v"><span id="sPc">0</span></div></div>
       <div class="actions">
         <button class="btn btn-p" onclick="S.openEdit(null)">+ 건 추가</button>
         <button class="btn btn-g" onclick="S.openUpload()">엑셀 업로드</button>
@@ -543,7 +542,7 @@ tr.today-row td{background:#fdf8ee}
     <section class="tbl-wrap">
       <table>
         <thead><tr>
-          <th style="width:34px"><input type="checkbox" id="selAll" class="sel-ck" title="현재 화면 전체 선택" onclick="S.toggleAll(this.checked)"></th><th>No.</th><th data-ssort="center">센터</th><th data-ssort="mgr">지점장</th><th data-ssort="partner">파트너스</th><th data-ssort="code">조직코드</th><th data-ssort="oldcode">구코드</th><th data-ssort="career">경력</th><th data-ssort="month">차월</th><th data-ssort="status">상태</th><th data-ssort="active">인보험여부</th><th data-ssort="amt">매출(금액)</th><th data-ssort="pcorr">수정P</th><th data-ssort="holder">계약자</th><th data-ssort="insured">피보험자</th><th data-ssort="product">상품명</th><th data-ssort="planDate">매출예정일</th><th data-ssort="saleDate">실매출일</th><th>비고</th><th>도움요청</th><th></th>
+          <th style="width:34px"><input type="checkbox" id="selAll" class="sel-ck" title="현재 화면 전체 선택" onclick="S.toggleAll(this.checked)"></th><th>No.</th><th data-ssort="center">센터</th><th data-ssort="mgr">지점장</th><th data-ssort="partner">파트너스</th><th data-ssort="code">조직코드</th><th data-ssort="oldcode">구코드</th><th data-ssort="career">경력</th><th data-ssort="month">차월</th><th data-ssort="status">상태</th><th data-ssort="active">인보험여부</th><th data-ssort="amt">매출(금액)</th><th data-ssort="holder">계약자</th><th data-ssort="insured">피보험자</th><th data-ssort="product">상품명</th><th data-ssort="planDate">매출예정일</th><th data-ssort="saleDate">실매출일</th><th>비고</th><th>도움요청</th><th></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -580,7 +579,6 @@ tr.today-row td{background:#fdf8ee}
       <div class="fld"><label>조직상태</label><select id="f_status"><option value="">선택</option><option>정상</option><option>폐쇄</option></select></div>
       <div class="fld need" id="fld_active"><label><span class="req">*</span>인보험여부</label><select id="f_active"><option value="">선택</option><option value="1">인보험</option><option value="0">인보험 외</option></select></div>
       <div class="fld"><label>매출(금액)</label><input type="number" id="f_amt"></div>
-      <div class="fld"><label>수정P</label><input type="number" id="f_pcorr"></div>
       <div class="fld need" id="fld_holder"><label><span class="req">*</span>계약자명</label><input id="f_holder"></div>
       <div class="fld"><label>피보험자명</label><input id="f_insured"></div>
       <div class="fld"><label>상품명</label><input id="f_product"></div>
@@ -746,7 +744,9 @@ tr.today-row td{background:#fdf8ee}
         <button class="btn btn-g" id="rstBtn" onclick="S.doResetMgrPw()">공통 비밀번호로 초기화</button>
         <div id="rstMsg" class="hidden"></div>
       </div>
-      <div class="set-sec">
+      <!-- 월 마감(새 달 시작)은 조회월 네비게이션 도입으로 숨김 처리 (2026-07)
+           다시 필요해지면 아래 div의 style="display:none" 만 지우면 됩니다 -->
+      <div class="set-sec" style="display:none">
         <div class="set-title">월 마감 (새 달 시작)</div>
         <p class="up-hint" style="margin:0">현재 달 데이터를 백업 탭으로 보관한 뒤, 파트너스 명단은 그대로 두고 <b>차월을 +1</b> 하고 실적·계약 입력칸을 비워 새 달을 시작합니다. 매월 초에 한 번만 누르세요.</p>
         <button class="btn btn-d" id="roBtn" onclick="S.doRollover()">새 달 시작하기</button>
@@ -890,7 +890,6 @@ tr.today-row td{background:#fdf8ee}
       <div class="form-group"><label>입사월</label><input type="month" id="mi-f-입사월" onchange="MGR.calcMonth()"></div>
       <div class="form-group"><label>차월 (입사월 기준 자동)</label><input type="number" id="mi-f-차월" placeholder="입사월 입력 시 자동"></div>
       <div class="form-group"><label>월 매출 목표 (천원)</label><input type="number" id="mi-f-월매출목표" placeholder="예: 804"></div>
-      <div class="form-group"><label>매출 목표 (천원)</label><input type="number" id="mi-f-매출목표" placeholder="예: 257"></div>
       <div class="form-group"><label>담당코치</label><input type="text" id="mi-f-담당코치" placeholder="예: 배정은"></div>
       <div class="form-group"><label>상태</label>
         <select id="mi-f-상태"><option value="정상">정상</option><option value="폐쇄">폐쇄</option></select>
@@ -1691,6 +1690,35 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 });
 
+/* ── 영업일 계산 (월~금 기준 · 공휴일 미반영) ── */
+function bizDaysBetween(fromStr, toStr){
+  if(!fromStr || !toStr || fromStr > toStr) return 0;
+  let n = 0;
+  const d = new Date(fromStr + 'T00:00:00');
+  const end = new Date(toStr + 'T00:00:00');
+  while(d <= end){
+    const w = d.getDay();
+    if(w >= 1 && w <= 5) n++;
+    d.setDate(d.getDate() + 1);
+  }
+  return n;
+}
+function monthRangeOf(key){           /* 'yyyy-mm' → 그 달의 시작·끝 날짜 */
+  const p = key.split('-'), y = Number(p[0]), m = Number(p[1]);
+  const last = new Date(y, m, 0).getDate();
+  return { from: key + '-01', to: key + '-' + String(last).padStart(2,'0') };
+}
+/* 지점장 월매출목표 합계(천원) — 센터 필터·폐쇄 제외 */
+function monthTargetSumK(fc){
+  let sum = 0;
+  ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
+    if(String(m.상태||'').trim()==='폐쇄') return;
+    if(fc && String(m.센터||'').trim() !== fc) return;
+    sum += Number(String(m.월매출목표==null?'':m.월매출목표).replace(/[^0-9.-]/g,'')) || 0;
+  });
+  return sum;
+}
+
 /* ── 폐쇄(퇴사) 지점장 판별: 입력 화면·통계에서 자동 제외 (과거 기록은 유지) ── */
 function closedMgrSet(){
   const s = new Set();
@@ -2413,35 +2441,47 @@ function renderStatsSales(prevKey, baseKey, fc, fp, ft){
       moneyCard(`${pm}월 (전월)`, prevKey, prev, false)
     + moneyCard(`${bm}월 (당월)`, baseKey, base, true);
 
-  /* 주단위 (당월) */
-  const wk = weeksOfMonth(baseKey);
-  const rows = wk.map(w=>{
-    const s = calcSalesRange(R, w.from, w.to);
-    return `<tr>
-      <td class="k">${w.no}주차</td>
-      <td style="color:#888;font-size:11px">${w.label}</td>
-      <td><span class="st-n">${won(s.plan)}</span></td>
-      <td><span class="st-n2">${won(s.real)}</span></td>
-      <td>${pctStr(s.real, s.plan)}</td>
-    </tr>`;
-  }).join('');
+  /* 주단위 (당월) — 목표 매출 = 월매출목표 합 × 그 주의 영업일 ÷ 당월 전체 영업일 (자동 배분) */
+  function fillWeek(){
+    const mr = monthRangeOf(baseKey);
+    const bizTotal = bizDaysBetween(mr.from, mr.to);
+    const totWon = monthTargetSumK(fc) * 1000;             /* 천원 → 원 */
+    const wk = weeksOfMonth(baseKey);
+    const wrows = wk.map(w=>{
+      const s = calcSalesRange(R, w.from, w.to);
+      const wf = w.from < mr.from ? mr.from : w.from;
+      const wt = w.to   > mr.to   ? mr.to   : w.to;
+      const wTgt = bizTotal ? Math.round(totWon * bizDaysBetween(wf, wt) / bizTotal) : 0;
+      return `<tr>
+        <td class="k">${w.no}주차</td>
+        <td style="color:#888;font-size:11px">${w.label} <span style="color:#bbb">· 영업일 ${bizDaysBetween(wf, wt)}일</span></td>
+        <td><span class="st-n">${won(wTgt)}</span></td>
+        <td><span class="st-n2">${won(s.real)}</span></td>
+        <td>${pctStr(s.real, wTgt)}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('st-week').innerHTML = `
+      <div class="section" style="padding:14px 16px">
+        <div class="st-h">${bm}월 주단위 매출 <span class="sub">월~일 기준 · 목표 = 월 매출 목표를 영업일수(월~금)로 자동 배분</span></div>
+        <div class="table-wrap">
+          <table class="st-t" style="min-width:520px">
+            <thead><tr><th style="text-align:left">주차</th><th>기간</th><th>목표 매출</th><th>실제 매출</th><th>달성율</th></tr></thead>
+            <tbody>${wrows}
+              <tr class="sum"><td class="k">합계</td><td>-</td>
+                <td>${won(totWon)}</td><td>${won(base.real)}</td><td>${pctStr(base.real, totWon)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+  /* 지점장 목표를 아직 안 불러왔을 수 있으므로 불러온 뒤 채움 */
+  if (typeof MGR !== 'undefined' && MGR.ensure){
+    MGR.ensure().then(fillWeek).catch(fillWeek);
+  } else { fillWeek(); }
 
   /* 주단위 매출 하단: 차월별 목표 달성 진척현황 */
   if (typeof S !== 'undefined' && S.renderTargetSection) S.renderTargetSection('st-target');
-
-  document.getElementById('st-week').innerHTML = `
-    <div class="section" style="padding:14px 16px">
-      <div class="st-h">${bm}월 주단위 매출 <span class="sub">월요일 ~ 일요일 기준</span></div>
-      <div class="table-wrap">
-        <table class="st-t" style="min-width:520px">
-          <thead><tr><th style="text-align:left">주차</th><th>기간</th><th>예정 매출</th><th>실제 매출</th><th>달성율</th></tr></thead>
-          <tbody>${rows}
-            <tr class="sum"><td class="k">합계</td><td>-</td>
-              <td>${won(base.plan)}</td><td>${won(base.real)}</td><td>${pctStr(base.real, base.plan)}</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>`;
 }
 
 /* ═══════════════════ 지점장 정보 (관리자 전용) ═══════════════════ */
@@ -2639,7 +2679,6 @@ var MGR = (function(){
     document.getElementById('mi-f-입사월').value = x.입사월||'';
     document.getElementById('mi-f-차월').value = x.차월||'';
     document.getElementById('mi-f-월매출목표').value = x.월매출목표||'';
-    document.getElementById('mi-f-매출목표').value = x.매출목표||'';
     document.getElementById('mi-f-담당코치').value = x.담당코치||'';
     document.getElementById('mi-f-상태').value = (String(x.상태||'').trim()==='폐쇄') ? '폐쇄' : '정상';
     document.getElementById('mi-f-폐쇄일').value = x.폐쇄일||'';
@@ -2668,7 +2707,7 @@ var MGR = (function(){
     const o = Object.assign(editIdx>=0 ? Object.assign({}, list[editIdx]) : {}, {
       센터:g('mi-f-센터'), 지점장명:g('mi-f-지점장명'), 위촉코드:g('mi-f-위촉코드'),
       기수:g('mi-f-기수'), 입사월:g('mi-f-입사월'), 차월:g('mi-f-차월'),
-      월매출목표:g('mi-f-월매출목표'), 매출목표:g('mi-f-매출목표'), 담당코치:g('mi-f-담당코치'),
+      월매출목표:g('mi-f-월매출목표'), 담당코치:g('mi-f-담당코치'),
       상태:g('mi-f-상태')||'정상', 폐쇄일:g('mi-f-폐쇄일'),
       교육이수:g('mi-f-교육이수'), 경력사항:g('mi-f-경력사항'), 특이사항:g('mi-f-특이사항')
     });
@@ -2737,7 +2776,7 @@ var MGR = (function(){
       if(idx >= 0){
         const m = Object.assign({}, list[idx]);
         m.월매출목표 = it.월매출목표;
-        m.매출목표   = it.매출목표;
+        /* 매출목표(②)는 영업일 기준 자동계산이므로 업로드값을 저장하지 않음 */
         if(it.담당코치) m.담당코치 = it.담당코치;
         if(it.위촉코드 && !codeOf(m)) m.위촉코드 = it.위촉코드;
         if(it.센터 && !String(m.센터||'').trim()) m.센터 = it.센터;
@@ -2747,7 +2786,7 @@ var MGR = (function(){
         list.push({
           센터: it.센터||'', 지점장명: it.지점장명, 위촉코드: it.위촉코드||'',
           기수:'', 입사월:'', 차월: it.차월||'',
-          월매출목표: it.월매출목표, 매출목표: it.매출목표, 담당코치: it.담당코치||'',
+          월매출목표: it.월매출목표, 매출목표: '', 담당코치: it.담당코치||'',
           상태:'정상', 폐쇄일:'', 교육이수:'', 경력사항:'', 특이사항:''
         });
         added++;
@@ -3421,11 +3460,30 @@ var MANAGERS = ["손다혜","홍승지","김수진","이인성","민진홍","이
 
 var rows = [], page = 1, PER = 50;
 var editing = null, parsedUpload = null;
-var F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: [], help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
+var F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], mcha: [], codes: [], help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
 var openMsId = null;
 var autoTimer = null;
 var entered = false;
 var codeLabel = "";
+/* 조회 월 (기본: 당월) — 행 소속 월 = 실매출일 > 매출예정일 기준 */
+var viewYM = (typeof todayStr !== 'undefined' ? todayStr : new Date().toISOString()).substring(0, 7);
+function rowYM(r){
+  var d = String(r.saleDate || r.planDate || "").slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(d) ? d : "";
+}
+function moveMonth(dir){
+  if (dir === 0){
+    viewYM = (typeof todayStr !== 'undefined' ? todayStr : new Date().toISOString()).substring(0, 7);
+  } else {
+    var p = viewYM.split('-'), y = Number(p[0]), m = Number(p[1]) + dir;
+    if (m < 1){ m = 12; y--; }
+    if (m > 12){ m = 1; y++; }
+    viewYM = y + '-' + String(m).padStart(2, '0');
+  }
+  page = 1;
+  renderFilterBar();
+  renderBody();
+}
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s === null || s === undefined ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -3452,6 +3510,8 @@ function enter(){
   $("asgBtn").classList.toggle("hidden", AUTH.role !== "admin");
   $("salesLoading").classList.remove("hidden");
   $("salesBody").classList.add("hidden");
+  /* 지점장 차월 필터용 명단 로드 (백그라운드) */
+  if (typeof MGR !== 'undefined' && MGR.ensure) MGR.ensure().then(function(){ renderFilterBar(); }).catch(function(){});
   return refresh().then(function(){
     $("salesLoading").classList.add("hidden");
     $("salesBody").classList.remove("hidden");
@@ -3461,7 +3521,7 @@ function enter(){
 function reset(){
   if (autoTimer){ clearInterval(autoTimer); autoTimer = null; }
   rows = []; parsedUpload = null; entered = false; openMsId = null; page = 1; codeLabel = ""; SEL = {};
-  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: [], help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
+  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], mcha: [], codes: [], help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
   ["editModal","uploadModal","setModal","asgModal","myPwModal"].forEach(function(id){ var el=$(id); if(el) el.classList.add("hidden"); });
   var cb=$("codeBanner"); if(cb) cb.classList.add("hidden");
   var sb=$("salesBody"); if(sb) sb.classList.add("hidden");
@@ -3506,7 +3566,7 @@ function startAutoRefresh(){
 /* ----- 파트너스 코드 연동 필터 ----- */
 var partnerCtx = null;   // 관리대장에서 넘어온 파트너스 정보 (건 추가 시 자동 입력)
 function filterByCodes(codes, label, ctx){
-  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: codes.map(String), help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
+  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], mcha: [], codes: codes.map(String), help: "", pFrom: "", pTo: "", sFrom: "", sTo: "" };
   codeLabel = label || "";
   partnerCtx = ctx || null;
   page = 1;
@@ -3552,10 +3612,37 @@ var MS_DEFS = [
   { id: "holder",  label: "계약자명", opts: function(){ return uniq(rows.map(function(r){ return r.holder; })).sort(function(a,b){ return a.localeCompare(b,"ko"); }); } },
   { id: "insured", label: "피보험자명", opts: function(){ return uniq(rows.map(function(r){ return r.insured; })).sort(function(a,b){ return a.localeCompare(b,"ko"); }); } },
   { id: "career",  label: "경력구분", opts: function(){ return CAREERS.slice(); } },
-  { id: "month",   label: "차월",     opts: function(){ return uniq(rows.map(function(r){ return (r.month === null || r.month === undefined || r.month === "") ? null : String(r.month); })).sort(function(a,b){ return Number(a) - Number(b); }); }, width: 100 }
+  { id: "month",   label: "차월",     opts: function(){ return uniq(rows.map(function(r){ return (r.month === null || r.month === undefined || r.month === "") ? null : String(r.month); })).sort(function(a,b){ return Number(a) - Number(b); }); }, width: 100 },
+  { id: "mcha",    label: "지점장 차월", opts: function(){
+      var s = {};
+      ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(function(m){
+        if (String(m.상태||'').trim() === '폐쇄') return;
+        var c = mgrCha(m);
+        if (c !== null) s[String(c)] = 1;
+      });
+      return Object.keys(s).sort(function(a,b){ return Number(a) - Number(b); });
+    }, width: 100 }
 ];
+/* 지점장 이름 → 지점장 차월 */
+function mgrChaOf(name){
+  var l = (typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : [];
+  var n = String(name||'').trim();
+  for (var i = 0; i < l.length; i++){
+    if (String(l[i].지점장명||'').trim() === n) return mgrCha(l[i]);
+  }
+  return null;
+}
 function renderFilterBar(){
   var html = "";
+  /* ◀ 년+월 ▶ 조회월 (기본: 당월) */
+  var yp = viewYM.split('-');
+  var curYM = (typeof todayStr !== 'undefined' ? todayStr : new Date().toISOString()).substring(0, 7);
+  html += '<div><div class="ms-label">조회 월</div><div class="dr-row" style="align-items:center;gap:4px">'
+    + '<button class="btn btn-g btn-sm" style="padding:6px 9px" onclick="S.moveMonth(-1)">◀</button>'
+    + '<b style="min-width:88px;text-align:center;font-size:13.5px">' + Number(yp[0]) + '년 ' + Number(yp[1]) + '월</b>'
+    + '<button class="btn btn-g btn-sm" style="padding:6px 9px" onclick="S.moveMonth(1)">▶</button>'
+    + (viewYM !== curYM ? '<button class="btn btn-g btn-sm" onclick="S.moveMonth(0)">당월</button>' : '')
+    + '</div></div>';
   MS_DEFS.forEach(function(d){
     var dis = AUTH.role === "mgr" && (d.id === "center" || d.id === "mgr");
     var sel = F[d.id];
@@ -3565,6 +3652,13 @@ function renderFilterBar(){
       + '<button class="ms-btn' + (sel.length ? ' on' : '') + '" onclick="S.toggleMs(\'' + d.id + '\',event)"><span class="ms-txt">' + esc(txt) + '</span><span>▾</span></button>'
       + '<div class="ms-pop hidden" id="pop_' + d.id + '"></div></div>';
   });
+  html += '<div><div class="ms-label">매출예정일</div><div class="dr-row">'
+    + '<input type="date" value="' + F.pFrom + '" onchange="S.setDate(\'pFrom\',this.value)"><span>~</span>'
+    + '<input type="date" value="' + F.pTo + '" onchange="S.setDate(\'pTo\',this.value)"></div></div>';
+  html += '<div><div class="ms-label">실매출일</div><div class="dr-row">'
+    + '<input type="date" value="' + F.sFrom + '" onchange="S.setDate(\'sFrom\',this.value)"><span>~</span>'
+    + '<input type="date" value="' + F.sTo + '" onchange="S.setDate(\'sTo\',this.value)"></div></div>';
+  /* 도움요청 (지점장 차월 필터에 자리를 내주고 뒤로 이동) */
   html += '<div style="width:130px"><div class="ms-label">도움요청</div>'
     + '<select class="ms-btn" style="height:33px" onchange="S.setHelp(this.value)">'
     +   '<option value=""' + (F.help === "" ? " selected" : "") + '>전체</option>'
@@ -3573,13 +3667,7 @@ function renderFilterBar(){
     +   '<option value="any"' + (F.help === "any" ? " selected" : "") + '>요청중 + 완료</option>'
     +   '<option value="none"' + (F.help === "none" ? " selected" : "") + '>요청 없음</option>'
     + '</select></div>';
-  html += '<div><div class="ms-label">매출예정일</div><div class="dr-row">'
-    + '<input type="date" value="' + F.pFrom + '" onchange="S.setDate(\'pFrom\',this.value)"><span>~</span>'
-    + '<input type="date" value="' + F.pTo + '" onchange="S.setDate(\'pTo\',this.value)"></div></div>';
-  html += '<div><div class="ms-label">실매출일</div><div class="dr-row">'
-    + '<input type="date" value="' + F.sFrom + '" onchange="S.setDate(\'sFrom\',this.value)"><span>~</span>'
-    + '<input type="date" value="' + F.sTo + '" onchange="S.setDate(\'sTo\',this.value)"></div></div>';
-  var any = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.help || F.pFrom || F.pTo || F.sFrom || F.sTo;
+  var any = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.mcha.length || F.help || F.pFrom || F.pTo || F.sFrom || F.sTo;
   if (any) html += '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="S.resetFilters()">필터 초기화</button>';
   $("filterBar").innerHTML = html;
   if (openMsId) renderPop(openMsId);
@@ -3665,7 +3753,7 @@ function setDate(k, v){ F[k] = v; page = 1; render(); }
 function setHelp(v){ F.help = v; page = 1; render(); }
 function resetFilters(){
   var codes = F.codes, hp = F.help;
-  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], codes: codes, help: hp, pFrom: "", pTo: "", sFrom: "", sTo: "" };
+  F = { center: [], mgr: [], partner: [], holder: [], insured: [], career: [], month: [], mcha: [], codes: codes, help: hp, pFrom: "", pTo: "", sFrom: "", sTo: "" };
   openMsId = null; page = 1; render();
 }
 document.addEventListener("click", function(){ if (entered && openMsId){ openMsId = null; renderFilterBar(); } });
@@ -3751,6 +3839,14 @@ function filteredRows(){
     if (F.pTo && (!r.planDate || r.planDate > F.pTo)) return false;
     if (F.sFrom && (!r.saleDate || r.saleDate < F.sFrom)) return false;
     if (F.sTo && (!r.saleDate || r.saleDate > F.sTo)) return false;
+    /* 조회 월: 실매출일(없으면 매출예정일)이 해당 월인 건만 · 날짜 없는 건(특이사항 등)은 항상 표시 */
+    var ym = rowYM(r);
+    if (ym && ym !== viewYM) return false;
+    /* 지점장 차월 필터 */
+    if (F.mcha.length){
+      var mc = mgrChaOf(r.mgr);
+      if (mc === null || F.mcha.indexOf(String(mc)) < 0) return false;
+    }
     return true;
   }).sort(salesCmp);
 }
@@ -3818,7 +3914,7 @@ function renderBody(){
   var act = 0;
   Object.keys(actMap).forEach(function(k){ if (actMap[k] >= YS_THRESH) act++; });
   $("sCnt").textContent = fmt(f.length); $("sAct").textContent = fmt(act);
-  $("sAmt").textContent = fmt(amt); $("sPc").textContent = fmt(pc);
+  $("sAmt").textContent = fmt(amt);
 
   var total = Math.max(1, Math.ceil(f.length / PER));
   if (page > total) page = total;
@@ -3839,7 +3935,7 @@ function renderBody(){
       + '<td class="num">' + esc(r.month) + '</td>'
       + '<td>' + (r.status === "폐쇄" ? '<span class="tag tg-cl">폐쇄</span>' : esc(r.status)) + '</td>'
       + '<td>' + (Number(r.active) === 1 ? '<span class="tag tg-new">인보험</span>' : '<span style="color:#9AA8A2;font-size:11px">인보험 외</span>') + '</td>'
-      + '<td class="num strong">' + fmt(r.amt) + '</td><td class="num">' + fmt(r.pcorr) + '</td>'
+      + '<td class="num strong">' + fmt(r.amt) + '</td>'
       + '<td>' + esc(r.holder) + '</td><td>' + esc(r.insured) + '</td>'
       + '<td class="ellip" title="' + esc(r.product) + '">' + esc(r.product) + '</td>'
       + '<td class="mono">' + esc(r.planDate) + '</td>'
@@ -3848,8 +3944,8 @@ function renderBody(){
       + '<td onclick="event.stopPropagation()" style="text-align:center">' + helpBtn(r) + '</td>'
       + '<td class="edit-cell">수정</td></tr>';
   });
-  if (!pr.length && rows.length) html = '<tr><td colspan="21" class="empty-row">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 \'건 추가\'로 입력하세요.</td></tr>';
-  if (!pr.length && !rows.length) html = '<tr><td colspan="21" class="empty-row">매출 데이터가 없습니다. \'건 추가\' 또는 엑셀 업로드로 입력하세요.</td></tr>';
+  if (!pr.length && rows.length) html = '<tr><td colspan="20" class="empty-row">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 \'건 추가\'로 입력하세요.</td></tr>';
+  if (!pr.length && !rows.length) html = '<tr><td colspan="20" class="empty-row">매출 데이터가 없습니다. \'건 추가\' 또는 엑셀 업로드로 입력하세요.</td></tr>';
   $("tbody").innerHTML = html;
   syncSelUI(pr);
   $("pageInfo").textContent = page + " / " + total + " 페이지 · 총 " + fmt(f.length) + "건";
@@ -4503,10 +4599,19 @@ function tgNum(v){
 }
 /* 표시용 데이터 계산: 폐쇄 제외, 차월→센터→이름 정렬, 진척·부족·달성률 산출 */
 function targetRows(mlist){
+  /* 당월 범위·영업일: ② 매출 목표 = 월 목표 × (오늘까지 누적 영업일 ÷ 당월 전체 영업일) — 매일 자동 증가 */
+  var mKey = todayStr.substring(0, 7);
+  var mr = monthRangeOf(mKey);
+  var bizTotal = bizDaysBetween(mr.from, mr.to);
+  var todayClamp = todayStr > mr.to ? mr.to : todayStr;
+  var bizToDate = bizDaysBetween(mr.from, todayClamp);
+  /* 매출 진척: 당월(1일~말일) 실매출일 기준 실제 매출 합계 */
   var sums = {};
   rows.forEach(function(r){
     var k = String(r.mgr || "").trim();
     if (!k) return;
+    var sd = String(r.saleDate || "").slice(0, 10);
+    if (!sd || sd < mr.from || sd > mr.to) return;
     sums[k] = (sums[k] || 0) + (Number(r.amt) || 0);
   });
   return (mlist || []).slice()
@@ -4523,7 +4628,7 @@ function targetRows(mlist){
     .map(function(m){
       var name = String(m.지점장명).trim();
       var monthTgt = tgNum(m.월매출목표);
-      var tgt = tgNum(m.매출목표);
+      var tgt = bizTotal ? Math.round(monthTgt * bizToDate / bizTotal) : 0;   /* 누적 영업일 기준 자동 계산 */
       var ach = Math.round((sums[name] || 0) / 1000);         /* 원 → 천원 */
       var lack = Math.max(monthTgt - ach, 0);
       var pct = monthTgt > 0 ? Math.round(ach / monthTgt * 100) : null;
@@ -4544,7 +4649,7 @@ function renderTargetSection(elId){
   host.innerHTML =
     '<div class="section" style="padding:14px 16px;margin-top:14px">' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
-        '<div class="st-h" style="margin:0">🎯 차월별 매출 달성 진척현황 <span class="sub">매출 진척 = 실매출 합계(천원) · 차월 → 센터 → 이름 · 폐쇄 지점장 제외</span></div>' +
+        '<div class="st-h" style="margin:0">🎯 차월별 매출 달성 진척현황 <span class="sub">매출 목표 = 월 목표 × 누적 영업일 비율(매일 자동 증가) · 진척 = 당월 실매출(천원) · 폐쇄 제외</span></div>' +
         '<div style="flex:1"></div>' +
         '<button class="btn btn-sm" onclick="S.targetsDown()">⬇ 엑셀 다운로드</button>' +
         (admin
@@ -4686,7 +4791,7 @@ return {
   enter: enter, reset: reset, refresh: refresh,
   getRows: getRows, ensureRows: ensureRows, saveHelp: saveHelp,
   openEdit: openEdit, doSaveRow: doSaveRow, doDelete: doDelete, toggleHelp: toggleHelp, copyRow: copyRow,
-  renderTargetSection: renderTargetSection, pickTargetsFile: pickTargetsFile, targetsDown: targetsDown, targetsUp: targetsUp, render: render, toggleNoteOnly: toggleNoteOnly,
+  renderTargetSection: renderTargetSection, pickTargetsFile: pickTargetsFile, targetsDown: targetsDown, targetsUp: targetsUp, render: render, toggleNoteOnly: toggleNoteOnly, moveMonth: moveMonth,
   openUpload: openUpload, applyUpload: applyUpload, downloadXlsx: downloadXlsx,
   setPage: setPage, closeModal: closeModal,
   toggleSel: toggleSel, toggleAll: toggleAll, deleteSelected: deleteSelected, runDelete: runDelete,
