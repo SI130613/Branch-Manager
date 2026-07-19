@@ -528,8 +528,20 @@ tr.today-row td{background:#fdf8ee}
     <section class="pstats" id="pstats"></section>
     <section class="stats">
       <div class="stat"><div class="stat-k">조회 건수</div><div class="stat-v"><span id="sCnt">0</span><span class="stat-u">건</span></div></div>
-      <div class="stat"><div class="stat-k">유실적 인원 (합산 5만원↑)</div><div class="stat-v"><span id="sAct">0</span><span class="stat-u">명</span></div></div>
-      <div class="stat hero"><div class="stat-k">매출(금액) 합계</div><div class="stat-v"><span id="sAmt">0</span><span class="stat-u">원</span></div></div>
+      <div class="stat" style="border-left:3px solid #B9B3F0">
+        <div class="stat-k" style="color:#3C3489;font-weight:700">예정건</div>
+        <div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap">
+          <div><span style="font-size:11px;color:#888">인원 (합산 5만원↑)</span> <span class="stat-v"><span id="sPlanAct">0</span><span class="stat-u">명</span></span></div>
+          <div><span style="font-size:11px;color:#888">매출예정금액</span> <span class="stat-v"><span id="sPlanAmt">0</span><span class="stat-u">원</span></span></div>
+        </div>
+      </div>
+      <div class="stat hero" style="border-left:3px solid #0A5540">
+        <div class="stat-k" style="color:#0A5540;font-weight:700">실매출</div>
+        <div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap">
+          <div><span style="font-size:11px;color:#888">인원 (합산 5만원↑)</span> <span class="stat-v"><span id="sRealAct">0</span><span class="stat-u">명</span></span></div>
+          <div><span style="font-size:11px;color:#888">실매출금액</span> <span class="stat-v"><span id="sRealAmt">0</span><span class="stat-u">원</span></span></div>
+        </div>
+      </div>
       <div class="actions">
         <button class="btn btn-p" onclick="S.openEdit(null)">+ 건 추가</button>
         <button class="btn btn-g" onclick="S.openUpload()">엑셀 업로드</button>
@@ -4124,18 +4136,26 @@ function renderBody(){
   var f = filteredRows();
   var anyF = F.center.length || F.mgr.length || F.partner.length || F.holder.length || F.insured.length || F.career.length || F.month.length || F.codes.length || F.help || F.pFrom || F.pTo || F.sFrom || F.sTo;
   renderPStats(f, !!anyF);
-  var amt = 0, pc = 0, actMap = {};
+  /* 예정건(조회된 전체 건) / 실매출(실매출일이 있는 건)을 각각 집계
+     인원 = 파트너스 1인 기준 인보험 인정(active=1) 합산 금액 5만원 이상인 사람 수 */
+  var planAmt = 0, realAmt = 0, planMap = {}, realMap = {};
   f.forEach(function(r){
-    amt += Number(r.amt) || 0; pc += Number(r.pcorr) || 0;
+    var a = Number(r.amt) || 0;
+    var pn = r.partner || ("(무명)" + r.mgr);
+    var isReal = String(r.saleDate || "").trim() !== "";
+    planAmt += a;
+    if (isReal) realAmt += a;
     if (Number(r.active) === 1){
-      var pn = r.partner || ("(무명)" + r.mgr);
-      actMap[pn] = (actMap[pn] || 0) + (Number(r.amt) || 0);
+      planMap[pn] = (planMap[pn] || 0) + a;
+      if (isReal) realMap[pn] = (realMap[pn] || 0) + a;
     }
   });
-  var act = 0;
-  Object.keys(actMap).forEach(function(k){ if (actMap[k] >= YS_THRESH) act++; });
-  $("sCnt").textContent = fmt(f.length); $("sAct").textContent = fmt(act);
-  $("sAmt").textContent = fmt(amt);
+  var planAct = 0, realAct = 0;
+  Object.keys(planMap).forEach(function(k){ if (planMap[k] >= YS_THRESH) planAct++; });
+  Object.keys(realMap).forEach(function(k){ if (realMap[k] >= YS_THRESH) realAct++; });
+  $("sCnt").textContent = fmt(f.length);
+  $("sPlanAct").textContent = fmt(planAct); $("sPlanAmt").textContent = fmt(planAmt);
+  $("sRealAct").textContent = fmt(realAct); $("sRealAmt").textContent = fmt(realAmt);
 
   var total = Math.max(1, Math.ceil(f.length / PER));
   if (page > total) page = total;
