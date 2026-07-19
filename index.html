@@ -1719,6 +1719,105 @@ function monthTargetSumK(fc){
   return sum;
 }
 
+/* ── 파트너스 위촉 현황: 수기 보정 데이터 (구글시트 '위촉현황보정' 탭) ── */
+let WI_DATA = null;        /* { 'yyyy-mm': {선행:{p,w}, 정규후속:{p,w}, cha:{'2':{p,w}}, 미배정:{p,w}} } */
+let wiViewAuto = false;    /* 수기 데이터가 있어도 자동 계산을 미리보기 */
+function wiNormMonth(v){
+  const s = String(v||'').trim().replace(/[./]/g,'-');
+  const m = s.match(/^(\d{4})-(\d{1,2})/);
+  return m ? m[1] + '-' + m[2].padStart(2,'0') : '';
+}
+function loadWI(){
+  return fetch(GAS_URL + '?type=wi&t=' + Date.now())
+    .then(r=>r.json())
+    .then(list=>{
+      const map = {};
+      (Array.isArray(list)?list:[]).forEach(r=>{
+        const mo = wiNormMonth(r.월);
+        const item = String(r.항목||'').replace(/\s/g,'');
+        if(!mo || !item) return;
+        const p = Number(String(r.합격||'').replace(/[^0-9.-]/g,''))||0;
+        const w = Number(String(r.위촉||'').replace(/[^0-9.-]/g,''))||0;
+        if(!map[mo]) map[mo] = { 선행:null, 정규후속:null, cha:{}, 미배정:null };
+        if(item==='선행') map[mo].선행 = {p,w};
+        else if(item==='정규후속'||item==='정규+후속') map[mo].정규후속 = {p,w};
+        else if(item==='미배정') map[mo].미배정 = {p,w};
+        else { const c = item.replace(/[^0-9]/g,''); if(c) map[mo].cha[Number(c)] = {p,w}; }
+      });
+      WI_DATA = map;
+      return map;
+    })
+    .catch(()=>{ if(WI_DATA===null) WI_DATA = {}; return WI_DATA; });
+}
+function wiDownload(){
+  const L = window._wiLast;
+  if(!L){ showToast('표가 아직 준비되지 않았습니다','err'); return; }
+  const aoa = [['월','항목','합격','위촉']];
+  aoa.push([L.month,'선행',L.A.p,L.A.w]);
+  aoa.push([L.month,'정규후속',L.B.p,L.B.w]);
+  L.cols.forEach(c=>{ const v=L.byCha[c]||{p:0,w:0}; aoa.push([L.month, c+'차월', v.p, v.w]); });
+  aoa.push([L.month,'미배정',L.misc.p,L.misc.w]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '위촉현황');
+  XLSX.writeFile(wb, '파트너스_위촉현황_' + L.month + '.xlsx');
+}
+function wiUpload(inp){
+  const file = inp.files && inp.files[0];
+  inp.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, raw:false, defval:''});
+      let hRow = -1, col = {};
+      for(let i=0;i<Math.min(arr.length,10);i++){
+        const j = arr[i].map(x=>String(x)).join('|');
+        if(j.indexOf('항목')>=0 && j.indexOf('합격')>=0){ hRow=i; break; }
+      }
+      if(hRow<0) throw new Error('헤더(월·항목·합격·위촉)를 찾지 못했습니다.');
+      arr[hRow].forEach((h,ci)=>{
+        h = String(h).replace(/\s/g,'');
+        if(h==='월') col.mo=ci; else if(h==='항목') col.it=ci;
+        else if(h.indexOf('합격')>=0) col.p=ci; else if(h.indexOf('위촉')>=0) col.w=ci;
+      });
+      if(col.mo===undefined||col.it===undefined||col.p===undefined||col.w===undefined) throw new Error('월/항목/합격/위촉 열이 모두 필요합니다.');
+      const rows = [];
+      for(let r=hRow+1;r<arr.length;r++){
+        const mo = wiNormMonth(arr[r][col.mo]);
+        const it = String(arr[r][col.it]||'').trim();
+        if(!mo || !it || it==='합계' || it==='Gap') continue;
+        rows.push({ 월: mo, 항목: it, 합격: String(Number(String(arr[r][col.p]).replace(/[^0-9.-]/g,''))||0), 위촉: String(Number(String(arr[r][col.w]).replace(/[^0-9.-]/g,''))||0) });
+      }
+      if(!rows.length) throw new Error('읽어들인 데이터가 없습니다.');
+      const months = [...new Set(rows.map(r=>r.월))];
+      if(!confirm(months.join(', ') + ' 월의 위촉 현황을 수기 데이터로 저장합니다.\n(해당 월은 화면에 수기 값이 우선 표시됩니다)\n진행할까요?')) return;
+      gasCall({ action:'save_wi', rows: rows }).then(()=>{
+        showToast('수기 데이터 저장 완료 (' + rows.length + '행)','ok');
+        wiViewAuto = false;
+        return loadWI();
+      }).then(()=>{ if(window._wiRefill) window._wiRefill(); });
+    }catch(ex){ alert('업로드 실패: ' + (ex.message||ex)); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function wiToggleView(){
+  wiViewAuto = !wiViewAuto;
+  if(window._wiRefill) window._wiRefill();
+}
+function wiDelete(){
+  const L = window._wiLast;
+  if(!L || !(WI_DATA && WI_DATA[L.month])) return;
+  if(!confirm(L.month + ' 월의 수기 데이터를 삭제하고 자동 계산으로 되돌릴까요?')) return;
+  gasCall({ action:'delete_wi', month: L.month }).then(()=>{
+    delete WI_DATA[L.month];
+    wiViewAuto = false;
+    showToast('수기 데이터 삭제 · 자동 계산으로 복귀','ok');
+    if(window._wiRefill) window._wiRefill();
+  });
+}
+
 /* 입사월(yyyy-mm) → 차월 자동 계산 (전역 공용) */
 function autoMonthOf(joinM){
   if(!joinM) return '';
@@ -2374,7 +2473,15 @@ function renderStatsPage(keepFilters=false){
       <span class="st-scope">📌 ${scopeLabel}</span>
     </div>
 
-    <div class="section-title" style="margin-bottom:10px">파트너스 신청 현황</div>
+    <div class="section-title" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">파트너스 위촉 현황
+      <span id="wi-badge" style="font-size:11px;font-weight:700"></span>
+      <span style="flex:1"></span>
+      <button class="btn btn-sm" onclick="wiDownload()">⬇ 양식 다운로드</button>
+      ${isAdmin ? `<button class="btn btn-sm" onclick="document.getElementById('wi-file').click()">⬆ 수기 업로드</button>
+      <button class="btn btn-sm hidden" id="wi-toggle" onclick="wiToggleView()"></button>
+      <button class="btn btn-sm hidden" id="wi-del" onclick="wiDelete()">수기 삭제</button>
+      <input type="file" id="wi-file" accept=".xlsx,.xls" style="display:none" onchange="wiUpload(this)">` : ''}
+    </div>
     <div class="st-grid" id="st-apply"></div>
 
     <div class="section-title" style="margin:1.4rem 0 10px">매출 현황</div>
@@ -2389,17 +2496,19 @@ function renderStatsPage(keepFilters=false){
   /* --- 파트너스 신청 --- */
   const P = statsScopedPartners(fc, fp, ft);
   const bm = Number(baseKey.split('-')[1]), nm = Number(nextKey.split('-')[1]);
-  /* 합격/위촉/Gap 현황 (이미지 형식) — 합격: 합격날짜가 기준월 · 위촉: 그 중 위촉여부='위촉' · Gap = 합격-위촉 */
+  /* 합격/위촉/Gap 현황 — 기본: 관리대장 자동 계산 · 수기 업로드가 있는 달은 수기 우선 */
   function fillApply(){
     const passed = P.filter(d => (cleanDate(d.합격날짜)||'').substring(0,7) === baseKey);
     const isWi = d => String(d.위촉여부||'').trim() === '위촉';
+    const ov = (!wiViewAuto && WI_DATA && WI_DATA[baseKey]) ? WI_DATA[baseKey] : null;
     const cell = (v, bold) => `<td style="text-align:center;padding:7px 6px;${bold?'font-weight:700;background:#FAFAFA;':''}">${v}</td>`;
     const rowHd = (t, gap) => `<td style="text-align:center;padding:7px 6px;font-weight:600;background:#F5F5F3;${gap?'color:#555;':''}">${t}</td>`;
 
-    /* 표1: 구분(선행 / 정규+후속) */
+    /* 표1: 구분(선행 / 정규+후속) — 수기 데이터가 있으면 수기 값 사용 */
     const g1 = set => { const g = passed.filter(d => set.includes(d.구분)); return { p:g.length, w:g.filter(isWi).length }; };
-    const A = g1(선행SET), B = g1(정규후속SET);
-    const T = { p: passed.length, w: passed.filter(isWi).length };
+    const A = ov ? (ov.선행 || {p:0,w:0}) : g1(선행SET);
+    const B = ov ? (ov.정규후속 || {p:0,w:0}) : g1(정규후속SET);
+    const T = ov ? { p: A.p + B.p, w: A.w + B.w } : { p: passed.length, w: passed.filter(isWi).length };
     const tbl1 = `
       <div class="section" style="padding:14px 16px">
         <div class="st-h">${bm}월${baseKey===curKey?'(당월)':''} <span class="sub">합격: 합격날짜 기준 · 위촉: 위촉여부 '위촉'</span></div>
@@ -2415,21 +2524,38 @@ function renderStatsPage(keepFilters=false){
 
     /* 표2: 지점장 차월별 (배정지점장의 차월 기준) */
     const chaSet = {};
-    ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
-      if(String(m.상태||'').trim()==='폐쇄') return;
-      const v = String((autoMonthOf(m.입사월) || m.차월 || '')).replace(/[^0-9]/g,'');
-      if(v) chaSet[Number(v)] = 1;
-    });
     const byCha = {}; let misc = { p:0, w:0 };
-    passed.forEach(d=>{
-      const c = mgrChaByName(d.배정지점장);
-      if(c === null){ misc.p++; if(isWi(d)) misc.w++; return; }
-      chaSet[c] = 1;
-      if(!byCha[c]) byCha[c] = { p:0, w:0 };
-      byCha[c].p++; if(isWi(d)) byCha[c].w++;
-    });
+    if (ov){
+      Object.keys(ov.cha || {}).forEach(c=>{ chaSet[Number(c)] = 1; byCha[Number(c)] = ov.cha[c]; });
+      misc = ov.미배정 || { p:0, w:0 };
+    } else {
+      ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
+        if(String(m.상태||'').trim()==='폐쇄') return;
+        const v = String((autoMonthOf(m.입사월) || m.차월 || '')).replace(/[^0-9]/g,'');
+        if(v) chaSet[Number(v)] = 1;
+      });
+      passed.forEach(d=>{
+        const c = mgrChaByName(d.배정지점장);
+        if(c === null){ misc.p++; if(isWi(d)) misc.w++; return; }
+        chaSet[c] = 1;
+        if(!byCha[c]) byCha[c] = { p:0, w:0 };
+        byCha[c].p++; if(isWi(d)) byCha[c].w++;
+      });
+    }
     const cols = Object.keys(chaSet).map(Number).sort((a,b)=>a-b);
     const hasMisc = misc.p > 0;
+    /* 다운로드용 스냅샷 + 상태 배지·버튼 */
+    window._wiLast = { month: baseKey, A: A, B: B, cols: cols, byCha: byCha, misc: misc };
+    window._wiRefill = fillApply;
+    const badge = document.getElementById('wi-badge');
+    if (badge){
+      const hasOv = WI_DATA && WI_DATA[baseKey];
+      badge.textContent = hasOv ? (wiViewAuto ? '(자동 계산 미리보기 · 실제 표시는 수기)' : '📌 수기 업로드 데이터 적용 중') : '자동 계산 (관리대장 기준)';
+      badge.style.color = hasOv && !wiViewAuto ? '#D93025' : '#888';
+      const tg2 = document.getElementById('wi-toggle'), dl2 = document.getElementById('wi-del');
+      if (tg2){ tg2.classList.toggle('hidden', !hasOv); tg2.textContent = wiViewAuto ? '수기 데이터 보기' : '자동 계산 보기'; }
+      if (dl2) dl2.classList.toggle('hidden', !hasOv);
+    }
     const hd = cols.map(c=>`<th>${c}차월</th>`).join('') + (hasMisc?'<th>미배정</th>':'') + '<th>합계</th>';
     const line = (get, gap) => cols.map(c=>cell(get(byCha[c]||{p:0,w:0}))).join('')
       + (hasMisc ? cell(get(misc)) : '')
@@ -2450,8 +2576,9 @@ function renderStatsPage(keepFilters=false){
     document.getElementById('st-apply').innerHTML = tbl1 + tbl2;
   }
   fillApply();
-  /* 지점장 차월 정보가 아직 없으면 불러온 뒤 다시 채움 */
+  /* 지점장 차월·수기 보정 데이터를 불러온 뒤 다시 채움 */
   if (typeof MGR !== 'undefined' && MGR.ensure) MGR.ensure().then(fillApply).catch(()=>{});
+  if (WI_DATA === null) loadWI().then(fillApply); else loadWI().then(fillApply);
 
   /* --- 매출 (비동기 로드) --- */
   if(typeof S!=='undefined' && S.ensureRows){
