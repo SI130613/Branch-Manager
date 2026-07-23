@@ -322,8 +322,8 @@ tr.today-row td{background:#fdf8ee}
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('list')">📋 전체 목록</div>
-    <div class="tab" onclick="switchTab('add')">➕ 신규 입력</div>
+    <div class="tab active" onclick="switchTab('list')">📋 파트너스 목록</div>
+    <div class="tab" style="display:none" onclick="switchTab('add')">➕ 신규 입력</div>
     <div class="tab" onclick="switchTab('stats')">📊 통계</div>
     <div class="tab" onclick="switchTab('sales')">💰 매출관리</div>
     <div class="tab" id="tab-btn-mgrinfo" style="display:none" onclick="switchTab('mgrinfo')">👤 지점장 정보</div>
@@ -372,6 +372,7 @@ tr.today-row td{background:#fdf8ee}
 
     <!-- 엑셀 -->
     <div style="display:flex;gap:8px;margin:-4px 0 12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-sm btn-primary" onclick="openAddModal()">+ 건 추가</button>
       <button class="btn btn-sm" onclick="XL.downloadPartners()" title="현재 화면에 보이는 목록을 엑셀로 저장">⬇ 엑셀 다운로드</button>
       <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
       <button class="btn btn-sm btn-danger" id="p-del-btn" onclick="DEL.confirm()" disabled>🗑 선택 삭제</button>
@@ -381,12 +382,13 @@ tr.today-row td{background:#fdf8ee}
       th[data-psort],th[data-msort],th[data-ssort]{cursor:pointer;user-select:none;white-space:nowrap}
       th[data-psort]:hover,th[data-msort]:hover,th[data-ssort]:hover{color:#3C3489;background:#F6F5FF}
       th[data-psort] .sort-arrow,th[data-msort] .sort-arrow,th[data-ssort] .sort-arrow{font-size:9px;color:#3C3489;margin-left:2px}
+      #tab-list thead th{position:sticky;top:0;z-index:5;background:#f4f3f0}
     </style>
     <div class="section" style="padding:0;overflow:hidden">
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th data-psort="담당자">담당자</th><th data-psort="센터">센터</th><th data-psort="인입날짜">인입날짜</th><th data-psort="가코드">가코드</th><th data-psort="파트너스명">파트너스명</th><th data-psort="경력구분">경력구분</th><th data-psort="직업">직업</th><th data-psort="전화번호">전화번호</th><th data-psort="재통화일정">재통화일정</th><th data-psort="응시날짜">응시일</th><th data-psort="구분">구분</th><th data-psort="지역">지역</th><th data-psort="합격날짜">합격여부</th><th class="prep-th" data-psort="보장분석동의">보장분석<br>동의</th><th class="prep-th" data-psort="브릿지콜">브릿지콜</th><th class="prep-th" data-psort="가계약">가계약</th><th style="width:90px">상담이력</th><th data-psort="위촉여부">위촉여부</th><th data-psort="위촉코드">위촉코드</th><th>관리</th></tr>
+            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th style="width:110px">관리</th><th data-psort="담당자">담당자</th><th data-psort="센터">센터</th><th data-psort="인입날짜">인입날짜</th><th data-psort="가코드">가코드</th><th data-psort="파트너스명">파트너스명</th><th data-psort="경력구분">경력구분</th><th data-psort="직업">직업</th><th data-psort="전화번호">전화번호</th><th data-psort="재통화일정">재통화일정</th><th data-psort="응시날짜">응시일</th><th data-psort="구분">구분</th><th data-psort="지역">지역</th><th data-psort="합격날짜">합격여부</th><th class="prep-th" data-psort="보장분석동의">보장분석<br>동의</th><th class="prep-th" data-psort="브릿지콜">브릿지콜</th><th class="prep-th" data-psort="가계약">가계약</th><th style="width:90px">상담이력</th><th data-psort="위촉여부">위촉여부</th><th data-psort="위촉코드">위촉코드</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -792,7 +794,7 @@ tr.today-row td{background:#fdf8ee}
 <div class="overlay" id="edit-modal">
   <div class="modal-box" style="max-width:640px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <h3>✏️ 정보 수정</h3>
+      <h3 id="edit-modal-title">✏️ 정보 수정</h3>
       <button class="btn btn-sm" onclick="closeModal('edit-modal')">✕</button>
     </div>
     <div style="border:1px solid #d8d8d4;border-radius:8px;overflow:hidden;margin-bottom:1rem">
@@ -845,7 +847,7 @@ tr.today-row td{background:#fdf8ee}
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-sm" onclick="closeModal('edit-modal')">취소</button>
-      <button class="btn btn-sm btn-primary" onclick="saveEdit()">💾 저장</button>
+      <button class="btn btn-sm btn-primary" id="edit-modal-save-btn" onclick="saveEdit()">💾 저장</button>
     </div>
   </div>
 </div>
@@ -1217,14 +1219,14 @@ function updateMonthFilter(){
 }
 
 /* ── 파트너스 시트 API (한 줄씩 처리 → 여러 명이 동시에 써도 안전) ── */
-async function gasCall(body){
+async function gasCall(body, _isRetry){
   body = Object.assign({ v: APP_VERSION }, body);   // 화면 버전 동봉
   busySaving = true;
-  setSyncStatus('loading','저장 중...');
+  setSyncStatus('loading', _isRetry ? '재시도 중...' : '저장 중...');
   showBusy(true);
 
   const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), 25000);   // 25초 넘으면 중단
+  const timer = setTimeout(()=>ctrl.abort(), 30000);   // 30초 넘으면 중단
 
   try{
     const res=await fetch(GAS_URL,{
@@ -1243,6 +1245,14 @@ async function gasCall(body){
     lastSnapshot = '';        // 다음 새로고침 때 반드시 다시 그리도록
     return j;
   }catch(e){
+    clearTimeout(timer);
+    /* 네트워크/타임아웃성 오류는 한 번 자동으로 재시도 (일시적 지연·통신 끊김 대응) */
+    const isNetworkIssue = (e.name === 'AbortError') || (e instanceof TypeError);
+    if(isNetworkIssue && !_isRetry){
+      busySaving = false; showBusy(false);
+      await new Promise(r=>setTimeout(r, 900));
+      return gasCall(body, true);
+    }
     setSyncStatus('err','저장 실패');
     const msg = (e.name === 'AbortError')
       ? '응답이 너무 늦습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.'
@@ -1673,7 +1683,15 @@ function getFilteredPartners(){ return lastFiltered; }
 /* ── 전체목록: 헤더 클릭 정렬 + 페이지(50개씩) ── */
 let PSORT = { key:'', dir:1 };   // dir 1=오름차순, -1=내림차순
 let PPAGE = 1;                   // 현재 페이지
-let PSIZE = 50;                  // 페이지당 표시 건수
+let PSIZE = (function(){
+  try{
+    const saved = localStorage.getItem('EM_PSIZE');
+    if(saved === 'all') return 'all';
+    const n = Number(saved);
+    if ([20,30,50,100,200].includes(n)) return n;
+  }catch(e){}
+  return 50;
+})();                             // 페이지당 표시 건수 (마지막 선택값 유지)
 let _pFilterSig = '';            // 필터가 바뀌면 1페이지로 되돌리기 위한 서명
 
 function setPSort(k){
@@ -1687,7 +1705,12 @@ function setPSort(k){
   renderTable();
 }
 function setPPage(p){ PPAGE = p; renderTable(); const tw=document.querySelector('.table-wrap'); if(tw) tw.scrollTop = 0; }
-function setPSize(v){ PSIZE = (v==='all') ? 'all' : Number(v); PPAGE = 1; renderTable(); }
+function setPSize(v){
+  PSIZE = (v==='all') ? 'all' : Number(v);
+  PPAGE = 1;
+  try{ localStorage.setItem('EM_PSIZE', String(PSIZE)); }catch(e){}
+  renderTable();
+}
 
 function applyPSort(arr){
   if(!PSORT.key) return arr;
@@ -1730,6 +1753,8 @@ function renderPPager(total){
     `<span><b>${PPAGE}</b> / ${pages} 페이지 · 총 ${total.toLocaleString()}건</span>`+
     `<button class="btn btn-sm" ${PPAGE>=pages?'disabled':''} onclick="setPPage(${PPAGE+1})">다음 ▶</button>`+
     `<select onchange="setPSize(this.value)" style="padding:4px 8px;border:1px solid #DDD;border-radius:6px;font-size:12px">`+
+      `<option value="20" ${PSIZE===20?'selected':''}>20개씩</option>`+
+      `<option value="30" ${PSIZE===30?'selected':''}>30개씩</option>`+
       `<option value="50" ${PSIZE===50?'selected':''}>50개씩</option>`+
       `<option value="100" ${PSIZE===100?'selected':''}>100개씩</option>`+
       `<option value="200" ${PSIZE===200?'selected':''}>200개씩</option>`+
@@ -2047,11 +2072,17 @@ function renderTable(){
     }
     const canEdit=isAdmin||d.담당자===currentUser;
     const isSel=DEL.has(d.id);
-    return`<tr${isSel?' class="sel"':rowCls}>
+    return`<tr${isSel?' class="sel"':rowCls} style="cursor:pointer" onclick="openEdit(${ri})">
       <td style="text-align:center" onclick="event.stopPropagation()">${
         canEdit ? `<input type="checkbox" class="p-sel" ${isSel?'checked':''} onchange="DEL.pick('${d.id}',this.checked)">` : ''
       }</td>
       <td style="color:#aaa;text-align:center">${pStart+fi+1}</td>
+      <td class="row-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm" title="이 파트너스 매출 보기" onclick="openPartnerSales(${ri})">💰</button>
+        <button class="btn btn-sm" onclick="openDetail(${ri})">👁</button>
+        ${canEdit?`<button class="btn btn-sm btn-edit" onclick="openEdit(${ri})">✏️</button>`:''}
+        ${canEdit?`<button class="btn btn-sm btn-danger" onclick="deleteEntry(${ri})">🗑</button>`:''}
+      </td>
       <td><span class="badge ${ADMINS.includes(d.담당자)?'badge-admin':'badge-new'}">${d.담당자||'-'}</span></td>
       <td style="font-size:11px">${d.센터||'-'}</td>
       <td>${cleanDate(d.인입날짜)||'-'}</td><td style="font-size:11px">${d.가코드||'-'}</td>
@@ -2071,12 +2102,6 @@ function renderTable(){
       </td>
       <td>${d.위촉여부?`<span class="badge badge-new">${d.위촉여부}</span>`:'-'}</td>
       <td style="font-size:11px">${d.위촉코드||'-'}</td>
-      <td class="row-actions">
-        <button class="btn btn-sm" title="이 파트너스 매출 보기" onclick="openPartnerSales(${ri})">💰</button>
-        <button class="btn btn-sm" onclick="openDetail(${ri})">👁</button>
-        ${canEdit?`<button class="btn btn-sm btn-edit" onclick="openEdit(${ri})">✏️</button>`:''}
-        ${canEdit?`<button class="btn btn-sm btn-danger" onclick="deleteEntry(${ri})">🗑</button>`:''}
-      </td>
     </tr>`;
   }).join('');
 }
@@ -2184,13 +2209,12 @@ async function saveEntry(){
     등록일시:new Date().toLocaleString()
   };
   const ok=await addRow(entry);
-  if(ok) data.push(entry);
   btn.disabled=false; btn.style.cursor='pointer'; btn.textContent='저장하기';
   if(ok){
+    data.push(entry);
     showToast('✓ 구글 시트에 저장되었습니다!','ok');
     renderTable(); renderStatsBar(); clearForm();
   }else{
-    data.pop();
     showToast('저장 실패. 네트워크를 확인해 주세요.','err');
   }
 }
@@ -2229,7 +2253,31 @@ function openDetail(idx){
   document.getElementById('detail-modal').classList.add('open');
 }
 
+function openAddModal(){
+  document.getElementById('edit-modal').dataset.idx = '-1';
+  document.getElementById('edit-modal-title').textContent = '➕ 파트너스 추가';
+  document.getElementById('edit-modal-save-btn').textContent = '💾 추가';
+  /* 입력칸 초기화 */
+  ['e-인입날짜','e-가코드','e-파트너스명','e-생년월일','e-경력구분','e-직업','e-전화번호','e-상담가능시간',
+   'e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min','e-상담이력','e-응시날짜','e-구분',
+   'e-지역','e-시험시간','e-합격날짜','e-배정지점장','e-위촉여부','e-위촉코드','e-보장분석동의','e-브릿지콜','e-가계약']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const ow=document.getElementById('e-owner-wrap');
+  if(ow){
+    ow.style.display = isAdmin ? '' : 'none';
+    if(isAdmin){
+      const names = collectManagers('');
+      document.getElementById('e-담당자').innerHTML =
+        '<option value="">담당 지점장 선택</option>' + names.map(n=>`<option value="${n}">${n}</option>`).join('');
+      document.getElementById('e-센터').value = '';
+    }
+  }
+  document.getElementById('edit-modal').classList.add('open');
+}
+
 function openEdit(idx){
+  document.getElementById('edit-modal-title').textContent = '✏️ 정보 수정';
+  document.getElementById('edit-modal-save-btn').textContent = '💾 저장';
   const d=data[idx];
   document.getElementById('edit-modal').dataset.idx=idx;
   /* 관리자: 담당 지점장·센터 수정 가능 */
@@ -2257,6 +2305,34 @@ async function saveEdit(){
   const idx=parseInt(document.getElementById('edit-modal').dataset.idx);
   const get=id=>document.getElementById(id).value.trim();
   if(!get('e-파트너스명')){alert('파트너스명을 입력해주세요.');return;}
+
+  /* ── 신규 추가 모드 (매출탭의 '+ 건 추가'와 동일한 방식) ── */
+  if(idx === -1){
+    if(isAdmin && !get('e-담당자')){alert('담당 지점장을 선택해 주세요.\n(누구를 대신해 입력하는지 지정해야 통계에 반영됩니다)');return;}
+    const btn=document.getElementById('edit-modal-save-btn');
+    btn.disabled=true; btn.textContent='추가 중...';
+    const entry={
+      담당자:(isAdmin ? get('e-담당자') : currentUser), 센터:(get('e-센터')||currentCenter), 인입날짜:get('e-인입날짜'), 가코드:get('e-가코드'), 파트너스명:get('e-파트너스명'),
+      생년월일:get('e-생년월일'), 경력구분:get('e-경력구분'), 직업:get('e-직업'),
+      전화번호:get('e-전화번호'), 상담가능시간:get('e-상담가능시간'), 재통화일정:buildRecall('e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min'),
+      상담이력:get('e-상담이력'), 응시날짜:get('e-응시날짜'), 구분:get('e-구분'),
+      지역:get('e-지역'), 시험시간:get('e-시험시간'), 합격날짜:get('e-합격날짜'),
+      배정지점장:get('e-배정지점장'), 위촉여부:get('e-위촉여부'), 위촉코드:get('e-위촉코드'),
+      보장분석동의:get('e-보장분석동의'), 브릿지콜:get('e-브릿지콜'), 가계약:get('e-가계약'),
+      등록일시:new Date().toLocaleString()
+    };
+    const ok=await addRow(entry);
+    btn.disabled=false; btn.textContent='💾 추가';
+    if(ok){
+      data.push(entry);
+      showToast('✓ 구글 시트에 저장되었습니다!','ok');
+      closeModal('edit-modal'); renderTable(); renderStatsBar(); updateYearFilter();
+    }else{
+      showToast('저장 실패. 네트워크를 확인해 주세요.','err');
+    }
+    return;
+  }
+
   const d=data[idx];
   d.인입날짜=get('e-인입날짜');d.가코드=get('e-가코드');d.파트너스명=get('e-파트너스명');
   d.생년월일=get('e-생년월일');d.경력구분=get('e-경력구분');d.직업=get('e-직업');
@@ -3022,15 +3098,26 @@ var MGR = (function(){
     document.getElementById('mi-modal').classList.add('open');
   }
 
-  function save(silent){
+  function save(silent, _isRetry){
     /* ★ v 누락 버그 수정: 버전을 안 보내면 서버가 '오래된 화면'으로 거부함 */
     const body = JSON.stringify({action:'save_mgr', v: APP_VERSION, data:list});
-    return fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body})
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), 30000);
+    return fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body, signal: ctrl.signal})
       .then(r=>r.text()).then(t=>{
+        clearTimeout(timer);
         let j; try{ j=JSON.parse(t); }catch(e){ throw new Error('저장 응답 오류'); }
         if(!j.ok) throw new Error(j.error||'저장 실패');
         if(!silent) showToast('✓ 저장되었습니다','ok');
-      }).catch(e=>{ showToast('저장 실패: '+(e.message||e),'err'); throw e; });
+      }).catch(e=>{
+        clearTimeout(timer);
+        const isNetworkIssue = (e.name === 'AbortError') || (e instanceof TypeError);
+        if(isNetworkIssue && !_isRetry){
+          return new Promise(r=>setTimeout(r,900)).then(()=>save(silent, true));
+        }
+        const msg = (e.name === 'AbortError') ? '응답이 너무 늦습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.' : (e.message||e);
+        showToast('저장 실패: '+msg,'err'); throw e;
+      });
   }
 
   function saveFromModal(){
