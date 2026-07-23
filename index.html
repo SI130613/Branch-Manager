@@ -368,12 +368,12 @@ tr.today-row td{background:#fdf8ee}
       <select id="filter-합격" onchange="renderTable()" style="width:115px"><option value="">합격 전체</option><option value="y">합격</option><option value="n">미합격</option></select>
       <button class="btn btn-sm btn-blue" id="filter-reset" onclick="resetListFilters()" style="display:none">↺ 필터 초기화</button>
 
-      <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." oninput="renderTable()">
+      <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." style="flex:0 0 auto;width:430px;min-width:0" oninput="renderTable()">
       <button class="btn btn-sm" onclick="openAddModal()" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:#E0403A;color:#fff;border-color:#E0403A;white-space:nowrap">+ 건 추가</button>
     </div>
 
     <!-- 엑셀 -->
-    <div id="list-toolbar" style="display:flex;gap:8px;margin:-4px 0 12px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:8;background:#fff;padding:8px 0">
+    <div id="list-toolbar" style="display:flex;gap:8px;margin:-4px 0 12px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-sm" onclick="XL.downloadPartners()" title="현재 화면에 보이는 목록을 엑셀로 저장">⬇ 엑셀 다운로드</button>
       <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
       <button class="btn btn-sm btn-danger" id="p-del-btn" onclick="DEL.confirm()" disabled>🗑 선택 삭제</button>
@@ -383,9 +383,11 @@ tr.today-row td{background:#fdf8ee}
       th[data-psort],th[data-msort],th[data-ssort]{cursor:pointer;user-select:none;white-space:nowrap}
       th[data-psort]:hover,th[data-msort]:hover,th[data-ssort]:hover{color:#3C3489;background:#F6F5FF}
       th[data-psort] .sort-arrow,th[data-msort] .sort-arrow,th[data-ssort] .sort-arrow{font-size:9px;color:#3C3489;margin-left:2px}
-      #tab-list thead th{position:sticky;top:var(--list-toolbar-h,44px);z-index:5;background:#f4f3f0}
+      /* 표 자체를 내부 스크롤 영역으로 만들어 헤더를 그 안에서 확실히 고정 (페이지 전체 스크롤에 기대지 않음) */
+      #tab-list .table-wrap{max-height:62vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px}
+      #tab-list thead th{position:sticky;top:0;z-index:5;background:#f4f3f0}
     </style>
-    <div class="section" style="padding:0;overflow:hidden">
+    <div class="section" style="padding:0;overflow:visible">
       <div class="table-wrap">
         <table>
           <thead>
@@ -1575,7 +1577,6 @@ function switchTab(t){
     if(btn) btn.classList.toggle('active',n===t);
   });
   if(t==='stats')renderStatsPage();
-  if(t==='list') setTimeout(syncListStickyOffset, 0);
   if(t==='sales'){ S.enter(); loadFromSheet(false, true); }  /* 파트너스 명단 최신화 → 건추가 이름 목록에 삭제된 사람 안 뜸 */
   if(t==='mgrinfo')MGR.enter();
   if(t==='add')syncCenterField();
@@ -2001,13 +2002,6 @@ function updateMSortArrows(){
   });
 }
 
-function syncListStickyOffset(){
-  const tb = document.getElementById('list-toolbar');
-  if(!tb) return;
-  document.documentElement.style.setProperty('--list-toolbar-h', tb.offsetHeight + 'px');
-}
-window.addEventListener('resize', syncListStickyOffset);
-
 function renderTable(){
   syncListFilters();
   const vis=getVisibleData();
@@ -2113,7 +2107,6 @@ function renderTable(){
       <td style="font-size:11px">${d.위촉코드||'-'}</td>
     </tr>`;
   }).join('');
-  syncListStickyOffset();
 }
 
 function showRecallPopup(force=false){
