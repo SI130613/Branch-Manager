@@ -2084,7 +2084,6 @@ function renderTable(){
         <button class="btn btn-sm" title="이 파트너스 매출 보기" onclick="openPartnerSales(${ri})">💰</button>
         <button class="btn btn-sm" onclick="openDetail(${ri})">👁</button>
         ${canEdit?`<button class="btn btn-sm btn-edit" onclick="openEdit(${ri})">✏️</button>`:''}
-        ${canEdit?`<button class="btn btn-sm btn-danger" onclick="deleteEntry(${ri})">🗑</button>`:''}
       </td>
       <td><span class="badge ${ADMINS.includes(d.담당자)?'badge-admin':'badge-new'}">${d.담당자||'-'}</span></td>
       <td style="font-size:11px">${d.센터||'-'}</td>
