@@ -909,7 +909,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="form-group"><label>월 매출 목표 (천원)</label><input type="number" id="mi-f-월매출목표" placeholder="예: 804"></div>
       <div class="form-group"><label>담당코치</label><input type="text" id="mi-f-담당코치" placeholder="예: 배정은"></div>
       <div class="form-group"><label>패키지</label>
-        <select id="mi-f-패키지"><option value="일반">일반</option><option value="패키지">패키지</option></select>
+        <select id="mi-f-패키지"><option value="O">O</option><option value="X">X</option></select>
       </div>
       <div class="form-group"><label>상태</label>
         <select id="mi-f-상태"><option value="정상">정상</option><option value="폐쇄">폐쇄</option></select>
@@ -3074,9 +3074,9 @@ var MGR = (function(){
         <td style="font-weight:600">${x.지점장명||'-'}</td>
         <td style="font-size:11px">${x.연락처||'-'}</td>
         <td style="text-align:center;color:#555">${x.담당코치||'-'}</td>
-        <td style="text-align:center">${String(x.패키지||'').trim()==='패키지'
-          ? '<span class="badge" style="background:#FFF3D6;color:#946200">패키지</span>'
-          : '<span style="color:#ccc;font-size:11px">일반</span>'}</td>
+        <td style="text-align:center">${['O','패키지'].includes(String(x.패키지||'').trim())
+          ? '<span class="badge" style="background:#FFF3D6;color:#946200">O</span>'
+          : '<span style="color:#ccc;font-size:11px">X</span>'}</td>
         <td style="text-align:center">${String(x.상태||'').trim()==='폐쇄'
           ? `<span class="badge" style="background:#FBE4E4;color:#B3251E" title="폐쇄일: ${x.폐쇄일||'미입력'}">폐쇄</span>`
           : '<span class="badge" style="background:#E4F3EC;color:#0E6B52">정상</span>'}</td>
@@ -3094,7 +3094,7 @@ var MGR = (function(){
 
   function openEdit(idx){
     editIdx = idx;
-    const x = idx>=0 ? list[idx] : {센터:'',지점장명:'',연락처:'',위촉코드:'',기수:'',입사월:'',차월:'',교육이수:'',경력사항:'',특이사항:'',월매출목표:'',매출목표:'',담당코치:'',패키지:'일반',상태:'정상',폐쇄일:''};
+    const x = idx>=0 ? list[idx] : {센터:'',지점장명:'',연락처:'',위촉코드:'',기수:'',입사월:'',차월:'',교육이수:'',경력사항:'',특이사항:'',월매출목표:'',매출목표:'',담당코치:'',패키지:'O',상태:'정상',폐쇄일:''};
     document.getElementById('mi-title').textContent = idx>=0 ? `${x.지점장명} 정보 수정` : '지점장 추가';
     document.getElementById('mi-f-센터').value = x.센터||'';
     document.getElementById('mi-f-지점장명').value = x.지점장명||'';
@@ -3105,7 +3105,7 @@ var MGR = (function(){
     document.getElementById('mi-f-차월').value = x.차월||'';
     document.getElementById('mi-f-월매출목표').value = x.월매출목표||'';
     document.getElementById('mi-f-담당코치').value = x.담당코치||'';
-    document.getElementById('mi-f-패키지').value = (String(x.패키지||'').trim()==='패키지') ? '패키지' : '일반';
+    document.getElementById('mi-f-패키지').value = (['O','패키지'].includes(String(x.패키지||'').trim())) ? 'O' : 'X';
     document.getElementById('mi-f-상태').value = (String(x.상태||'').trim()==='폐쇄') ? '폐쇄' : '정상';
     document.getElementById('mi-f-폐쇄일').value = x.폐쇄일||'';
     document.getElementById('mi-f-교육이수').value = x.교육이수||'';
@@ -3144,7 +3144,7 @@ var MGR = (function(){
     const o = Object.assign(editIdx>=0 ? Object.assign({}, list[editIdx]) : {}, {
       센터:g('mi-f-센터'), 지점장명:g('mi-f-지점장명'), 연락처:g('mi-f-연락처'), 위촉코드:g('mi-f-위촉코드'),
       기수:g('mi-f-기수'), 입사월:g('mi-f-입사월'), 차월:g('mi-f-차월'),
-      월매출목표:g('mi-f-월매출목표'), 담당코치:g('mi-f-담당코치'), 패키지:g('mi-f-패키지')||'일반',
+      월매출목표:g('mi-f-월매출목표'), 담당코치:g('mi-f-담당코치'), 패키지:g('mi-f-패키지')||'O',
       상태:g('mi-f-상태')||'정상', 폐쇄일:g('mi-f-폐쇄일'),
       교육이수:g('mi-f-교육이수'), 경력사항:g('mi-f-경력사항'), 특이사항:g('mi-f-특이사항')
     });
