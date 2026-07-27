@@ -497,7 +497,11 @@ tr.today-row td{background:#fdf8ee}
       <button class="btn btn-sm" onclick="MGR.applyPreset()" title="위촉코드·기수·입사월을 한 번에 채웁니다">📥 코드·기수 일괄 입력</button>
       <button class="btn btn-primary btn-sm" onclick="MGR.openEdit(-1)">+ 지점장 추가</button>
     </div>
-    <div class="section" style="padding:0;overflow:hidden">
+    <style>
+      #tab-mgrinfo .table-wrap{max-height:62vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px}
+      #tab-mgrinfo thead th{position:sticky;top:0;z-index:5;background:#f4f3f0}
+    </style>
+    <div class="section" style="padding:0;overflow:visible">
       <div class="table-wrap">
         <table>
           <thead><tr>
