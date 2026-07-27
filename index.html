@@ -3078,9 +3078,9 @@ var MGR = (function(){
         <td style="font-weight:600">${x.지점장명||'-'}</td>
         <td style="font-size:11px">${x.연락처||'-'}</td>
         <td style="text-align:center;color:#555">${x.담당코치||'-'}</td>
-        <td style="text-align:center">${['O','패키지'].includes(String(x.패키지||'').trim())
-          ? '<span class="badge" style="background:#FFF3D6;color:#946200">O</span>'
-          : '<span style="color:#ccc;font-size:11px">X</span>'}</td>
+        <td style="text-align:center">${String(x.패키지||'').trim()==='X'
+          ? '<span style="color:#ccc;font-size:11px">X</span>'
+          : '<span class="badge" style="background:#FFF3D6;color:#946200">O</span>'}</td>
         <td style="text-align:center">${String(x.상태||'').trim()==='폐쇄'
           ? `<span class="badge" style="background:#FBE4E4;color:#B3251E" title="폐쇄일: ${x.폐쇄일||'미입력'}">폐쇄</span>`
           : '<span class="badge" style="background:#E4F3EC;color:#0E6B52">정상</span>'}</td>
@@ -3109,7 +3109,7 @@ var MGR = (function(){
     document.getElementById('mi-f-차월').value = x.차월||'';
     document.getElementById('mi-f-월매출목표').value = x.월매출목표||'';
     document.getElementById('mi-f-담당코치').value = x.담당코치||'';
-    document.getElementById('mi-f-패키지').value = (['O','패키지'].includes(String(x.패키지||'').trim())) ? 'O' : 'X';
+    document.getElementById('mi-f-패키지').value = (String(x.패키지||'').trim()==='X') ? 'X' : 'O';
     document.getElementById('mi-f-상태').value = (String(x.상태||'').trim()==='폐쇄') ? '폐쇄' : '정상';
     document.getElementById('mi-f-폐쇄일').value = x.폐쇄일||'';
     document.getElementById('mi-f-교육이수').value = x.교육이수||'';
