@@ -4031,12 +4031,12 @@ function clearCodeFilter(){
 /* ----- 필터 옵션 (종속) ----- */
 function mgrOptions(){
   var src = F.center.length ? rows.filter(function(r){ return F.center.indexOf(r.center) >= 0; }) : rows;
-  return uniq(src.map(function(r){ return r.mgr; }));
+  return uniq(src.map(function(r){ return String(r.mgr == null ? '' : r.mgr).trim(); }));
 }
 function partnerOptions(){
   var src = rows;
   if (F.center.length) src = src.filter(function(r){ return F.center.indexOf(r.center) >= 0; });
-  if (F.mgr.length) src = src.filter(function(r){ return F.mgr.indexOf(r.mgr) >= 0; });
+  if (F.mgr.length) src = src.filter(function(r){ return F.mgr.indexOf(String(r.mgr == null ? '' : r.mgr).trim()) >= 0; });
   return uniq(src.map(function(r){ return r.partner; })).sort(function(a,b){ return a.localeCompare(b,"ko"); });
 }
 function uniq(arr){
@@ -4276,7 +4276,7 @@ function filteredRows(){
       if (F.codes.indexOf(c1) < 0 && F.codes.indexOf(c2) < 0) return false;
     }
     if (F.center.length && F.center.indexOf(r.center) < 0) return false;
-    if (F.mgr.length && F.mgr.indexOf(r.mgr) < 0) return false;
+    if (F.mgr.length && F.mgr.indexOf(String(r.mgr == null ? '' : r.mgr).trim()) < 0) return false;
     if (F.partner.length && F.partner.indexOf(r.partner) < 0) return false;
     if (F.holder.length && F.holder.indexOf(r.holder) < 0) return false;
     if (F.insured.length && F.insured.indexOf(r.insured) < 0) return false;
@@ -4558,7 +4558,7 @@ function openEdit(id){
   $("editTitle").textContent = isNew ? "매출 건 추가" : "매출 건 수정";
   fillPartnerList();
   fillSelect("f_center", CENTERS, true);
-  fillSelect("f_mgr", AUTH.role === "mgr" ? [AUTH.name] : uniq(MANAGERS.concat(rows.map(function(x){return x.mgr;}))).filter(function(n){ return !isClosedMgr(n); }), true);
+  fillSelect("f_mgr", AUTH.role === "mgr" ? [AUTH.name] : uniq(MANAGERS.concat(rows.map(function(x){return String(x.mgr==null?'':x.mgr).trim();}))).filter(function(n){ return !isClosedMgr(n); }), true);
   $("f_center").disabled = AUTH.role === "mgr";
   $("f_mgr").disabled = AUTH.role === "mgr";
   SKEYS.forEach(function(k){
@@ -4679,6 +4679,7 @@ function collectRow(){
     if (!el){ o[k] = editing.orig ? editing.orig[k] : null; return; }
     var v = el.value;
     if (k === "month" || k === "amt" || k === "pcorr" || k === "active") v = v === "" ? null : Number(v);
+    if ((k === "mgr" || k === "center" || k === "partner") && typeof v === "string") v = v.trim();
     o[k] = v === "" ? null : v;
   });
   return o;
