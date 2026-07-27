@@ -501,7 +501,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>No.</th><th data-msort="센터">센터</th><th data-msort="지점장명">지점장명</th><th data-msort="연락처">연락처</th><th data-msort="담당코치">담당코치</th><th data-msort="상태">상태</th><th data-msort="위촉코드">위촉코드</th><th data-msort="입사월">입사월</th><th data-msort="기수">기수</th><th data-msort="차월">차월</th>
+            <th>No.</th><th data-msort="센터">센터</th><th data-msort="지점장명">지점장명</th><th data-msort="연락처">연락처</th><th data-msort="담당코치">담당코치</th><th data-msort="패키지">패키지</th><th data-msort="상태">상태</th><th data-msort="위촉코드">위촉코드</th><th data-msort="입사월">입사월</th><th data-msort="기수">기수</th><th data-msort="차월">차월</th>
             <th>교육 이수 내용</th><th>경력사항</th><th>특이사항</th><th>관리</th>
           </tr></thead>
           <tbody id="mi-body"></tbody>
@@ -908,6 +908,9 @@ tr.today-row td{background:#fdf8ee}
       <div class="form-group"><label>차월 (입사월 기준 자동)</label><input type="number" id="mi-f-차월" placeholder="입사월 입력 시 자동"></div>
       <div class="form-group"><label>월 매출 목표 (천원)</label><input type="number" id="mi-f-월매출목표" placeholder="예: 804"></div>
       <div class="form-group"><label>담당코치</label><input type="text" id="mi-f-담당코치" placeholder="예: 배정은"></div>
+      <div class="form-group"><label>패키지</label>
+        <select id="mi-f-패키지"><option value="일반">일반</option><option value="패키지">패키지</option></select>
+      </div>
       <div class="form-group"><label>상태</label>
         <select id="mi-f-상태"><option value="정상">정상</option><option value="폐쇄">폐쇄</option></select>
       </div>
@@ -2956,12 +2959,12 @@ var MGR = (function(){
       reload();   /* ★ 다른 관리자가 바꾼 최신 명단으로 조용히 갱신 (덮어쓰기 사고 예방) */
       return;
     }
-    document.getElementById('mi-body').innerHTML = '<tr><td colspan="14" class="empty">불러오는 중…</td></tr>';
+    document.getElementById('mi-body').innerHTML = '<tr><td colspan="15" class="empty">불러오는 중…</td></tr>';
     ensure()
       .then(()=>{ fillCenters(); render(); })
       .catch(e=>{
         document.getElementById('mi-body').innerHTML =
-          `<tr><td colspan="14" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
+          `<tr><td colspan="15" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
       });
   }
 
@@ -3026,7 +3029,7 @@ var MGR = (function(){
         const co = String(x.담당코치||'').trim();
         if(fco === '__none__' ? co !== '' : co !== fco) return false;
       }
-      if(q && !`${x.지점장명||''} ${x.센터||''} ${x.연락처||''} ${x.위촉코드||''} ${x.기수||''} ${x.담당코치||''}`.toLowerCase().includes(q)) return false;
+      if(q && !`${x.지점장명||''} ${x.센터||''} ${x.연락처||''} ${x.위촉코드||''} ${x.기수||''} ${x.담당코치||''} ${x.패키지||''}`.toLowerCase().includes(q)) return false;
       return true;
     });
     /* 헤더 클릭 정렬 */
@@ -3061,7 +3064,7 @@ var MGR = (function(){
     }
     if(typeof updateMSortArrows === 'function') updateMSortArrows();
     const tb = document.getElementById('mi-body');
-    if(!f.length){ tb.innerHTML = '<tr><td colspan="14" class="empty">데이터가 없습니다</td></tr>'; return; }
+    if(!f.length){ tb.innerHTML = '<tr><td colspan="15" class="empty">데이터가 없습니다</td></tr>'; return; }
     tb.innerHTML = f.map((x,i)=>{
       const ri = list.indexOf(x);
       const cha = autoMonth(x.입사월) || x.차월 || '-';
@@ -3071,6 +3074,9 @@ var MGR = (function(){
         <td style="font-weight:600">${x.지점장명||'-'}</td>
         <td style="font-size:11px">${x.연락처||'-'}</td>
         <td style="text-align:center;color:#555">${x.담당코치||'-'}</td>
+        <td style="text-align:center">${String(x.패키지||'').trim()==='패키지'
+          ? '<span class="badge" style="background:#FFF3D6;color:#946200">패키지</span>'
+          : '<span style="color:#ccc;font-size:11px">일반</span>'}</td>
         <td style="text-align:center">${String(x.상태||'').trim()==='폐쇄'
           ? `<span class="badge" style="background:#FBE4E4;color:#B3251E" title="폐쇄일: ${x.폐쇄일||'미입력'}">폐쇄</span>`
           : '<span class="badge" style="background:#E4F3EC;color:#0E6B52">정상</span>'}</td>
@@ -3088,7 +3094,7 @@ var MGR = (function(){
 
   function openEdit(idx){
     editIdx = idx;
-    const x = idx>=0 ? list[idx] : {센터:'',지점장명:'',연락처:'',위촉코드:'',기수:'',입사월:'',차월:'',교육이수:'',경력사항:'',특이사항:'',월매출목표:'',매출목표:'',담당코치:'',상태:'정상',폐쇄일:''};
+    const x = idx>=0 ? list[idx] : {센터:'',지점장명:'',연락처:'',위촉코드:'',기수:'',입사월:'',차월:'',교육이수:'',경력사항:'',특이사항:'',월매출목표:'',매출목표:'',담당코치:'',패키지:'일반',상태:'정상',폐쇄일:''};
     document.getElementById('mi-title').textContent = idx>=0 ? `${x.지점장명} 정보 수정` : '지점장 추가';
     document.getElementById('mi-f-센터').value = x.센터||'';
     document.getElementById('mi-f-지점장명').value = x.지점장명||'';
@@ -3099,6 +3105,7 @@ var MGR = (function(){
     document.getElementById('mi-f-차월').value = x.차월||'';
     document.getElementById('mi-f-월매출목표').value = x.월매출목표||'';
     document.getElementById('mi-f-담당코치').value = x.담당코치||'';
+    document.getElementById('mi-f-패키지').value = (String(x.패키지||'').trim()==='패키지') ? '패키지' : '일반';
     document.getElementById('mi-f-상태').value = (String(x.상태||'').trim()==='폐쇄') ? '폐쇄' : '정상';
     document.getElementById('mi-f-폐쇄일').value = x.폐쇄일||'';
     document.getElementById('mi-f-교육이수').value = x.교육이수||'';
@@ -3137,7 +3144,7 @@ var MGR = (function(){
     const o = Object.assign(editIdx>=0 ? Object.assign({}, list[editIdx]) : {}, {
       센터:g('mi-f-센터'), 지점장명:g('mi-f-지점장명'), 연락처:g('mi-f-연락처'), 위촉코드:g('mi-f-위촉코드'),
       기수:g('mi-f-기수'), 입사월:g('mi-f-입사월'), 차월:g('mi-f-차월'),
-      월매출목표:g('mi-f-월매출목표'), 담당코치:g('mi-f-담당코치'),
+      월매출목표:g('mi-f-월매출목표'), 담당코치:g('mi-f-담당코치'), 패키지:g('mi-f-패키지')||'일반',
       상태:g('mi-f-상태')||'정상', 폐쇄일:g('mi-f-폐쇄일'),
       교육이수:g('mi-f-교육이수'), 경력사항:g('mi-f-경력사항'), 특이사항:g('mi-f-특이사항')
     });
@@ -3240,7 +3247,7 @@ var XL = (function(){
   /* 엑셀 헤더(보기 좋은 이름) ↔ 실제 항목 */
   const P_ALIAS = { '담당EM':'배정지점장', '보장분석 동의':'보장분석동의', '재통화 일정':'재통화일정' };
 
-  const M_FIELDS = ['센터','지점장명','연락처','위촉코드','기수','입사월','차월','교육이수','경력사항','특이사항'];
+  const M_FIELDS = ['센터','지점장명','연락처','위촉코드','기수','입사월','차월','패키지','교육이수','경력사항','특이사항'];
 
   let mode = null;      // 'partner' | 'mgr'
   let parsed = null;
@@ -3331,7 +3338,7 @@ var XL = (function(){
     const ws = wb.addWorksheet('지점장정보');
     ws.addRow(M_FIELDS);
     rows.forEach(r => ws.addRow(M_FIELDS.map(k => (r[k]===null||r[k]===undefined) ? '' : String(r[k]))));
-    ws.columns = [{width:12},{width:12},{width:15},{width:14},{width:9},{width:12},{width:8},{width:28},{width:28},{width:28}];
+    ws.columns = [{width:12},{width:12},{width:15},{width:14},{width:9},{width:12},{width:8},{width:10},{width:28},{width:28},{width:28}];
     styleRange(ws, 1, rows.length + 1, M_FIELDS.length, { header:true });
     ws.views = [{ state:'frozen', ySplit:1 }];
 
@@ -3492,7 +3499,7 @@ var XL = (function(){
     mode = 'mgr';
     document.getElementById('xl-title').textContent = '지점장 정보 엑셀 업로드';
     document.getElementById('xl-hint').innerHTML =
-      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다.<br>(센터, 지점장명, 연락처, 위촉코드, 기수, 입사월, 차월, 교육이수, 경력사항, 특이사항)<br>'
+      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다.<br>(센터, 지점장명, 연락처, 위촉코드, 기수, 입사월, 차월, 패키지, 교육이수, 경력사항, 특이사항)<br>'
       + '<span style="color:#0A5540">"추가" 모드에서는 <b>빈 칸으로 둔 항목은 기존 값을 그대로 유지</b>합니다. (예: 연락처만 채워 올리면 연락처만 갱신됩니다)';
     document.getElementById('xl-replace-label').textContent = '전체 교체 (기존 명단 삭제 후 새로 등록)';
     document.getElementById('xl-mode').style.display = '';
