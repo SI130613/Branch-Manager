@@ -538,20 +538,23 @@ tr.today-row td{background:#fdf8ee}
   <div class="section" style="margin-bottom:16px">
     <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월 기준 · 센터 → 지점장차월 → 지점장이름 순</span></div>
     <div class="table-wrap" style="max-height:50vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">
-      <table class="st-t" style="min-width:560px;white-space:nowrap">
+      <table class="st-t" style="min-width:760px;white-space:nowrap">
         <thead>
           <tr>
             <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle">센터</th>
             <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle">차월</th>
             <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle;text-align:left">지점장</th>
-            <th colspan="2" style="position:sticky;top:0;z-index:6;background:#DCEEFB;color:#1565C0">선행</th>
-            <th colspan="2" style="position:sticky;top:0;z-index:6;background:#FFE9CC;color:#B36B00">정규(+후속)</th>
+            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#EFEEF9;color:#3C3489;vertical-align:middle">총위촉율<br><span style="font-weight:400;font-size:10px">(선+정규+후속)</span></th>
+            <th colspan="3" style="position:sticky;top:0;z-index:6;background:#DCEEFB;color:#1565C0">선행</th>
+            <th colspan="3" style="position:sticky;top:0;z-index:6;background:#FFE9CC;color:#B36B00">정규(+후속)</th>
           </tr>
           <tr>
             <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">합격인원</th>
             <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">위촉인원</th>
+            <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">위촉율</th>
             <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">합격인원</th>
             <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">위촉인원</th>
+            <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">위촉율</th>
           </tr>
         </thead>
         <tbody id="wk-stat-body"></tbody>
@@ -560,10 +563,10 @@ tr.today-row td{background:#fdf8ee}
   </div>
 
   <div class="section" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding:10px 14px;margin-bottom:12px">
-    <select id="wk-f-center" onchange="WK.onFilterChange()" style="padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">센터</option></select>
-    <select id="wk-f-mgr" onchange="WK.onFilterChange()" style="padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">지점장명</option></select>
-    <input type="text" id="wk-f-partner" placeholder="🔍 파트너스명" oninput="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
-    <select id="wk-f-status" onchange="WK.onFilterChange()" style="padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
+    <select id="wk-f-center" onchange="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">센터</option></select>
+    <select id="wk-f-mgr" onchange="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">지점장명</option></select>
+    <input type="text" id="wk-f-partner" placeholder="🔍 파트너스명" oninput="WK.onFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
+    <select id="wk-f-status" onchange="WK.onFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
       <option value="">위촉여부</option>
       <option value="미위촉">미위촉</option>
       <option value="완료">완료</option>
@@ -3444,8 +3447,14 @@ var WK = (function(){
 
   function enter(){
     var lb = $('wk-month-label'); if(lb) lb.textContent = monthLabel(curMonth);
-    if(!loaded){ load().then(render); render(); }
-    else render();
+    var mgrReady = (typeof MGR!=='undefined' && MGR.ensure) ? MGR.ensure() : Promise.resolve();
+    if(!loaded){
+      Promise.all([load(), mgrReady]).then(render);
+      render();
+    } else {
+      mgrReady.then(render);
+      render();
+    }
   }
 
   /* 파트너스 목록(전역 data 배열)에서 "합격"한 사람만, 응시날짜(응시년월)·구분을 그대로 끌어와
@@ -3611,22 +3620,31 @@ var WK = (function(){
     return arr;
   }
 
+  function pct(num, den){
+    if(!den) return '-';
+    return Math.round(num/den*1000)/10 + '%';
+  }
+
   function renderStatsTable(){
     var tb = $('wk-stat-body');
     if(!tb) return;
     var arr = statGroups();
-    if(!arr.length){ tb.innerHTML = '<tr><td colspan="7" class="empty">데이터가 없습니다</td></tr>'; return; }
+    if(!arr.length){ tb.innerHTML = '<tr><td colspan="10" class="empty">데이터가 없습니다</td></tr>'; return; }
     var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
     tb.innerHTML = arr.map(function(g){
       var cha = fn ? fn(g.지점장명) : null;
+      var totCand = g.선행합격 + g.정규합격, totDone = g.선행위촉 + g.정규위촉;
       return '<tr>' +
         '<td style="font-size:11px">'+esc(g.센터)+'</td>' +
         '<td style="text-align:center">'+ (cha!=null && !isNaN(cha) ? cha+'차월' : '-') +'</td>' +
         '<td style="text-align:left;font-weight:600">'+esc(g.지점장명)+'</td>' +
+        '<td style="text-align:center;font-weight:700;color:#3C3489">'+ pct(totDone, totCand) +'</td>' +
         '<td style="text-align:right">'+g.선행합격+'</td>' +
         '<td style="text-align:right">'+g.선행위촉+'</td>' +
+        '<td style="text-align:center;color:#1565C0">'+ pct(g.선행위촉, g.선행합격) +'</td>' +
         '<td style="text-align:right">'+g.정규합격+'</td>' +
         '<td style="text-align:right">'+g.정규위촉+'</td>' +
+        '<td style="text-align:center;color:#B36B00">'+ pct(g.정규위촉, g.정규합격) +'</td>' +
       '</tr>';
     }).join('');
   }
