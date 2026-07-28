@@ -326,6 +326,7 @@ tr.today-row td{background:#fdf8ee}
     <div class="tab" style="display:none" onclick="switchTab('add')">➕ 신규 입력</div>
     <div class="tab" onclick="switchTab('stats')">📊 통계</div>
     <div class="tab" onclick="switchTab('sales')">💰 매출관리</div>
+    <div class="tab" id="tab-btn-wichok" style="display:none" onclick="switchTab('wichok')">📝 위촉현황</div>
     <div class="tab" id="tab-btn-mgrinfo" style="display:none" onclick="switchTab('mgrinfo')">👤 지점장 정보</div>
   </div>
 
@@ -525,6 +526,120 @@ tr.today-row td{background:#fdf8ee}
       <div id="adm-msg" style="font-size:12px;margin-top:8px"></div>
     </div>
   </div>
+
+<!-- ===== 위촉현황 ===== -->
+<div id="tab-wichok" style="display:none">
+  <div class="section" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px">
+    <button class="btn btn-sm" onclick="WK.monthShift(-1)">◀</button>
+    <div style="font-weight:700;font-size:14px;min-width:100px;text-align:center" id="wk-month-label">-</div>
+    <button class="btn btn-sm" onclick="WK.monthShift(1)">▶</button>
+    <select id="wk-f-center" onchange="WK.onFilterChange()" style="padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px"><option value="">센터 전체</option></select>
+    <select id="wk-f-mgr" onchange="WK.onFilterChange()" style="padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px"><option value="">지점장명 전체</option></select>
+    <input type="text" id="wk-f-partner" placeholder="🔍 파트너스명 검색" oninput="WK.onFilterChange()" style="width:150px;padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px">
+    <select id="wk-f-status" onchange="WK.onFilterChange()" style="padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px">
+      <option value="">위촉여부 전체</option>
+      <option value="완료">완료</option>
+      <option value="진행중">진행중</option>
+      <option value="위촉불가">위촉불가</option>
+      <option value="위촉거부">위촉거부</option>
+    </select>
+    <div style="flex:1"></div>
+    <button class="btn btn-sm" onclick="WK.download()">⬇ 엑셀다운</button>
+    <button class="btn btn-sm" onclick="WK.openUpload()">⬆ 엑셀업로드</button>
+  </div>
+
+  <style>
+    #tab-wichok .table-wrap{max-height:62vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px}
+    #tab-wichok thead th{position:sticky;top:0;z-index:5;background:#f4f3f0;cursor:pointer;user-select:none}
+    #tab-wichok thead th:hover{color:#3C3489;background:#F6F5FF}
+  </style>
+  <div class="section" style="padding:0;overflow:visible">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th data-wksort="날짜" onclick="WK.setSort('날짜')">날짜</th>
+          <th data-wksort="센터" onclick="WK.setSort('센터')">센터</th>
+          <th data-wksort="지점장명" onclick="WK.setSort('지점장명')">지점장명</th>
+          <th data-wksort="응시구분" onclick="WK.setSort('응시구분')">응시구분</th>
+          <th data-wksort="구코드" onclick="WK.setSort('구코드')">구코드</th>
+          <th data-wksort="파트너스명" onclick="WK.setSort('파트너스명')">파트너스명</th>
+          <th data-wksort="위촉코드" onclick="WK.setSort('위촉코드')">위촉코드</th>
+          <th data-wksort="위촉여부" onclick="WK.setSort('위촉여부')">위촉여부</th>
+          <th style="cursor:default">비고</th>
+        </tr></thead>
+        <tbody id="wk-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:8px">
+    <button class="btn btn-sm btn-primary" onclick="WK.openAdd()">+ 건 추가</button>
+  </div>
+
+  <!-- 위촉현황 수정 모달 -->
+  <div class="overlay" id="wk-modal">
+    <div class="modal-box" style="max-width:440px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 id="wk-modal-title">위촉현황</h3>
+        <button class="btn btn-sm" onclick="WK.closeWkModal()">✕</button>
+      </div>
+      <div class="form-group"><label>날짜</label><input type="date" id="wk-e-날짜"></div>
+      <div class="form-group"><label>센터</label>
+        <select id="wk-e-센터"><option value="">선택</option><option>강남센터</option><option>서울센터</option><option>경인센터</option><option>충청센터</option><option>호남센터</option><option>부경센터</option><option>대경센터</option></select>
+      </div>
+      <div class="form-group"><label>지점장명</label><input type="text" id="wk-e-지점장명"></div>
+      <div class="form-group"><label>응시구분</label>
+        <select id="wk-e-응시구분"><option value="">선택</option><option>선행</option><option>정규</option><option>후속</option></select>
+      </div>
+      <div class="form-group"><label>구코드</label><input type="text" id="wk-e-구코드"></div>
+      <div class="form-group"><label>파트너스명 *</label><input type="text" id="wk-e-파트너스명"></div>
+      <div class="form-group"><label>위촉코드</label><input type="text" id="wk-e-위촉코드"></div>
+      <div class="form-group"><label>위촉여부</label>
+        <select id="wk-e-위촉여부"><option value="">선택</option><option>완료</option><option>진행중</option><option>위촉불가</option><option>위촉거부</option></select>
+      </div>
+      <div class="form-group"><label>비고</label><textarea id="wk-e-비고" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;font-family:inherit"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:12px">
+        <button class="btn btn-sm btn-danger hidden" id="wk-del-btn" onclick="WK.doDelete()">삭제</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-sm" onclick="WK.closeWkModal()">취소</button>
+        <button class="btn btn-sm btn-primary" onclick="WK.doSave()">💾 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 위촉현황 엑셀 업로드 모달 -->
+  <div class="overlay" id="wk-xl-modal">
+    <div class="modal-box" style="max-width:520px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3>⬆ 위촉현황 엑셀 업로드</h3>
+        <button class="btn btn-sm" onclick="closeModal('wk-xl-modal')">✕</button>
+      </div>
+      <p style="font-size:12.5px;color:#888;line-height:1.6;margin:0 0 12px">
+        헤더: 날짜, 센터, 지점장명, 응시구분, 구코드, 파트너스명, 위촉코드, 위촉여부, 비고<br>
+        동일인 판별은 <b>'구코드+이름'</b> 또는 <b>'위촉코드+이름'</b> 중 하나라도 일치하면 같은 사람으로 봅니다.
+      </p>
+      <input type="file" id="wk-xl-file" accept=".xlsx,.xls" style="margin-bottom:10px" onchange="WK.handleFile(this)">
+      <div id="wk-xl-msg" class="hidden" style="font-size:12.5px;padding:8px 10px;border-radius:8px;margin-bottom:10px;background:#F6F5FF"></div>
+      <div id="wk-xl-modes" class="hidden">
+        <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;cursor:pointer">
+          <input type="radio" name="wk-xl-mode" value="append" checked style="width:auto;margin:3px 0 0">
+          <span><b>추가</b> — 동일인은 <b>빈 칸만 채우고</b> 기존 값은 그대로 유지, 명단에 없는 새 사람은 추가합니다 <span style="color:#0A5540;font-size:11px">(권장)</span></span>
+        </label>
+        <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;cursor:pointer">
+          <input type="radio" name="wk-xl-mode" value="dedupe" style="width:auto;margin:3px 0 0">
+          <span><b>중복 제외 업로드</b> — 동일인은 <b>빈 칸만 채우고</b>, 명단에 없는 새 사람은 추가하지 않고 건너뜁니다</span>
+        </label>
+        <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;cursor:pointer">
+          <input type="radio" name="wk-xl-mode" value="replace" style="width:auto;margin:3px 0 0">
+          <span><b>전체 삭제 후 업로드</b> <span style="color:#B4372F;font-size:11px">— 기존 위촉현황을 모두 지우고 새로 등록합니다</span></span>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button class="btn btn-sm" onclick="closeModal('wk-xl-modal')">취소</button>
+        <button class="btn btn-sm btn-primary" id="wk-xl-apply" onclick="WK.applyUpload()" disabled>반영하기</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ===== 매출관리 (통합) ===== -->
 <div id="salesRoot">
@@ -1393,6 +1508,7 @@ function doLogin(restoring){
     document.getElementById('view-scope-label').textContent=isAdmin?'전체 데이터 조회 중':'본인 데이터만 조회 중';
     document.getElementById('account-btn').textContent = (AUTH.role==='admin') ? '🔑 설정' : '🔑 비밀번호 변경';
     document.getElementById('tab-btn-mgrinfo').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('tab-btn-wichok').style.display = isAdmin ? 'block' : 'none';
     if(isAdmin && typeof MGR!=='undefined' && MGR.ensure){
       MGR.ensure().then(()=>{                      // 담당 지점장 드롭다운용 명단 미리 로드
         if(document.getElementById('tab-add').style.display !== 'none') syncCenterField();
@@ -1576,7 +1692,7 @@ function doLogout(auto){
 function getVisibleData(){return isAdmin?data:data.filter(d=>d.담당자===currentUser);}
 
 function switchTab(t){
-  ['list','add','stats','sales','mgrinfo'].forEach((n,i)=>{
+  ['list','add','stats','sales','wichok','mgrinfo'].forEach((n,i)=>{
     const el=document.getElementById('tab-'+n);
     if(el) el.style.display = (n===t?'block':'none');
     const btn=document.querySelectorAll('#screen-main > .tabs .tab')[i];
@@ -1585,6 +1701,7 @@ function switchTab(t){
   if(t==='stats')renderStatsPage();
   if(t==='sales'){ S.enter(); loadFromSheet(false, true); }  /* 파트너스 명단 최신화 → 건추가 이름 목록에 삭제된 사람 안 뜸 */
   if(t==='mgrinfo')MGR.enter();
+  if(t==='wichok')WK.enter();
   if(t==='add')syncCenterField();
 }
 
@@ -3238,6 +3355,356 @@ var MGR = (function(){
   }
 
   return { enter, render, openEdit, save:saveFromModal, remove, calcMonth, onGisu, applyPreset, getList, ensure, replaceAll, applyTargetRows };
+})();
+/* ═══════════════════ 위촉현황 (WK) ═══════════════════ */
+var WK = (function(){
+  var rows = [];               // 서버(위촉현황 시트)에 저장된 실제 레코드
+  var loaded = false;
+  var now = new Date();
+  var curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  var F = { center:'', mgr:'', partner:'', status:'' };
+  var SORT = { key:'', dir:1 };
+  var editing = null;          // { id, isNew }
+  var uploadRows = null;       // 파싱된 업로드 미리보기 데이터
+
+  var WK_FIELDS = ['날짜','센터','지점장명','응시구분','구코드','파트너스명','위촉코드','위촉여부','비고'];
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function normCode(v){ var s=String(v==null?'':v).trim(); if(!s) return ''; return s.replace(/\.0+$/,'').replace(/[^0-9]/g,''); }
+  function uniq(a){ return a.filter(function(v,i){ return v && a.indexOf(v)===i; }); }
+  function wkKeys(o){
+    var name = String(o.파트너스명||'').trim();
+    var oc = normCode(o.구코드), wc = normCode(o.위촉코드);
+    var ks = [];
+    if(name && oc) ks.push('C|'+oc+'|'+name);
+    if(name && wc) ks.push('W|'+wc+'|'+name);
+    return ks;
+  }
+  function monthOf(r){
+    var d = String(r.날짜||'').trim().replace(/[./]/g,'-');
+    var m = d.match(/^(\d{4})-(\d{1,2})/);
+    return m ? m[1]+'-'+m[2].padStart(2,'0') : '';
+  }
+  function monthLabel(m){ var p = m.split('-'); return p[0]+'년 '+Number(p[1])+'월'; }
+
+  function monthShift(delta){
+    var p = curMonth.split('-').map(Number);
+    var d = new Date(p[0], p[1]-1+delta, 1);
+    curMonth = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    render();
+  }
+
+  function load(){
+    return fetch(GAS_URL + '?type=wichok&t=' + Date.now())
+      .then(function(r){ return r.json(); })
+      .then(function(list){ rows = Array.isArray(list) ? list : []; loaded = true; })
+      .catch(function(){ if(!loaded){ rows = []; loaded = true; } });
+  }
+
+  function enter(){
+    var lb = $('wk-month-label'); if(lb) lb.textContent = monthLabel(curMonth);
+    if(!loaded){ load().then(render); render(); }
+    else render();
+  }
+
+  /* 파트너스 목록(전역 data 배열)에서 "합격"한 사람만, 응시날짜(응시년월)·구분을 그대로 끌어와
+     위촉현황에 아직 없는 경우 가상 행으로 자동 표시 */
+  function autoRows(){
+    var known = {};
+    rows.forEach(function(r){ wkKeys(r).forEach(function(k){ known[k]=true; }); });
+    var out = [];
+    (typeof data !== 'undefined' ? data : []).forEach(function(p){
+      if(!p || !String(p.파트너스명||'').trim()) return;
+      if(!String(p.합격날짜||'').trim()) return;          /* ★ 합격자만 자동 연동 */
+      if(!String(p.응시날짜||'').trim()) return;           /* 응시년월이 있어야 어느 달인지 판단 가능 */
+      var virt = {
+        id:'', 날짜: p.응시날짜, 센터: p.센터 || '',
+        지점장명: p.배정지점장 || '', 응시구분: p.구분 || '',
+        구코드: p.가코드 || '', 파트너스명: p.파트너스명 || '',
+        위촉코드: p.위촉코드 || '', 위촉여부: p.위촉여부 || '', 비고: '',
+        _auto:true, _srcId: p.id
+      };
+      var ks = wkKeys(virt);
+      var dup = ks.some(function(k){ return known[k]; });
+      if(!dup) out.push(virt);
+    });
+    return out;
+  }
+
+  function allRows(){ return rows.concat(autoRows()); }
+
+  function centerOptions(){ return uniq(allRows().map(function(r){return String(r.센터||'').trim();})); }
+  function mgrOptions(){ return uniq(allRows().map(function(r){return String(r.지점장명||'').trim();})); }
+
+  function filteredRows(){
+    var q = String(F.partner||'').trim().toLowerCase();
+    return allRows().filter(function(r){
+      var mo = monthOf(r);
+      if(mo && mo !== curMonth) return false;
+      if(F.center && String(r.센터||'').trim() !== F.center) return false;
+      if(F.mgr && String(r.지점장명||'').trim() !== F.mgr) return false;
+      if(F.status && String(r.위촉여부||'').trim() !== F.status) return false;
+      if(q && !String(r.파트너스명||'').toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function sortedRows(){
+    var f = filteredRows();
+    if(!SORT.key) return f.sort(function(a,b){ return String(a.날짜||'').localeCompare(String(b.날짜||'')); });
+    var k = SORT.key, dir = SORT.dir;
+    return f.sort(function(a,b){
+      var va = String(a[k]==null?'':a[k]).trim(), vb = String(b[k]==null?'':b[k]).trim();
+      if(va==='' && vb==='') return 0;
+      if(va==='') return 1;
+      if(vb==='') return -1;
+      return va.localeCompare(vb,'ko') * dir;
+    });
+  }
+
+  function setSort(k){
+    if(SORT.key===k){ if(SORT.dir===1) SORT.dir=-1; else { SORT.key=''; SORT.dir=1; } }
+    else { SORT.key=k; SORT.dir=1; }
+    render();
+  }
+
+  function updateFilterOptions(){
+    var cSel = $('wk-f-center'), mSel = $('wk-f-mgr');
+    if(cSel){
+      var cv = cSel.value;
+      cSel.innerHTML = '<option value="">센터 전체</option>' + centerOptions().map(function(c){ return '<option value="'+esc(c)+'"'+(c===cv?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
+      F.center = cSel.value;
+    }
+    if(mSel){
+      var mv = mSel.value;
+      mSel.innerHTML = '<option value="">지점장명 전체</option>' + mgrOptions().map(function(m){ return '<option value="'+esc(m)+'"'+(m===mv?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
+      F.mgr = mSel.value;
+    }
+  }
+
+  function onFilterChange(){
+    F.center = $('wk-f-center') ? $('wk-f-center').value : '';
+    F.mgr = $('wk-f-mgr') ? $('wk-f-mgr').value : '';
+    F.partner = $('wk-f-partner') ? $('wk-f-partner').value : '';
+    F.status = $('wk-f-status') ? $('wk-f-status').value : '';
+    render();
+  }
+
+  function statusBadge(v){
+    v = String(v||'').trim();
+    if(v==='완료') return '<span class="badge" style="background:#DDF3E4;color:#1F7A44">완료</span>';
+    if(v==='진행중') return '<span class="badge" style="background:#FFF3D6;color:#946200">진행중</span>';
+    if(v==='위촉불가') return '<span class="badge" style="background:#FCEBEB;color:#B4372F">위촉불가</span>';
+    if(v==='위촉거부') return '<span class="badge" style="background:#FCEBEB;color:#B4372F">위촉거부</span>';
+    return '<span style="color:#ccc;font-size:11px">-</span>';
+  }
+
+  function render(){
+    var lb = $('wk-month-label'); if(lb) lb.textContent = monthLabel(curMonth);
+    updateFilterOptions();
+    var tb = $('wk-body');
+    if(!tb) return;
+    var list = sortedRows();
+    document.querySelectorAll('#tab-wichok th[data-wksort]').forEach(function(th){
+      var k = th.getAttribute('data-wksort');
+      th.innerHTML = th.textContent.replace(/ ?[▲▼]$/,'') + (SORT.key===k ? (SORT.dir===1?' ▲':' ▼') : '');
+    });
+    if(!list.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">데이터가 없습니다</td></tr>'; return; }
+    tb.innerHTML = list.map(function(r,i){
+      var rid = r.id || ('auto_'+i);
+      return '<tr style="cursor:pointer" onclick="WK.openEdit(\''+esc(rid)+'\')">' +
+        '<td>'+ (esc(r.날짜)||'-') +'</td>' +
+        '<td style="font-size:11px">'+ (esc(r.센터)||'-') +'</td>' +
+        '<td>'+ (esc(r.지점장명)||'-') +'</td>' +
+        '<td>'+ (esc(r.응시구분)||'-') +'</td>' +
+        '<td style="font-size:11px">'+ (esc(r.구코드)||'-') +'</td>' +
+        '<td style="font-weight:600">'+ (esc(r.파트너스명)||'-') + (r._auto ? ' <span style="color:#aaa;font-size:10px">(자동)</span>' : '') +'</td>' +
+        '<td style="font-size:11px">'+ (esc(r.위촉코드)||'-') +'</td>' +
+        '<td style="text-align:center">'+ statusBadge(r.위촉여부) +'</td>' +
+        '<td style="font-size:12px;color:#666">'+ (esc(r.비고)||'-') +'</td>' +
+      '</tr>';
+    }).join('');
+    /* 방금 렌더링한 목록을 id로 다시 찾을 수 있게 저장해둠 (수정 모달용) */
+    window._wkLastList = list;
+  }
+
+  function openAdd(){
+    editing = { id:'', isNew:true };
+    $('wk-modal-title').textContent = '➕ 위촉현황 추가';
+    ['날짜','센터','지점장명','응시구분','구코드','파트너스명','위촉코드','위촉여부','비고'].forEach(function(k){
+      var el = $('wk-e-'+k); if(el) el.value = '';
+    });
+    $('wk-del-btn').classList.add('hidden');
+    $('wk-modal').classList.add('open');
+  }
+
+  function openEdit(rid){
+    var list = window._wkLastList || sortedRows();
+    var r = list.find(function(x){ return (x.id || ('auto_'+list.indexOf(x))) === rid; });
+    if(!r) return;
+    editing = { id: r.id || '', isNew: !r.id, srcAuto: !!r._auto };
+    $('wk-modal-title').textContent = r.id ? '✏️ 위촉현황 수정' : '➕ 위촉현황 추가 (파트너스 목록에서 자동으로 가져온 정보)';
+    $('wk-e-날짜').value = r.날짜 || '';
+    $('wk-e-센터').value = r.센터 || '';
+    $('wk-e-지점장명').value = r.지점장명 || '';
+    $('wk-e-응시구분').value = r.응시구분 || '';
+    $('wk-e-구코드').value = r.구코드 || '';
+    $('wk-e-파트너스명').value = r.파트너스명 || '';
+    $('wk-e-위촉코드').value = r.위촉코드 || '';
+    $('wk-e-위촉여부').value = r.위촉여부 || '';
+    $('wk-e-비고').value = r.비고 || '';
+    $('wk-del-btn').classList.toggle('hidden', !r.id);
+    $('wk-modal').classList.add('open');
+  }
+
+  function collect(){
+    var o = { id: editing.id || '' };
+    WK_FIELDS.forEach(function(k){ var el = $('wk-e-'+k); o[k] = el ? el.value.trim() : ''; });
+    return o;
+  }
+
+  function doSave(){
+    var o = collect();
+    if(!o.파트너스명){ alert('파트너스명을 입력해 주세요.'); return; }
+    var isNew = !o.id;
+    var action = isNew ? 'add_wichok' : 'update_wichok';
+    var btn = document.querySelector('#wk-modal .btn-primary');
+    if(btn){ btn.disabled = true; btn.textContent = '저장 중...'; }
+    gasCall({ action: action, row: o }).then(function(j){
+      if(btn){ btn.disabled = false; btn.textContent = '💾 저장'; }
+      if(!j) return;   /* gasCall이 이미 실패 토스트를 표시함 */
+      if(isNew) o.id = j.id;
+      if(isNew) rows.push(o);
+      else { var idx = rows.findIndex(function(x){ return x.id===o.id; }); if(idx>=0) rows[idx]=o; else rows.push(o); }
+      closeWkModal();
+      render();
+      showToast('✓ 저장되었습니다','ok');
+    });
+  }
+
+  function doDelete(){
+    if(!editing || !editing.id) return;
+    if(!confirm('이 건을 삭제하시겠습니까?')) return;
+    var delId = editing.id;
+    gasCall({ action:'delete_wichok', id: delId }).then(function(j){
+      if(!j) return;
+      rows = rows.filter(function(x){ return x.id !== delId; });
+      closeWkModal();
+      render();
+      showToast('삭제되었습니다','ok');
+    });
+  }
+
+  function closeWkModal(){ $('wk-modal').classList.remove('open'); editing=null; }
+
+  /* ── 엑셀 다운로드 ── */
+  function download(){
+    if(typeof ExcelJS === 'undefined'){ showToast('엑셀 기능을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.','err'); return; }
+    var list = sortedRows();
+    var wb = new ExcelJS.Workbook();
+    var ws = wb.addWorksheet('위촉현황');
+    ws.addRow(WK_FIELDS);
+    list.forEach(function(r){ ws.addRow(WK_FIELDS.map(function(h){ return r[h]==null ? '' : String(r[h]); })); });
+    ws.getRow(1).font = { bold:true };
+    ws.getRow(1).fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFF3D6'} };
+    ws.columns = [{width:12},{width:10},{width:12},{width:10},{width:14},{width:14},{width:14},{width:10},{width:30}];
+    wb.xlsx.writeBuffer().then(function(buf){
+      var blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '위촉현황_' + curMonth + '.xlsx';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+    });
+  }
+
+  /* ── 엑셀 업로드 ── */
+  function openUpload(){
+    uploadRows = null;
+    $('wk-xl-file').value = '';
+    $('wk-xl-msg').classList.add('hidden');
+    $('wk-xl-modal').classList.add('open');
+  }
+  function norm(s){ return String(s||'').replace(/[\s()·]/g,''); }
+  function handleFile(input){
+    var file = input.files[0];
+    if(!file) return;
+    var msg = $('wk-xl-msg');
+    msg.classList.remove('hidden'); msg.style.color=''; msg.textContent = '읽는 중...';
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        var wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array', cellDates:true });
+        var js = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+        if(!js.length) throw new Error('데이터가 없습니다.');
+        var map = {};
+        Object.keys(js[0]).forEach(function(hd){
+          var n = norm(hd);
+          var hit = WK_FIELDS.find(function(f){ return norm(f)===n; });
+          if(hit) map[hd] = hit;
+        });
+        if(!Object.values(map).includes('파트너스명')) throw new Error("'파트너스명' 컬럼을 찾지 못했습니다. 엑셀 다운로드 받은 파일과 같은 헤더를 사용해 주세요.");
+        var out = js.map(function(row){
+          var o = {}; WK_FIELDS.forEach(function(f){ o[f]=''; });
+          Object.keys(row).forEach(function(hd){
+            var f = map[hd]; if(!f) return;
+            var v = row[hd];
+            if(v instanceof Date) v = Utilities_fmtDate(v);
+            o[f] = String(v==null?'':v).trim();
+          });
+          return o;
+        }).filter(function(o){ return o.파트너스명; });
+        uploadRows = out;
+        msg.style.color = '#0A5540';
+        msg.textContent = '✓ ' + out.length + '건 확인됨. 아래에서 방식을 골라 반영해 주세요.';
+        renderUploadModes();
+      }catch(e){
+        uploadRows = null;
+        msg.style.color = '#B4372F';
+        msg.textContent = '오류: ' + e.message;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  function Utilities_fmtDate(d){
+    var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+  function renderUploadModes(){
+    if($('wk-xl-modes')) $('wk-xl-modes').classList.remove('hidden');
+    if($('wk-xl-apply')) $('wk-xl-apply').disabled = false;
+  }
+  function applyUpload(){
+    if(!uploadRows || !uploadRows.length){ showToast('먼저 파일을 선택해 주세요.','err'); return; }
+    var mode = (document.querySelector('input[name="wk-xl-mode"]:checked')||{}).value || 'append';
+    var action = mode==='replace' ? 'replace_wichok' : (mode==='dedupe' ? 'dedupe_wichok' : 'append_wichok');
+    var payload = { action: action, rows: uploadRows };
+    if(mode==='replace'){
+      if(!confirm('기존 위촉현황 데이터를 모두 지우고 업로드한 내용으로 교체합니다.\n계속할까요?')) return;
+      payload.confirm = true;
+    }
+    var btn = $('wk-xl-apply');
+    if(btn){ btn.disabled = true; btn.textContent = '반영 중...'; }
+    gasCall(payload).then(function(j){
+      if(btn){ btn.disabled = false; btn.textContent = '반영하기'; }
+      if(!j) return;
+      var summary = mode==='replace'
+        ? ('총 ' + j.count + '건으로 교체되었습니다.')
+        : ('추가 ' + (j.added||0) + '건, 갱신 ' + (j.updated||0) + '건' + (j.skipped!=null ? (', 건너뜀 ' + j.skipped + '건') : '') + '.');
+      showToast('✓ ' + summary, 'ok');
+      closeModal('wk-xl-modal');
+      loaded = false;
+      load().then(render);
+    });
+  }
+
+  return {
+    enter: enter, render: render, monthShift: monthShift, onFilterChange: onFilterChange,
+    setSort: setSort, openAdd: openAdd, openEdit: openEdit, doSave: doSave, doDelete: doDelete,
+    closeWkModal: closeWkModal, download: download, openUpload: openUpload, handleFile: handleFile,
+    applyUpload: applyUpload
+  };
 })();
 /* ═══════════════════ 엑셀 다운로드 / 업로드 ═══════════════════ */
 var XL = (function(){
@@ -5178,13 +5645,13 @@ function renderTargetSection(elId){
             '<input type="file" id="tgFile" accept=".xlsx,.xls" style="display:none" onchange="S.targetsUp(this)">'
           : '') +
       '</div>' +
-      '<div class="table-wrap">' +
+      '<div class="table-wrap tg-table-wrap" style="max-height:60vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">' +
         '<table class="st-t" style="min-width:860px;white-space:nowrap">' +
           '<thead><tr>' +
-            '<th>차월</th><th>센터</th><th style="text-align:left">지점장</th><th>코드</th>' +
-            '<th style="text-align:right">월 매출 목표(천원)</th><th style="text-align:right">매출 목표(천원)</th>' +
-            '<th style="text-align:right">매출 진척(천원)</th><th style="text-align:right">부족 금액(천원)</th>' +
-            '<th style="text-align:right">월 매출 달성률(%)</th><th style="text-align:left">담당코치</th>' +
+            '<th style="position:sticky;top:0;z-index:5;background:#f4f3f0">차월</th><th style="position:sticky;top:0;z-index:5;background:#f4f3f0">센터</th><th style="position:sticky;top:0;z-index:5;background:#f4f3f0;text-align:left">지점장</th><th style="position:sticky;top:0;z-index:5;background:#f4f3f0">코드</th>' +
+            '<th style="position:sticky;top:0;z-index:5;background:#f4f3f0;text-align:right">월 매출 목표(천원)</th><th style="position:sticky;top:0;z-index:5;background:#f4f3f0;text-align:right">매출 목표(천원)</th>' +
+            '<th style="position:sticky;top:0;z-index:5;background:#f4f3f0;text-align:right">매출 진척(천원)</th><th style="position:sticky;top:0;z-index:5;background:#f4f3f0;text-align:right">부족 금액(천원)</th>' +
+            '<th style="position:sticky;top:0;z-index:5;background:#f4f3f0;text-align:right">월 매출 달성률(%)</th><th style="position:sticky;top:0;z-index:5;background:#f4f3f0;text-align:left">담당코치</th>' +
           '</tr></thead>' +
           '<tbody id="tgBody"><tr><td colspan="10" style="text-align:center;color:#888;padding:16px">불러오는 중…</td></tr></tbody>' +
         '</table>' +
