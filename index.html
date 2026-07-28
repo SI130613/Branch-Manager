@@ -465,8 +465,8 @@ tr.today-row td{background:#fdf8ee}
         <div class="form-group"><label>시험시간</label><input type="text" id="f-시험시간" placeholder="D-2,3에 공지됨"></div>
         <div class="form-group"><label>합격(날짜)</label><input type="date" id="f-합격날짜"></div>
         <div class="form-group"><label>담당EM</label><input type="text" id="f-배정지점장" placeholder="담당 EM 이름"></div>
-        <div class="form-group"><label>위촉 여부</label><select id="f-위촉여부"><option value="">선택</option><option>위촉</option><option>미위촉</option></select></div>
-        <div class="form-group"><label>위촉코드</label><input type="text" id="f-위촉코드" placeholder="위촉 후 부여되는 코드"></div>
+        <div class="form-group"><label>위촉 여부</label><select id="f-위촉여부"><option value="">선택</option><option>위촉</option><option selected>미위촉</option></select></div>
+        <div class="form-group"><label>위촉코드</label><input type="text" id="f-위촉코드" placeholder="위촉 후 부여되는 코드" oninput="syncWichokStatus('f-위촉코드','f-위촉여부','위촉')"></div>
       </div>
     </div>
     <div class="section" style="margin-top:1rem">
@@ -529,23 +529,51 @@ tr.today-row td{background:#fdf8ee}
 
 <!-- ===== 위촉현황 ===== -->
 <div id="tab-wichok" style="display:none">
-  <div class="section" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px">
+  <div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:8px 0 14px">
     <button class="btn btn-sm" onclick="WK.monthShift(-1)">◀</button>
-    <div style="font-weight:700;font-size:14px;min-width:100px;text-align:center" id="wk-month-label">-</div>
+    <div style="font-weight:700;font-size:16px;min-width:110px;text-align:center;white-space:nowrap" id="wk-month-label">-</div>
     <button class="btn btn-sm" onclick="WK.monthShift(1)">▶</button>
-    <select id="wk-f-center" onchange="WK.onFilterChange()" style="padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px"><option value="">센터 전체</option></select>
-    <select id="wk-f-mgr" onchange="WK.onFilterChange()" style="padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px"><option value="">지점장명 전체</option></select>
-    <input type="text" id="wk-f-partner" placeholder="🔍 파트너스명 검색" oninput="WK.onFilterChange()" style="width:150px;padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px">
-    <select id="wk-f-status" onchange="WK.onFilterChange()" style="padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px">
-      <option value="">위촉여부 전체</option>
+  </div>
+
+  <div class="section" style="margin-bottom:16px">
+    <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월 기준 · 센터 → 지점장차월 → 지점장이름 순</span></div>
+    <div class="table-wrap" style="max-height:50vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">
+      <table class="st-t" style="min-width:560px;white-space:nowrap">
+        <thead>
+          <tr>
+            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle">센터</th>
+            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle">차월</th>
+            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle;text-align:left">지점장</th>
+            <th colspan="2" style="position:sticky;top:0;z-index:6;background:#DCEEFB;color:#1565C0">선행</th>
+            <th colspan="2" style="position:sticky;top:0;z-index:6;background:#FFE9CC;color:#B36B00">정규(+후속)</th>
+          </tr>
+          <tr>
+            <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">합격인원</th>
+            <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">위촉인원</th>
+            <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">합격인원</th>
+            <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">위촉인원</th>
+          </tr>
+        </thead>
+        <tbody id="wk-stat-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding:10px 14px;margin-bottom:12px">
+    <select id="wk-f-center" onchange="WK.onFilterChange()" style="padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">센터</option></select>
+    <select id="wk-f-mgr" onchange="WK.onFilterChange()" style="padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">지점장명</option></select>
+    <input type="text" id="wk-f-partner" placeholder="🔍 파트너스명" oninput="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
+    <select id="wk-f-status" onchange="WK.onFilterChange()" style="padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
+      <option value="">위촉여부</option>
+      <option value="미위촉">미위촉</option>
       <option value="완료">완료</option>
       <option value="진행중">진행중</option>
       <option value="위촉불가">위촉불가</option>
       <option value="위촉거부">위촉거부</option>
     </select>
-    <div style="flex:1"></div>
-    <button class="btn btn-sm" onclick="WK.download()">⬇ 엑셀다운</button>
-    <button class="btn btn-sm" onclick="WK.openUpload()">⬆ 엑셀업로드</button>
+    <div style="flex:1;min-width:8px"></div>
+    <button class="btn btn-sm" onclick="WK.download()" style="flex:0 0 auto;white-space:nowrap">⬇ 엑셀다운</button>
+    <button class="btn btn-sm" onclick="WK.openUpload()" style="flex:0 0 auto;white-space:nowrap">⬆ 엑셀업로드</button>
   </div>
 
   <style>
@@ -592,9 +620,9 @@ tr.today-row td{background:#fdf8ee}
       </div>
       <div class="form-group"><label>구코드</label><input type="text" id="wk-e-구코드"></div>
       <div class="form-group"><label>파트너스명 *</label><input type="text" id="wk-e-파트너스명"></div>
-      <div class="form-group"><label>위촉코드</label><input type="text" id="wk-e-위촉코드"></div>
+      <div class="form-group"><label>위촉코드</label><input type="text" id="wk-e-위촉코드" oninput="syncWichokStatus('wk-e-위촉코드','wk-e-위촉여부','완료')"></div>
       <div class="form-group"><label>위촉여부</label>
-        <select id="wk-e-위촉여부"><option value="">선택</option><option>완료</option><option>진행중</option><option>위촉불가</option><option>위촉거부</option></select>
+        <select id="wk-e-위촉여부"><option>미위촉</option><option>완료</option><option>진행중</option><option>위촉불가</option><option>위촉거부</option></select>
       </div>
       <div class="form-group"><label>비고</label><textarea id="wk-e-비고" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;font-family:inherit"></textarea></div>
       <div style="display:flex;gap:8px;justify-content:space-between;margin-top:12px">
@@ -947,7 +975,7 @@ tr.today-row td{background:#fdf8ee}
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">합격날짜</label><input type="date" id="e-합격날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">담당EM</label><input type="text" id="e-배정지점장" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉여부</label><select id="e-위촉여부" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>위촉</option><option>미위촉</option></select></div>
-        <div style="padding:10px 12px;grid-column:2/-1;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉코드</label><input type="text" id="e-위촉코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;grid-column:2/-1;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉코드</label><input type="text" id="e-위촉코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px" oninput="syncWichokStatus('e-위촉코드','e-위촉여부','위촉')"></div>
         <div id="e-owner-wrap" style="display:none;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff;padding:10px 12px">
           <label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 관리자 전용 · 담당 지점장 / 센터</label>
           <div style="display:flex;gap:10px;margin-top:6px">
@@ -2050,6 +2078,17 @@ function wiDelete(){
 }
 
 /* 입사월(yyyy-mm) → 차월 자동 계산 (전역 공용) */
+/* 위촉코드(3으로 시작하는 9자리) 입력 시 위촉여부를 자동으로 채워주는 공용 함수 */
+function isValidWichokCode(code){
+  var c = String(code||'').trim();
+  return /^3\d{8}$/.test(c);
+}
+function syncWichokStatus(codeElId, statusElId, doneValue){
+  var codeEl = document.getElementById(codeElId), statusEl = document.getElementById(statusElId);
+  if(!codeEl || !statusEl) return;
+  if(isValidWichokCode(codeEl.value)) statusEl.value = doneValue;
+}
+
 function autoMonthOf(joinM){
   if(!joinM) return '';
   const p = String(joinM).split('-').map(Number), y = p[0], m = p[1];
@@ -2392,8 +2431,9 @@ function openAddModal(){
   /* 입력칸 초기화 */
   ['e-인입날짜','e-가코드','e-파트너스명','e-생년월일','e-경력구분','e-직업','e-전화번호','e-상담가능시간',
    'e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min','e-상담이력','e-응시날짜','e-구분',
-   'e-지역','e-시험시간','e-합격날짜','e-배정지점장','e-위촉여부','e-위촉코드','e-보장분석동의','e-브릿지콜','e-가계약']
+   'e-지역','e-시험시간','e-합격날짜','e-배정지점장','e-위촉코드','e-보장분석동의','e-브릿지콜','e-가계약']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const wiEl = document.getElementById('e-위촉여부'); if(wiEl) wiEl.value = '미위촉';   /* ★ 기본값: 미위촉 */
   const ow=document.getElementById('e-owner-wrap');
   if(ow){
     ow.style.display = isAdmin ? '' : 'none';
@@ -3410,19 +3450,34 @@ var WK = (function(){
 
   /* 파트너스 목록(전역 data 배열)에서 "합격"한 사람만, 응시날짜(응시년월)·구분을 그대로 끌어와
      위촉현황에 아직 없는 경우 가상 행으로 자동 표시 */
+  function registeredMgrSet(){
+    var set = {};
+    ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(function(m){
+      var n = String(m.지점장명||'').trim();
+      if(n) set[n] = true;
+    });
+    return set;
+  }
+
   function autoRows(){
     var known = {};
     rows.forEach(function(r){ wkKeys(r).forEach(function(k){ known[k]=true; }); });
+    var mgrSet = registeredMgrSet();
     var out = [];
     (typeof data !== 'undefined' ? data : []).forEach(function(p){
       if(!p || !String(p.파트너스명||'').trim()) return;
       if(!String(p.합격날짜||'').trim()) return;          /* ★ 합격자만 자동 연동 */
       if(!String(p.응시날짜||'').trim()) return;           /* 응시년월이 있어야 어느 달인지 판단 가능 */
+      var mgrName = String(p.배정지점장||'').trim();
+      if(!mgrName || !mgrSet[mgrName]) return;             /* ★ 지점장 명단에 등록된 사람만 */
+      var wStatus = String(p.위촉여부||'').trim();
+      if(wStatus === '위촉') wStatus = '완료';                                  /* 파트너스 목록 표기(위촉) → 위촉현황 표기(완료) */
+      if(!wStatus || wStatus === '미위촉') wStatus = isValidWichokCode(p.위촉코드) ? '완료' : '미위촉';
       var virt = {
         id:'', 날짜: p.응시날짜, 센터: p.센터 || '',
-        지점장명: p.배정지점장 || '', 응시구분: p.구분 || '',
+        지점장명: mgrName, 응시구분: p.구분 || '',
         구코드: p.가코드 || '', 파트너스명: p.파트너스명 || '',
-        위촉코드: p.위촉코드 || '', 위촉여부: p.위촉여부 || '', 비고: '',
+        위촉코드: p.위촉코드 || '', 위촉여부: wStatus, 비고: '',
         _auto:true, _srcId: p.id
       };
       var ks = wkKeys(virt);
@@ -3450,9 +3505,21 @@ var WK = (function(){
     });
   }
 
+  var GUBUN_RANK = { '선행':0, '정규':1, '후속':2 };
   function sortedRows(){
     var f = filteredRows();
-    if(!SORT.key) return f.sort(function(a,b){ return String(a.날짜||'').localeCompare(String(b.날짜||'')); });
+    if(!SORT.key){
+      return f.sort(function(a,b){
+        var ga = GUBUN_RANK[String(a.응시구분||'').trim()]; if(ga===undefined) ga=99;
+        var gb = GUBUN_RANK[String(b.응시구분||'').trim()]; if(gb===undefined) gb=99;
+        if(ga!==gb) return ga-gb;
+        var ca = String(a.센터||'').trim(), cb = String(b.센터||'').trim();
+        var cCmp = ca.localeCompare(cb,'ko'); if(cCmp) return cCmp;
+        var ma = String(a.지점장명||'').trim(), mb = String(b.지점장명||'').trim();
+        var mCmp = ma.localeCompare(mb,'ko'); if(mCmp) return mCmp;
+        return String(a.파트너스명||'').trim().localeCompare(String(b.파트너스명||'').trim(),'ko');
+      });
+    }
     var k = SORT.key, dir = SORT.dir;
     return f.sort(function(a,b){
       var va = String(a[k]==null?'':a[k]).trim(), vb = String(b[k]==null?'':b[k]).trim();
@@ -3473,12 +3540,12 @@ var WK = (function(){
     var cSel = $('wk-f-center'), mSel = $('wk-f-mgr');
     if(cSel){
       var cv = cSel.value;
-      cSel.innerHTML = '<option value="">센터 전체</option>' + centerOptions().map(function(c){ return '<option value="'+esc(c)+'"'+(c===cv?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
+      cSel.innerHTML = '<option value="">센터</option>' + centerOptions().map(function(c){ return '<option value="'+esc(c)+'"'+(c===cv?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
       F.center = cSel.value;
     }
     if(mSel){
       var mv = mSel.value;
-      mSel.innerHTML = '<option value="">지점장명 전체</option>' + mgrOptions().map(function(m){ return '<option value="'+esc(m)+'"'+(m===mv?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
+      mSel.innerHTML = '<option value="">지점장명</option>' + mgrOptions().map(function(m){ return '<option value="'+esc(m)+'"'+(m===mv?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
       F.mgr = mSel.value;
     }
   }
@@ -3491,13 +3558,77 @@ var WK = (function(){
     render();
   }
 
+  function gubunCell(v){
+    v = String(v||'').trim();
+    if(v==='선행') return '<td style="background:#DCEEFB;color:#1565C0;font-weight:600;text-align:center">'+esc(v)+'</td>';
+    if(v==='정규'||v==='후속') return '<td style="background:#FFE9CC;color:#B36B00;font-weight:600;text-align:center">'+esc(v)+'</td>';
+    return '<td style="text-align:center">'+(esc(v)||'-')+'</td>';
+  }
+
   function statusBadge(v){
     v = String(v||'').trim();
     if(v==='완료') return '<span class="badge" style="background:#DDF3E4;color:#1F7A44">완료</span>';
     if(v==='진행중') return '<span class="badge" style="background:#FFF3D6;color:#946200">진행중</span>';
     if(v==='위촉불가') return '<span class="badge" style="background:#FCEBEB;color:#B4372F">위촉불가</span>';
     if(v==='위촉거부') return '<span class="badge" style="background:#FCEBEB;color:#B4372F">위촉거부</span>';
-    return '<span style="color:#ccc;font-size:11px">-</span>';
+    return '<span style="color:#999;font-size:11px">미위촉</span>';
+  }
+
+  function statGroups(){
+    /* 통계표는 현재 조회월 전체 기준 (센터/지점장/위촉여부 필터와는 무관하게 전체 현황을 보여줌) */
+    var mgrSet = registeredMgrSet();
+    var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
+    var list = allRows().filter(function(r){
+      var mo = monthOf(r);
+      if(mo && mo !== curMonth) return false;
+      var mgrName = String(r.지점장명||'').trim();
+      if(!mgrName || !mgrSet[mgrName]) return false;              /* ★ 지점장 명단에 등록된 사람만 */
+      var cha = fn ? fn(mgrName) : null;
+      if(cha===null || cha===undefined || isNaN(cha) || cha<1 || cha>6) return false;   /* ★ 1~6차월만 */
+      return true;
+    });
+    var groups = {};
+    list.forEach(function(r){
+      var center = String(r.센터||'').trim() || '(미지정)';
+      var mgr = String(r.지점장명||'').trim() || '(미지정)';
+      var key = center + '|' + mgr;
+      if(!groups[key]) groups[key] = { 센터:center, 지점장명:mgr, 선행합격:0, 선행위촉:0, 정규합격:0, 정규위촉:0 };
+      var g = groups[key];
+      var gubun = String(r.응시구분||'').trim();
+      var done = String(r.위촉여부||'').trim()==='완료';
+      if(gubun==='선행'){ g.선행합격++; if(done) g.선행위촉++; }
+      else if(gubun==='정규' || gubun==='후속'){ g.정규합격++; if(done) g.정규위촉++; }
+    });
+    var arr = Object.keys(groups).map(function(k){ return groups[k]; });
+    arr.sort(function(a,b){
+      var cCmp = String(a.센터).localeCompare(String(b.센터),'ko'); if(cCmp) return cCmp;
+      var ta = fn ? fn(a.지점장명) : null, tb = fn ? fn(b.지점장명) : null;
+      ta = (ta===null||ta===undefined||isNaN(ta)) ? Infinity : ta;
+      tb = (tb===null||tb===undefined||isNaN(tb)) ? Infinity : tb;
+      if(ta!==tb) return ta-tb;
+      return String(a.지점장명).localeCompare(String(b.지점장명),'ko');
+    });
+    return arr;
+  }
+
+  function renderStatsTable(){
+    var tb = $('wk-stat-body');
+    if(!tb) return;
+    var arr = statGroups();
+    if(!arr.length){ tb.innerHTML = '<tr><td colspan="7" class="empty">데이터가 없습니다</td></tr>'; return; }
+    var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
+    tb.innerHTML = arr.map(function(g){
+      var cha = fn ? fn(g.지점장명) : null;
+      return '<tr>' +
+        '<td style="font-size:11px">'+esc(g.센터)+'</td>' +
+        '<td style="text-align:center">'+ (cha!=null && !isNaN(cha) ? cha+'차월' : '-') +'</td>' +
+        '<td style="text-align:left;font-weight:600">'+esc(g.지점장명)+'</td>' +
+        '<td style="text-align:right">'+g.선행합격+'</td>' +
+        '<td style="text-align:right">'+g.선행위촉+'</td>' +
+        '<td style="text-align:right">'+g.정규합격+'</td>' +
+        '<td style="text-align:right">'+g.정규위촉+'</td>' +
+      '</tr>';
+    }).join('');
   }
 
   function render(){
@@ -3517,7 +3648,7 @@ var WK = (function(){
         '<td>'+ (esc(r.날짜)||'-') +'</td>' +
         '<td style="font-size:11px">'+ (esc(r.센터)||'-') +'</td>' +
         '<td>'+ (esc(r.지점장명)||'-') +'</td>' +
-        '<td>'+ (esc(r.응시구분)||'-') +'</td>' +
+        gubunCell(r.응시구분) +
         '<td style="font-size:11px">'+ (esc(r.구코드)||'-') +'</td>' +
         '<td style="font-weight:600">'+ (esc(r.파트너스명)||'-') + (r._auto ? ' <span style="color:#aaa;font-size:10px">(자동)</span>' : '') +'</td>' +
         '<td style="font-size:11px">'+ (esc(r.위촉코드)||'-') +'</td>' +
@@ -3527,6 +3658,7 @@ var WK = (function(){
     }).join('');
     /* 방금 렌더링한 목록을 id로 다시 찾을 수 있게 저장해둠 (수정 모달용) */
     window._wkLastList = list;
+    renderStatsTable();
   }
 
   function openAdd(){
@@ -3535,6 +3667,7 @@ var WK = (function(){
     ['날짜','센터','지점장명','응시구분','구코드','파트너스명','위촉코드','위촉여부','비고'].forEach(function(k){
       var el = $('wk-e-'+k); if(el) el.value = '';
     });
+    $('wk-e-위촉여부').value = '미위촉';   /* ★ 기본값 */
     $('wk-del-btn').classList.add('hidden');
     $('wk-modal').classList.add('open');
   }
@@ -3552,7 +3685,7 @@ var WK = (function(){
     $('wk-e-구코드').value = r.구코드 || '';
     $('wk-e-파트너스명').value = r.파트너스명 || '';
     $('wk-e-위촉코드').value = r.위촉코드 || '';
-    $('wk-e-위촉여부').value = r.위촉여부 || '';
+    $('wk-e-위촉여부').value = r.위촉여부 || '미위촉';
     $('wk-e-비고').value = r.비고 || '';
     $('wk-del-btn').classList.toggle('hidden', !r.id);
     $('wk-modal').classList.add('open');
@@ -3653,6 +3786,8 @@ var WK = (function(){
             if(v instanceof Date) v = Utilities_fmtDate(v);
             o[f] = String(v==null?'':v).trim();
           });
+          /* ★ 위촉코드가 유효(3으로 시작하는 9자리)한데 위촉여부가 비어있으면 자동으로 완료, 아예 비어있으면 미위촉 */
+          if(!o.위촉여부) o.위촉여부 = isValidWichokCode(o.위촉코드) ? '완료' : '미위촉';
           return o;
         }).filter(function(o){ return o.파트너스명; });
         uploadRows = out;
