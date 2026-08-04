@@ -3955,12 +3955,16 @@ var XL = (function(){
   async function downloadMgr(){
     const rows = MGR.getList();
     if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
-    if(!hasExcelJS()){ save([{ name:'지점장정보', header:M_FIELDS, rows: toSheet(rows, M_FIELDS) }], `지점장_정보_${today()}.xlsx`); return; }
+    /* ★ 차월은 화면에 표시되는 계산값(입사월 기준 자동 갱신)으로 내보냄 — 저장된 옛 값이 아님 */
+    const exportRows = rows.map(r => Object.assign({}, r, {
+      차월: (typeof autoMonthOf === 'function' ? (autoMonthOf(r.입사월) || r.차월 || '') : (r.차월 || ''))
+    }));
+    if(!hasExcelJS()){ save([{ name:'지점장정보', header:M_FIELDS, rows: toSheet(exportRows, M_FIELDS) }], `지점장_정보_${today()}.xlsx`); return; }
 
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('지점장정보');
     ws.addRow(M_FIELDS);
-    rows.forEach(r => ws.addRow(M_FIELDS.map(k => (r[k]===null||r[k]===undefined) ? '' : String(r[k]))));
+    exportRows.forEach(r => ws.addRow(M_FIELDS.map(k => (r[k]===null||r[k]===undefined) ? '' : String(r[k]))));
     ws.columns = [{width:12},{width:12},{width:15},{width:14},{width:9},{width:12},{width:8},{width:10},{width:28},{width:28},{width:28}];
     styleRange(ws, 1, rows.length + 1, M_FIELDS.length, { header:true });
     ws.views = [{ state:'frozen', ySplit:1 }];
