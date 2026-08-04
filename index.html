@@ -535,6 +535,8 @@ tr.today-row td{background:#fdf8ee}
     <button class="btn btn-sm" onclick="WK.monthShift(1)">▶</button>
   </div>
 
+  <div id="wk-apply-box" style="margin-bottom:16px"></div>
+
   <div class="section" style="margin-bottom:16px">
     <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월(응시날짜) 기준 · 지점장차월 → 센터 → 지점장이름 순</span></div>
     <div class="table-wrap" style="max-height:50vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">
@@ -557,6 +559,11 @@ tr.today-row td{background:#fdf8ee}
   <div class="section" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding:10px 14px;margin-bottom:12px">
     <select id="wk-f-center" onchange="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">센터</option></select>
     <select id="wk-f-mgr" onchange="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">지점장명</option></select>
+    <select id="wk-f-mcha" onchange="WK.onFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
+      <option value="">지점장 차월</option>
+      <option value="1">1차월</option><option value="2">2차월</option><option value="3">3차월</option>
+      <option value="4">4차월</option><option value="5">5차월</option><option value="6">6차월</option>
+    </select>
     <input type="text" id="wk-f-partner" placeholder="🔍 파트너스명" oninput="WK.onFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
     <select id="wk-f-status" onchange="WK.onFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
       <option value="">위촉여부</option>
@@ -3394,7 +3401,7 @@ var WK = (function(){
   var loaded = false;
   var now = new Date();
   var curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  var F = { center:'', mgr:'', partner:'', status:'' };
+  var F = { center:'', mgr:'', partner:'', status:'', mcha:'' };
   var SORT = { key:'', dir:1 };
   var editing = null;          // { id, isNew }
   var uploadRows = null;       // 파싱된 업로드 미리보기 데이터
@@ -3437,11 +3444,12 @@ var WK = (function(){
   function enter(){
     var lb = $('wk-month-label'); if(lb) lb.textContent = monthLabel(curMonth);
     var mgrReady = (typeof MGR!=='undefined' && MGR.ensure) ? MGR.ensure() : Promise.resolve();
+    var wiReady = (typeof WI_DATA !== 'undefined' && WI_DATA === null && typeof loadWI === 'function') ? loadWI() : Promise.resolve();
     if(!loaded){
-      Promise.all([load(), mgrReady]).then(render);
+      Promise.all([load(), mgrReady, wiReady]).then(render);
       render();
     } else {
-      mgrReady.then(render);
+      Promise.all([mgrReady, wiReady]).then(render);
       render();
     }
   }
@@ -3490,14 +3498,26 @@ var WK = (function(){
   function centerOptions(){ return uniq(allRows().map(function(r){return String(r.센터||'').trim();})); }
   function mgrOptions(){ return uniq(allRows().map(function(r){return String(r.지점장명||'').trim();})); }
 
+  function filteredByMonthOnly(){
+    return allRows().filter(function(r){
+      var mo = monthOf(r);
+      return !mo || mo === curMonth;
+    });
+  }
+
   function filteredRows(){
     var q = String(F.partner||'').trim().toLowerCase();
+    var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
     return allRows().filter(function(r){
       var mo = monthOf(r);
       if(mo && mo !== curMonth) return false;
       if(F.center && String(r.센터||'').trim() !== F.center) return false;
       if(F.mgr && String(r.지점장명||'').trim() !== F.mgr) return false;
       if(F.status && String(r.위촉여부||'').trim() !== F.status) return false;
+      if(F.mcha){
+        var c = fn ? fn(String(r.지점장명||'').trim()) : null;
+        if(String(c==null?'':c) !== String(F.mcha)) return false;
+      }
       if(q && !String(r.파트너스명||'').toLowerCase().includes(q)) return false;
       return true;
     });
@@ -3506,7 +3526,12 @@ var WK = (function(){
   function sortedRows(){
     var f = filteredRows();
     if(!SORT.key){
+      var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
       return f.sort(function(a,b){
+        var ta = fn ? fn(String(a.지점장명||'').trim()) : null, tb = fn ? fn(String(b.지점장명||'').trim()) : null;
+        ta = (ta===null||ta===undefined||isNaN(ta)) ? Infinity : ta;
+        tb = (tb===null||tb===undefined||isNaN(tb)) ? Infinity : tb;
+        if(ta!==tb) return ta-tb;
         var ca = String(a.센터||'').trim(), cb = String(b.센터||'').trim();
         var cCmp = ca.localeCompare(cb,'ko'); if(cCmp) return cCmp;
         var ma = String(a.지점장명||'').trim(), mb = String(b.지점장명||'').trim();
@@ -3547,6 +3572,7 @@ var WK = (function(){
   function onFilterChange(){
     F.center = $('wk-f-center') ? $('wk-f-center').value : '';
     F.mgr = $('wk-f-mgr') ? $('wk-f-mgr').value : '';
+    F.mcha = $('wk-f-mcha') ? $('wk-f-mcha').value : '';
     F.partner = $('wk-f-partner') ? $('wk-f-partner').value : '';
     F.status = $('wk-f-status') ? $('wk-f-status').value : '';
     render();
@@ -3621,6 +3647,56 @@ var WK = (function(){
     }).join('');
   }
 
+  function computeApplyStats(){
+    var passed = filteredByMonthOnly();
+    var isWi = function(d){ return String(d.위촉여부||'').trim()==='완료'; };
+    var ov = (typeof wiViewAuto!=='undefined' && !wiViewAuto && typeof WI_DATA!=='undefined' && WI_DATA && WI_DATA[curMonth]) ? WI_DATA[curMonth] : null;
+    var T = ov ? (ov.합계 || { p:((ov.선행&&ov.선행.p)||0)+((ov.정규후속&&ov.정규후속.p)||0), w:((ov.선행&&ov.선행.w)||0)+((ov.정규후속&&ov.정규후속.w)||0) })
+               : { p: passed.length, w: passed.filter(isWi).length };
+    var byCha = {}, misc = { p:0, w:0 };
+    var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
+    if(ov){
+      Object.keys(ov.cha||{}).forEach(function(c){ var n=Number(c); if(n>=1 && n<=6) byCha[n]=ov.cha[c]; });
+      misc = ov.미배정 || {p:0,w:0};
+    } else {
+      passed.forEach(function(d){
+        var who = String(d.지점장명||'').trim();
+        var c = fn ? fn(who) : null;
+        if(c===null||c===undefined||isNaN(c)||c<1||c>6){ misc.p++; if(isWi(d)) misc.w++; return; }
+        if(!byCha[c]) byCha[c] = {p:0,w:0};
+        byCha[c].p++; if(isWi(d)) byCha[c].w++;
+      });
+    }
+    return { T: T, byCha: byCha, misc: misc, hasOv: !!ov };
+  }
+
+  function renderApplySummary(){
+    var box = $('wk-apply-box');
+    if(!box) return;
+    var st = computeApplyStats();
+    var cols = [1,2,3,4,5,6];
+    var cellFn = function(v, bold){ return '<td style="text-align:center;padding:7px 6px;'+(bold?'font-weight:700;background:#FAFAFA;':'')+'">'+v+'</td>'; };
+    var rowHd = function(t, gap){ return '<td style="text-align:center;padding:7px 6px;font-weight:600;background:#F5F5F3;'+(gap?'color:#555;':'')+'">'+t+'</td>'; };
+    var line = function(get){ return cols.map(function(c){ return cellFn(get(st.byCha[c]||{p:0,w:0})); }).join(''); };
+    var tbl1 = '<div class="section" style="padding:14px 16px;flex:1;min-width:220px">' +
+      '<div class="st-h">'+monthLabel(curMonth)+' <span class="sub">위촉현황 기준 · 합격: 응시날짜 · 위촉: 위촉여부 \'완료\''+(st.hasOv?' · 📌 수기 데이터 적용 중':'')+'</span></div>' +
+      '<div class="table-wrap"><table class="st-t" style="min-width:200px">' +
+      '<thead><tr><th>구분</th><th>합계</th></tr></thead><tbody>' +
+      '<tr>'+rowHd('합격')+cellFn(st.T.p,1)+'</tr>' +
+      '<tr>'+rowHd('위촉')+cellFn(st.T.w,1)+'</tr>' +
+      '<tr>'+rowHd('Gap',1)+cellFn(st.T.p-st.T.w,1)+'</tr>' +
+      '</tbody></table></div></div>';
+    var tbl2 = '<div class="section" style="padding:14px 16px;flex:2;min-width:360px">' +
+      '<div class="st-h">지점장 차월별 <span class="sub">1~6차월</span></div>' +
+      '<div class="table-wrap"><table class="st-t" style="min-width:400px">' +
+      '<thead><tr><th>구분</th>'+cols.map(function(c){ return '<th>'+c+'차월</th>'; }).join('')+'<th>합계</th></tr></thead><tbody>' +
+      '<tr>'+rowHd('합격')+line(function(x){return x.p;})+cellFn(st.T.p,1)+'</tr>' +
+      '<tr>'+rowHd('위촉')+line(function(x){return x.w;})+cellFn(st.T.w,1)+'</tr>' +
+      '<tr>'+rowHd('Gap',1)+line(function(x){return x.p-x.w;})+cellFn(st.T.p-st.T.w,1)+'</tr>' +
+      '</tbody></table></div></div>';
+    box.innerHTML = '<div style="display:flex;gap:14px;flex-wrap:wrap">'+tbl1+tbl2+'</div>';
+  }
+
   function render(){
     var lb = $('wk-month-label'); if(lb) lb.textContent = monthLabel(curMonth);
     updateFilterOptions();
@@ -3648,6 +3724,7 @@ var WK = (function(){
     /* 방금 렌더링한 목록을 id로 다시 찾을 수 있게 저장해둠 (수정 모달용) */
     window._wkLastList = list;
     renderStatsTable();
+    renderApplySummary();
   }
 
   function openAdd(){
