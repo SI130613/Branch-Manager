@@ -539,6 +539,15 @@ tr.today-row td{background:#fdf8ee}
 
   <div class="section" style="margin-bottom:16px">
     <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월(응시날짜) 기준 · 지점장차월 → 센터 → 지점장이름 순</span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <select id="wk-st-center" onchange="WK.onStatFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px"><option value="">센터</option></select>
+      <select id="wk-st-mcha" onchange="WK.onStatFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px">
+        <option value="">지점장 차월</option>
+        <option value="1">1차월</option><option value="2">2차월</option><option value="3">3차월</option>
+        <option value="4">4차월</option><option value="5">5차월</option><option value="6">6차월</option>
+      </select>
+      <select id="wk-st-mgr" onchange="WK.onStatFilterChange()" style="width:120px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px"><option value="">지점장 이름</option></select>
+    </div>
     <div class="table-wrap" style="max-height:50vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">
       <table class="st-t" style="min-width:480px;white-space:nowrap">
         <thead>
@@ -3587,8 +3596,49 @@ var WK = (function(){
     return '<span style="color:#999;font-size:11px">미위촉</span>';
   }
 
+  var ST = { center:'', mcha:'', mgr:'' };
+
+  function statFilterOptions(){
+    var mgrSet = registeredMgrSet();
+    var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
+    var list = allRows().filter(function(r){
+      var mo = monthOf(r);
+      if(mo && mo !== curMonth) return false;
+      var mgrName = String(r.지점장명||'').trim();
+      if(!mgrName || !mgrSet[mgrName]) return false;
+      var cha = fn ? fn(mgrName) : null;
+      return !(cha===null || cha===undefined || isNaN(cha) || cha<1 || cha>6);
+    });
+    return {
+      centers: uniq(list.map(function(r){ return String(r.센터||'').trim(); })),
+      mgrs: uniq(list.map(function(r){ return String(r.지점장명||'').trim(); }))
+    };
+  }
+
+  function updateStatFilterOptions(){
+    var opts = statFilterOptions();
+    var cSel = $('wk-st-center'), mSel = $('wk-st-mgr');
+    if(cSel){
+      var cv = cSel.value;
+      cSel.innerHTML = '<option value="">센터</option>' + opts.centers.map(function(c){ return '<option value="'+esc(c)+'"'+(c===cv?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
+      ST.center = cSel.value;
+    }
+    if(mSel){
+      var mv = mSel.value;
+      mSel.innerHTML = '<option value="">지점장 이름</option>' + opts.mgrs.map(function(m){ return '<option value="'+esc(m)+'"'+(m===mv?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
+      ST.mgr = mSel.value;
+    }
+  }
+
+  function onStatFilterChange(){
+    ST.center = $('wk-st-center') ? $('wk-st-center').value : '';
+    ST.mcha = $('wk-st-mcha') ? $('wk-st-mcha').value : '';
+    ST.mgr = $('wk-st-mgr') ? $('wk-st-mgr').value : '';
+    renderStatsTable();
+  }
+
   function statGroups(){
-    /* 통계표는 현재 조회월 전체 기준 (센터/지점장/위촉여부 필터와는 무관하게 전체 현황을 보여줌) */
+    /* 통계표는 현재 조회월 기준 + 센터/지점장차월/지점장이름 자체 필터 적용 */
     var mgrSet = registeredMgrSet();
     var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
     var list = allRows().filter(function(r){
@@ -3598,6 +3648,9 @@ var WK = (function(){
       if(!mgrName || !mgrSet[mgrName]) return false;              /* ★ 지점장 명단에 등록된 사람만 */
       var cha = fn ? fn(mgrName) : null;
       if(cha===null || cha===undefined || isNaN(cha) || cha<1 || cha>6) return false;   /* ★ 1~6차월만 */
+      if(ST.center && String(r.센터||'').trim() !== ST.center) return false;
+      if(ST.mgr && mgrName !== ST.mgr) return false;
+      if(ST.mcha && String(cha) !== String(ST.mcha)) return false;
       return true;
     });
     var groups = {};
@@ -3631,6 +3684,7 @@ var WK = (function(){
   function renderStatsTable(){
     var tb = $('wk-stat-body');
     if(!tb) return;
+    updateStatFilterOptions();
     var arr = statGroups();
     if(!arr.length){ tb.innerHTML = '<tr><td colspan="6" class="empty">데이터가 없습니다</td></tr>'; return; }
     var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
@@ -3912,7 +3966,8 @@ var WK = (function(){
     enter: enter, render: render, monthShift: monthShift, onFilterChange: onFilterChange,
     setSort: setSort, openAdd: openAdd, openEdit: openEdit, doSave: doSave, doDelete: doDelete,
     closeWkModal: closeWkModal, download: download, openUpload: openUpload, handleFile: handleFile,
-    applyUpload: applyUpload, ensure: ensureLoaded, getRowsFlat: getRowsFlat, monthKeyOf: monthKeyOf
+    applyUpload: applyUpload, ensure: ensureLoaded, getRowsFlat: getRowsFlat, monthKeyOf: monthKeyOf,
+    onStatFilterChange: onStatFilterChange
   };
 })();
 /* ═══════════════════ 엑셀 다운로드 / 업로드 ═══════════════════ */
