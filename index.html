@@ -1062,9 +1062,9 @@ tr.today-row td{background:#fdf8ee}
         <select id="mi-f-패키지"><option value="O">O</option><option value="X">X</option></select>
       </div>
       <div class="form-group"><label>상태</label>
-        <select id="mi-f-상태"><option value="정상">정상</option><option value="폐쇄">폐쇄</option></select>
+        <select id="mi-f-상태"><option value="정상">정상</option><option value="폐쇄">폐쇄</option><option value="보직변경">보직변경</option></select>
       </div>
-      <div class="form-group"><label>폐쇄일 (폐쇄 시)</label><input type="date" id="mi-f-폐쇄일"></div>
+      <div class="form-group"><label>폐쇄일 (폐쇄·보직변경 시)</label><input type="date" id="mi-f-폐쇄일"></div>
       <div class="form-group full"><label>교육 이수 내용</label><textarea id="mi-f-교육이수" style="min-height:52px"></textarea></div>
       <div class="form-group full"><label>경력사항</label><textarea id="mi-f-경력사항" style="min-height:52px"></textarea></div>
       <div class="form-group full"><label>특이사항</label><textarea id="mi-f-특이사항" style="min-height:52px"></textarea></div>
@@ -1573,9 +1573,9 @@ function verifyCode(name, code){
     .then(list=>{
       if(!Array.isArray(list)){ window._mgrNameSet = null; return null; }
       /* ★ 등록 사용자 명단 저장 (로그인 최종 단계에서 미등록자 차단에 사용)
-         폐쇄(퇴사) 처리된 지점장은 명단에서 제외 → 로그인 불가 */
+         폐쇄(퇴사)·보직변경 처리된 지점장은 명단에서 제외 → 로그인 불가 */
       window._mgrNameSet = new Set(list
-        .filter(m=>String(m.상태||'').trim()!=='폐쇄')
+        .filter(m=>!isMgrInactiveStatus(m.상태))
         .map(m=>String(m.지점장명||'').trim()).filter(Boolean));
       const rows = list.filter(m=>String(m.지점장명||'').trim() === name);
       if(!rows.length) return null;                       // 명단에 없음 → 아래 최종 단계에서 차단됨
@@ -1966,7 +1966,7 @@ function monthRangeOf(key){           /* 'yyyy-mm' → 그 달의 시작·끝 �
 function monthTargetSumK(fc){
   let sum = 0;
   ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
-    if(String(m.상태||'').trim()==='폐쇄') return;
+    if(isMgrInactiveStatus(m.상태)) return;
     if(fc && String(m.센터||'').trim() !== fc) return;
     if(!isAdmin){
       /* 지점장 본인 화면: 차월과 상관없이 본인 목표만 */
@@ -2092,6 +2092,12 @@ function syncWichokStatus(codeElId, statusElId, doneValue){
   if(isValidWichokCode(codeEl.value)) statusEl.value = doneValue;
 }
 
+/* 지점장 상태가 '폐쇄' 또는 '보직변경'이면 모든 통계·명단에서 동일하게 제외 처리 */
+function isMgrInactiveStatus(status){
+  var s = String(status||'').trim();
+  return s === '폐쇄' || s === '보직변경';
+}
+
 function autoMonthOf(joinM){
   if(!joinM) return '';
   const p = String(joinM).split('-').map(Number), y = p[0], m = p[1];
@@ -2115,12 +2121,12 @@ function mgrChaByName(name){
   return null;
 }
 
-/* ── 폐쇄(퇴사) 지점장 판별: 입력 화면·통계에서 자동 제외 (과거 기록은 유지) ── */
+/* ── 폐쇄(퇴사)·보직변경 지점장 판별: 입력 화면·통계에서 자동 제외 (과거 기록은 유지) ── */
 function closedMgrSet(){
   const s = new Set();
   try{
     ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
-      if(String(m.상태||'').trim()==='폐쇄'){ const n=String(m.지점장명||'').trim(); if(n) s.add(n); }
+      if(isMgrInactiveStatus(m.상태)){ const n=String(m.지점장명||'').trim(); if(n) s.add(n); }
     });
   }catch(e){}
   return s;
@@ -2577,7 +2583,7 @@ function collectManagers(fc, ft){
   // ① 지점장정보 시트
   (typeof MGR!=='undefined' && MGR.getList ? MGR.getList() : []).forEach(m=>{
     if(!isMgrName(m.지점장명)) return;
-    if(String(m.상태||'').trim()==='폐쇄') return;   /* 폐쇄(퇴사) 지점장 제외 */
+    if(isMgrInactiveStatus(m.상태)) return;   /* 폐쇄(퇴사)·보직변경 지점장 제외 */
     if(fc && (m.센터||'') !== fc) return;
     set.add(String(m.지점장명).trim());
   });
@@ -2854,7 +2860,7 @@ function renderStatsPage(keepFilters=false){
     } else {
       if (isAdmin){   /* 지점장 권한은 본인 데이터에서 나온 차월만 컬럼으로 표시 */
         ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
-          if(String(m.상태||'').trim()==='폐쇄') return;
+          if(isMgrInactiveStatus(m.상태)) return;
           const v = String((autoMonthOf(m.입사월) || m.차월 || '')).replace(/[^0-9]/g,'');
           if(v) chaSet[Number(v)] = 1;
         });
@@ -3242,6 +3248,8 @@ var MGR = (function(){
           : '<span class="badge" style="background:#FFF3D6;color:#946200">O</span>'}</td>
         <td style="text-align:center">${String(x.상태||'').trim()==='폐쇄'
           ? `<span class="badge" style="background:#FBE4E4;color:#B3251E" title="폐쇄일: ${x.폐쇄일||'미입력'}">폐쇄</span>`
+          : String(x.상태||'').trim()==='보직변경'
+          ? `<span class="badge" style="background:#F1E9FB;color:#6A3FA0" title="변경일: ${x.폐쇄일||'미입력'}">보직변경</span>`
           : '<span class="badge" style="background:#E4F3EC;color:#0E6B52">정상</span>'}</td>
         <td>${x.위촉코드 ? `<span class="badge badge-admin" style="font-variant-numeric:tabular-nums">${x.위촉코드}</span>` : '<span style="color:#ddd">미등록</span>'}</td>
         <td>${x.입사월||'-'}</td>
@@ -3269,7 +3277,7 @@ var MGR = (function(){
     document.getElementById('mi-f-월매출목표').value = x.월매출목표||'';
     document.getElementById('mi-f-담당코치').value = x.담당코치||'';
     document.getElementById('mi-f-패키지').value = (String(x.패키지||'').trim()==='X') ? 'X' : 'O';
-    document.getElementById('mi-f-상태').value = (String(x.상태||'').trim()==='폐쇄') ? '폐쇄' : '정상';
+    document.getElementById('mi-f-상태').value = ['폐쇄','보직변경'].includes(String(x.상태||'').trim()) ? String(x.상태).trim() : '정상';
     document.getElementById('mi-f-폐쇄일').value = x.폐쇄일||'';
     document.getElementById('mi-f-교육이수').value = x.교육이수||'';
     document.getElementById('mi-f-경력사항').value = x.경력사항||'';
@@ -3311,8 +3319,8 @@ var MGR = (function(){
       상태:g('mi-f-상태')||'정상', 폐쇄일:g('mi-f-폐쇄일'),
       교육이수:g('mi-f-교육이수'), 경력사항:g('mi-f-경력사항'), 특이사항:g('mi-f-특이사항')
     });
-    if(o.상태==='폐쇄' && !o.폐쇄일){
-      if(!confirm('상태가 폐쇄인데 폐쇄일이 비어 있습니다. 그대로 저장할까요?')) return;
+    if((o.상태==='폐쇄' || o.상태==='보직변경') && !o.폐쇄일){
+      if(!confirm(`상태가 ${o.상태}인데 날짜가 비어 있습니다. 그대로 저장할까요?`)) return;
     }
     /* 위촉코드 중복 확인 */
     if(o.위촉코드){
@@ -3462,7 +3470,8 @@ var WK = (function(){
     var set = {};
     ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(function(m){
       var n = String(m.지점장명||'').trim();
-      if(n) set[n] = true;
+      var inactive = (typeof isMgrInactiveStatus === 'function') ? isMgrInactiveStatus(m.상태) : false;
+      if(n && !inactive) set[n] = true;
     });
     return set;
   }
@@ -4688,7 +4697,7 @@ var MS_DEFS = [
   { id: "mcha",    label: "지점장 차월", opts: function(){
       var s = {};
       ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(function(m){
-        if (String(m.상태||'').trim() === '폐쇄') return;
+        if ((typeof isMgrInactiveStatus === 'function') ? isMgrInactiveStatus(m.상태) : String(m.상태||'').trim() === '폐쇄') return;
         var c = mgrCha(m);
         if (c !== null) s[String(c)] = 1;
       });
@@ -5749,7 +5758,7 @@ function targetRows(mlist){
   return (mlist || []).slice()
     .filter(function(m){
       if (!String(m.지점장명 || "").trim()) return false;
-      if (String(m.상태 || "").trim() === "폐쇄") return false;
+      if ((typeof isMgrInactiveStatus === 'function') ? isMgrInactiveStatus(m.상태) : String(m.상태 || "").trim() === "폐쇄") return false;
       var isAdminView = AUTH && AUTH.role === "admin";
       if (!isAdminView){
         /* 지점장 본인 화면: 본인 차월과 상관없이 본인 것만 그대로 표시 */
