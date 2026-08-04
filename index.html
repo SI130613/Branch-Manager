@@ -536,25 +536,17 @@ tr.today-row td{background:#fdf8ee}
   </div>
 
   <div class="section" style="margin-bottom:16px">
-    <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월 기준 · 센터 → 지점장차월 → 지점장이름 순</span></div>
+    <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월(합격날짜) 기준 · 지점장차월 → 센터 → 지점장이름 순</span></div>
     <div class="table-wrap" style="max-height:50vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">
-      <table class="st-t" style="min-width:760px;white-space:nowrap">
+      <table class="st-t" style="min-width:480px;white-space:nowrap">
         <thead>
           <tr>
-            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle">센터</th>
-            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle">차월</th>
-            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#f4f3f0;vertical-align:middle;text-align:left">지점장</th>
-            <th rowspan="2" style="position:sticky;top:0;z-index:6;background:#EFEEF9;color:#3C3489;vertical-align:middle">총위촉율<br><span style="font-weight:400;font-size:10px">(선+정규+후속)</span></th>
-            <th colspan="3" style="position:sticky;top:0;z-index:6;background:#DCEEFB;color:#1565C0">선행</th>
-            <th colspan="3" style="position:sticky;top:0;z-index:6;background:#FFE9CC;color:#B36B00">정규(+후속)</th>
-          </tr>
-          <tr>
-            <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">합격인원</th>
-            <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">위촉인원</th>
-            <th style="position:sticky;top:29px;z-index:6;background:#EFF7FE;font-size:11px">위촉율</th>
-            <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">합격인원</th>
-            <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">위촉인원</th>
-            <th style="position:sticky;top:29px;z-index:6;background:#FFF3E4;font-size:11px">위촉율</th>
+            <th style="position:sticky;top:0;z-index:6;background:#f4f3f0">차월</th>
+            <th style="position:sticky;top:0;z-index:6;background:#f4f3f0">센터</th>
+            <th style="position:sticky;top:0;z-index:6;background:#f4f3f0;text-align:left">지점장</th>
+            <th style="position:sticky;top:0;z-index:6;background:#EFF7FE">합격인원</th>
+            <th style="position:sticky;top:0;z-index:6;background:#EFF7FE">위촉인원</th>
+            <th style="position:sticky;top:0;z-index:6;background:#EFEEF9;color:#3C3489">위촉율</th>
           </tr>
         </thead>
         <tbody id="wk-stat-body"></tbody>
@@ -588,10 +580,9 @@ tr.today-row td{background:#fdf8ee}
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th data-wksort="날짜" onclick="WK.setSort('날짜')">날짜</th>
+          <th data-wksort="날짜" onclick="WK.setSort('날짜')">합격날짜</th>
           <th data-wksort="센터" onclick="WK.setSort('센터')">센터</th>
           <th data-wksort="지점장명" onclick="WK.setSort('지점장명')">지점장명</th>
-          <th data-wksort="응시구분" onclick="WK.setSort('응시구분')">응시구분</th>
           <th data-wksort="구코드" onclick="WK.setSort('구코드')">구코드</th>
           <th data-wksort="파트너스명" onclick="WK.setSort('파트너스명')">파트너스명</th>
           <th data-wksort="위촉코드" onclick="WK.setSort('위촉코드')">위촉코드</th>
@@ -613,14 +604,11 @@ tr.today-row td{background:#fdf8ee}
         <h3 id="wk-modal-title">위촉현황</h3>
         <button class="btn btn-sm" onclick="WK.closeWkModal()">✕</button>
       </div>
-      <div class="form-group"><label>날짜</label><input type="date" id="wk-e-날짜"></div>
+      <div class="form-group"><label>합격날짜</label><input type="date" id="wk-e-날짜"></div>
       <div class="form-group"><label>센터</label>
         <select id="wk-e-센터"><option value="">선택</option><option>강남센터</option><option>서울센터</option><option>경인센터</option><option>충청센터</option><option>호남센터</option><option>부경센터</option><option>대경센터</option></select>
       </div>
       <div class="form-group"><label>지점장명</label><input type="text" id="wk-e-지점장명"></div>
-      <div class="form-group"><label>응시구분</label>
-        <select id="wk-e-응시구분"><option value="">선택</option><option>선행</option><option>정규</option><option>후속</option></select>
-      </div>
       <div class="form-group"><label>구코드</label><input type="text" id="wk-e-구코드"></div>
       <div class="form-group"><label>파트너스명 *</label><input type="text" id="wk-e-파트너스명"></div>
       <div class="form-group"><label>위촉코드</label><input type="text" id="wk-e-위촉코드" oninput="syncWichokStatus('wk-e-위촉코드','wk-e-위촉여부','완료')"></div>
@@ -645,7 +633,7 @@ tr.today-row td{background:#fdf8ee}
         <button class="btn btn-sm" onclick="closeModal('wk-xl-modal')">✕</button>
       </div>
       <p style="font-size:12.5px;color:#888;line-height:1.6;margin:0 0 12px">
-        헤더: 날짜, 센터, 지점장명, 응시구분, 구코드, 파트너스명, 위촉코드, 위촉여부, 비고<br>
+        헤더: 날짜(합격날짜), 센터, 지점장명, 구코드, 파트너스명, 위촉코드, 위촉여부, 비고<br>
         동일인 판별은 <b>'구코드+이름'</b> 또는 <b>'위촉코드+이름'</b> 중 하나라도 일치하면 같은 사람으로 봅니다.
       </p>
       <input type="file" id="wk-xl-file" accept=".xlsx,.xls" style="margin-bottom:10px" onchange="WK.handleFile(this)">
@@ -3417,7 +3405,7 @@ var WK = (function(){
   var editing = null;          // { id, isNew }
   var uploadRows = null;       // 파싱된 업로드 미리보기 데이터
 
-  var WK_FIELDS = ['날짜','센터','지점장명','응시구분','구코드','파트너스명','위촉코드','위촉여부','비고'];
+  var WK_FIELDS = ['날짜','센터','지점장명','구코드','파트너스명','위촉코드','위촉여부','비고'];
 
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -3483,16 +3471,15 @@ var WK = (function(){
     var out = [];
     (typeof data !== 'undefined' ? data : []).forEach(function(p){
       if(!p || !String(p.파트너스명||'').trim()) return;
-      if(!String(p.합격날짜||'').trim()) return;          /* ★ 합격자만 자동 연동 */
-      if(!String(p.응시날짜||'').trim()) return;           /* 응시년월이 있어야 어느 달인지 판단 가능 */
+      if(!String(p.합격날짜||'').trim()) return;          /* ★ 합격자만 자동 연동 (날짜 기준도 합격날짜) */
       var mgrName = String(p.배정지점장||'').trim();
       if(!mgrName || !mgrSet[mgrName]) return;             /* ★ 지점장 명단에 등록된 사람만 */
       var wStatus = String(p.위촉여부||'').trim();
       if(wStatus === '위촉') wStatus = '완료';                                  /* 파트너스 목록 표기(위촉) → 위촉현황 표기(완료) */
       if(!wStatus || wStatus === '미위촉') wStatus = isValidWichokCode(p.위촉코드) ? '완료' : '미위촉';
       var virt = {
-        id:'', 날짜: p.응시날짜, 센터: p.센터 || '',
-        지점장명: mgrName, 응시구분: p.구분 || '',
+        id:'', 날짜: p.합격날짜, 센터: p.센터 || '',
+        지점장명: mgrName,
         구코드: p.가코드 || '', 파트너스명: p.파트너스명 || '',
         위촉코드: p.위촉코드 || '', 위촉여부: wStatus, 비고: '',
         _auto:true, _srcId: p.id
@@ -3522,14 +3509,10 @@ var WK = (function(){
     });
   }
 
-  var GUBUN_RANK = { '선행':0, '정규':1, '후속':2 };
   function sortedRows(){
     var f = filteredRows();
     if(!SORT.key){
       return f.sort(function(a,b){
-        var ga = GUBUN_RANK[String(a.응시구분||'').trim()]; if(ga===undefined) ga=99;
-        var gb = GUBUN_RANK[String(b.응시구분||'').trim()]; if(gb===undefined) gb=99;
-        if(ga!==gb) return ga-gb;
         var ca = String(a.센터||'').trim(), cb = String(b.센터||'').trim();
         var cCmp = ca.localeCompare(cb,'ko'); if(cCmp) return cCmp;
         var ma = String(a.지점장명||'').trim(), mb = String(b.지점장명||'').trim();
@@ -3575,13 +3558,6 @@ var WK = (function(){
     render();
   }
 
-  function gubunCell(v){
-    v = String(v||'').trim();
-    if(v==='선행') return '<td style="background:#DCEEFB;color:#1565C0;font-weight:600;text-align:center">'+esc(v)+'</td>';
-    if(v==='정규'||v==='후속') return '<td style="background:#FFE9CC;color:#B36B00;font-weight:600;text-align:center">'+esc(v)+'</td>';
-    return '<td style="text-align:center">'+(esc(v)||'-')+'</td>';
-  }
-
   function statusBadge(v){
     v = String(v||'').trim();
     if(v==='완료') return '<span class="badge" style="background:#DDF3E4;color:#1F7A44">완료</span>';
@@ -3609,20 +3585,19 @@ var WK = (function(){
       var center = String(r.센터||'').trim() || '(미지정)';
       var mgr = String(r.지점장명||'').trim() || '(미지정)';
       var key = center + '|' + mgr;
-      if(!groups[key]) groups[key] = { 센터:center, 지점장명:mgr, 선행합격:0, 선행위촉:0, 정규합격:0, 정규위촉:0 };
+      if(!groups[key]) groups[key] = { 센터:center, 지점장명:mgr, 합격:0, 위촉:0 };
       var g = groups[key];
-      var gubun = String(r.응시구분||'').trim();
-      var done = String(r.위촉여부||'').trim()==='완료';
-      if(gubun==='선행'){ g.선행합격++; if(done) g.선행위촉++; }
-      else if(gubun==='정규' || gubun==='후속'){ g.정규합격++; if(done) g.정규위촉++; }
+      g.합격++;
+      if(String(r.위촉여부||'').trim()==='완료') g.위촉++;
     });
     var arr = Object.keys(groups).map(function(k){ return groups[k]; });
     arr.sort(function(a,b){
-      var cCmp = String(a.센터).localeCompare(String(b.센터),'ko'); if(cCmp) return cCmp;
+      /* ★ 지점장차월 → 센터 → 지점장이름 순 */
       var ta = fn ? fn(a.지점장명) : null, tb = fn ? fn(b.지점장명) : null;
       ta = (ta===null||ta===undefined||isNaN(ta)) ? Infinity : ta;
       tb = (tb===null||tb===undefined||isNaN(tb)) ? Infinity : tb;
       if(ta!==tb) return ta-tb;
+      var cCmp = String(a.센터).localeCompare(String(b.센터),'ko'); if(cCmp) return cCmp;
       return String(a.지점장명).localeCompare(String(b.지점장명),'ko');
     });
     return arr;
@@ -3637,22 +3612,17 @@ var WK = (function(){
     var tb = $('wk-stat-body');
     if(!tb) return;
     var arr = statGroups();
-    if(!arr.length){ tb.innerHTML = '<tr><td colspan="10" class="empty">데이터가 없습니다</td></tr>'; return; }
+    if(!arr.length){ tb.innerHTML = '<tr><td colspan="6" class="empty">데이터가 없습니다</td></tr>'; return; }
     var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
     tb.innerHTML = arr.map(function(g){
       var cha = fn ? fn(g.지점장명) : null;
-      var totCand = g.선행합격 + g.정규합격, totDone = g.선행위촉 + g.정규위촉;
       return '<tr>' +
-        '<td style="font-size:11px">'+esc(g.센터)+'</td>' +
         '<td style="text-align:center">'+ (cha!=null && !isNaN(cha) ? cha+'차월' : '-') +'</td>' +
+        '<td style="font-size:11px">'+esc(g.센터)+'</td>' +
         '<td style="text-align:left;font-weight:600">'+esc(g.지점장명)+'</td>' +
-        '<td style="text-align:center;font-weight:700;color:#3C3489">'+ pct(totDone, totCand) +'</td>' +
-        '<td style="text-align:right">'+g.선행합격+'</td>' +
-        '<td style="text-align:right">'+g.선행위촉+'</td>' +
-        '<td style="text-align:center;color:#1565C0">'+ pct(g.선행위촉, g.선행합격) +'</td>' +
-        '<td style="text-align:right">'+g.정규합격+'</td>' +
-        '<td style="text-align:right">'+g.정규위촉+'</td>' +
-        '<td style="text-align:center;color:#B36B00">'+ pct(g.정규위촉, g.정규합격) +'</td>' +
+        '<td style="text-align:right">'+g.합격+'</td>' +
+        '<td style="text-align:right">'+g.위촉+'</td>' +
+        '<td style="text-align:center;font-weight:700;color:#3C3489">'+ pct(g.위촉, g.합격) +'</td>' +
       '</tr>';
     }).join('');
   }
@@ -3667,14 +3637,13 @@ var WK = (function(){
       var k = th.getAttribute('data-wksort');
       th.innerHTML = th.textContent.replace(/ ?[▲▼]$/,'') + (SORT.key===k ? (SORT.dir===1?' ▲':' ▼') : '');
     });
-    if(!list.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">데이터가 없습니다</td></tr>'; return; }
+    if(!list.length){ tb.innerHTML = '<tr><td colspan="8" class="empty">데이터가 없습니다</td></tr>'; return; }
     tb.innerHTML = list.map(function(r,i){
       var rid = r.id || ('auto_'+i);
       return '<tr style="cursor:pointer" onclick="WK.openEdit(\''+esc(rid)+'\')">' +
         '<td>'+ (esc(r.날짜)||'-') +'</td>' +
         '<td style="font-size:11px">'+ (esc(r.센터)||'-') +'</td>' +
         '<td>'+ (esc(r.지점장명)||'-') +'</td>' +
-        gubunCell(r.응시구분) +
         '<td style="font-size:11px">'+ (esc(r.구코드)||'-') +'</td>' +
         '<td style="font-weight:600">'+ (esc(r.파트너스명)||'-') + (r._auto ? ' <span style="color:#aaa;font-size:10px">(자동)</span>' : '') +'</td>' +
         '<td style="font-size:11px">'+ (esc(r.위촉코드)||'-') +'</td>' +
@@ -3690,7 +3659,7 @@ var WK = (function(){
   function openAdd(){
     editing = { id:'', isNew:true };
     $('wk-modal-title').textContent = '➕ 위촉현황 추가';
-    ['날짜','센터','지점장명','응시구분','구코드','파트너스명','위촉코드','위촉여부','비고'].forEach(function(k){
+    ['날짜','센터','지점장명','구코드','파트너스명','위촉코드','위촉여부','비고'].forEach(function(k){
       var el = $('wk-e-'+k); if(el) el.value = '';
     });
     $('wk-e-위촉여부').value = '미위촉';   /* ★ 기본값 */
@@ -3707,7 +3676,6 @@ var WK = (function(){
     $('wk-e-날짜').value = r.날짜 || '';
     $('wk-e-센터').value = r.센터 || '';
     $('wk-e-지점장명').value = r.지점장명 || '';
-    $('wk-e-응시구분').value = r.응시구분 || '';
     $('wk-e-구코드').value = r.구코드 || '';
     $('wk-e-파트너스명').value = r.파트너스명 || '';
     $('wk-e-위촉코드').value = r.위촉코드 || '';
@@ -3829,7 +3797,9 @@ var WK = (function(){
     reader.readAsArrayBuffer(file);
   }
   function Utilities_fmtDate(d){
-    var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    /* ★ SheetJS(xlsx.js)가 cellDates:true로 만든 Date는 UTC 기준 날짜이므로
+       로컬 getter를 쓰면 시간대에 따라 하루 밀릴 수 있음 → UTC getter로 정확한 날짜 복원 */
+    var y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
     return y+'-'+m+'-'+day;
   }
   function renderUploadModes(){
