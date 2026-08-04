@@ -536,7 +536,7 @@ tr.today-row td{background:#fdf8ee}
   </div>
 
   <div class="section" style="margin-bottom:16px">
-    <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월(합격날짜) 기준 · 지점장차월 → 센터 → 지점장이름 순</span></div>
+    <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월(응시날짜) 기준 · 지점장차월 → 센터 → 지점장이름 순</span></div>
     <div class="table-wrap" style="max-height:50vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">
       <table class="st-t" style="min-width:480px;white-space:nowrap">
         <thead>
@@ -580,7 +580,7 @@ tr.today-row td{background:#fdf8ee}
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th data-wksort="날짜" onclick="WK.setSort('날짜')">합격날짜</th>
+          <th data-wksort="날짜" onclick="WK.setSort('날짜')">응시날짜</th>
           <th data-wksort="센터" onclick="WK.setSort('센터')">센터</th>
           <th data-wksort="지점장명" onclick="WK.setSort('지점장명')">지점장명</th>
           <th data-wksort="구코드" onclick="WK.setSort('구코드')">구코드</th>
@@ -604,7 +604,7 @@ tr.today-row td{background:#fdf8ee}
         <h3 id="wk-modal-title">위촉현황</h3>
         <button class="btn btn-sm" onclick="WK.closeWkModal()">✕</button>
       </div>
-      <div class="form-group"><label>합격날짜</label><input type="date" id="wk-e-날짜"></div>
+      <div class="form-group"><label>응시날짜</label><input type="date" id="wk-e-날짜"></div>
       <div class="form-group"><label>센터</label>
         <select id="wk-e-센터"><option value="">선택</option><option>강남센터</option><option>서울센터</option><option>경인센터</option><option>충청센터</option><option>호남센터</option><option>부경센터</option><option>대경센터</option></select>
       </div>
@@ -633,7 +633,7 @@ tr.today-row td{background:#fdf8ee}
         <button class="btn btn-sm" onclick="closeModal('wk-xl-modal')">✕</button>
       </div>
       <p style="font-size:12.5px;color:#888;line-height:1.6;margin:0 0 12px">
-        헤더: 날짜(합격날짜), 센터, 지점장명, 구코드, 파트너스명, 위촉코드, 위촉여부, 비고<br>
+        헤더: 날짜(응시날짜), 센터, 지점장명, 구코드, 파트너스명, 위촉코드, 위촉여부, 비고<br>
         동일인 판별은 <b>'구코드+이름'</b> 또는 <b>'위촉코드+이름'</b> 중 하나라도 일치하면 같은 사람으로 봅니다.
       </p>
       <input type="file" id="wk-xl-file" accept=".xlsx,.xls" style="margin-bottom:10px" onchange="WK.handleFile(this)">
@@ -1970,7 +1970,7 @@ function monthTargetSumK(fc){
 }
 
 /* ── 파트너스 위촉 현황: 수기 보정 데이터 (구글시트 '위촉현황보정' 탭) ── */
-let WI_DATA = null;        /* { 'yyyy-mm': {선행:{p,w}, 정규후속:{p,w}, cha:{'2':{p,w}}, 미배정:{p,w}} } */
+let WI_DATA = null;        /* { 'yyyy-mm': {합계:{p,w}, 선행:{p,w}, 정규후속:{p,w}, cha:{'2':{p,w}}, 미배정:{p,w}} } */
 let wiViewAuto = false;    /* 수기 데이터가 있어도 자동 계산을 미리보기 */
 function wiNormMonth(v){
   const s = String(v||'').trim().replace(/[./]/g,'-');
@@ -1988,8 +1988,9 @@ function loadWI(){
         if(!mo || !item) return;
         const p = Number(String(r.합격||'').replace(/[^0-9.-]/g,''))||0;
         const w = Number(String(r.위촉||'').replace(/[^0-9.-]/g,''))||0;
-        if(!map[mo]) map[mo] = { 선행:null, 정규후속:null, cha:{}, 미배정:null };
-        if(item==='선행') map[mo].선행 = {p,w};
+        if(!map[mo]) map[mo] = { 합계:null, 선행:null, 정규후속:null, cha:{}, 미배정:null };
+        if(item==='합계') map[mo].합계 = {p,w};
+        else if(item==='선행') map[mo].선행 = {p,w};
         else if(item==='정규후속'||item==='정규+후속') map[mo].정규후속 = {p,w};
         else if(item==='미배정') map[mo].미배정 = {p,w};
         else { const c = item.replace(/[^0-9]/g,''); if(c) map[mo].cha[Number(c)] = {p,w}; }
@@ -2003,8 +2004,7 @@ function wiDownload(){
   const L = window._wiLast;
   if(!L){ showToast('표가 아직 준비되지 않았습니다','err'); return; }
   const aoa = [['월','항목','합격','위촉']];
-  aoa.push([L.month,'선행',L.A.p,L.A.w]);
-  aoa.push([L.month,'정규후속',L.B.p,L.B.w]);
+  aoa.push([L.month,'합계',L.T.p,L.T.w]);
   L.cols.forEach(c=>{ const v=L.byCha[c]||{p:0,w:0}; aoa.push([L.month, c+'차월', v.p, v.w]); });
   aoa.push([L.month,'미배정',L.misc.p,L.misc.w]);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -2811,62 +2811,55 @@ function renderStatsPage(keepFilters=false){
   `;
 
   /* --- 파트너스 신청 --- */
-  const P = statsScopedPartners(fc, fp, ft);
   const bm = Number(baseKey.split('-')[1]), nm = Number(nextKey.split('-')[1]);
-  /* 합격/위촉/Gap 현황 — 기본: 관리대장 자동 계산 · 수기 업로드가 있는 달은 수기 우선 */
+  /* 합격/위촉/Gap 현황 — ★ 위촉현황(WK) 데이터 기준 · 수기 업로드가 있는 달은 수기 우선 */
   function fillApply(){
-    const passed = P.filter(d => (cleanDate(d.합격날짜)||'').substring(0,7) === baseKey);
-    const isWi = d => String(d.위촉여부||'').trim() === '위촉';
+    const wkAll = (typeof WK !== 'undefined' && WK.getRowsFlat) ? WK.getRowsFlat() : [];
+    const passed = wkAll.filter(d => {
+      const mk = (typeof WK !== 'undefined' && WK.monthKeyOf) ? WK.monthKeyOf(d) : (String(d.날짜||'').trim().substring(0,7));
+      return mk === baseKey;
+    });
+    const isWi = d => String(d.위촉여부||'').trim() === '완료';
     const ov = (!wiViewAuto && WI_DATA && WI_DATA[baseKey]) ? WI_DATA[baseKey] : null;
     const cell = (v, bold) => `<td style="text-align:center;padding:7px 6px;${bold?'font-weight:700;background:#FAFAFA;':''}">${v}</td>`;
     const rowHd = (t, gap) => `<td style="text-align:center;padding:7px 6px;font-weight:600;background:#F5F5F3;${gap?'color:#555;':''}">${t}</td>`;
 
-    /* 표1: 구분(선행 / 정규+후속) — 수기 데이터가 있으면 수기 값 사용 */
-    const g1 = set => { const g = passed.filter(d => set.includes(d.구분)); return { p:g.length, w:g.filter(isWi).length }; };
-    const A = ov ? (ov.선행 || {p:0,w:0}) : g1(선행SET);
-    const B = ov ? (ov.정규후속 || {p:0,w:0}) : g1(정규후속SET);
-    const T = ov ? { p: A.p + B.p, w: A.w + B.w } : { p: passed.length, w: passed.filter(isWi).length };
+    /* 표1: 합계 (위촉현황은 선행/정규 구분이 없으므로 합계 하나만) — 수기 데이터가 있으면 수기 값 사용 */
+    const T = ov ? (ov.합계 || { p: (ov.선행?.p||0)+(ov.정규후속?.p||0), w: (ov.선행?.w||0)+(ov.정규후속?.w||0) }) : { p: passed.length, w: passed.filter(isWi).length };
     const tbl1 = `
       <div class="section" style="padding:14px 16px">
-        <div class="st-h">${bm}월${baseKey===curKey?'(당월)':''} <span class="sub">합격: 합격날짜 기준 · 위촉: 위촉여부 '위촉'</span></div>
-        <div class="table-wrap"><table class="st-t" style="min-width:320px">
-          <thead><tr><th>구분</th><th>선행</th><th>정규 + 후속</th><th>합계</th></tr></thead>
+        <div class="st-h">${bm}월${baseKey===curKey?'(당월)':''} <span class="sub">위촉현황 기준 · 합격: 날짜(응시날짜) · 위촉: 위촉여부 '완료'</span></div>
+        <div class="table-wrap"><table class="st-t" style="min-width:220px">
+          <thead><tr><th>구분</th><th>합계</th></tr></thead>
           <tbody>
-            <tr>${rowHd('합격')}${cell(A.p)}${cell(B.p)}${cell(T.p,1)}</tr>
-            <tr>${rowHd('위촉')}${cell(A.w)}${cell(B.w)}${cell(T.w,1)}</tr>
-            <tr>${rowHd('Gap',1)}${cell(A.p-A.w)}${cell(B.p-B.w)}${cell(T.p-T.w,1)}</tr>
+            <tr>${rowHd('합격')}${cell(T.p,1)}</tr>
+            <tr>${rowHd('위촉')}${cell(T.w,1)}</tr>
+            <tr>${rowHd('Gap',1)}${cell(T.p-T.w,1)}</tr>
           </tbody>
         </table></div>
       </div>`;
 
-    /* 표2: 지점장 차월별 (배정지점장의 차월 기준) */
-    const chaSet = {};
+    /* 표2: 지점장 차월별 (위촉현황에 기록된 지점장명의 차월 기준) — ★ 목표 관리 대상인 1~6차월만 표시 */
     const byCha = {}; let misc = { p:0, w:0 };
     if (ov){
-      Object.keys(ov.cha || {}).forEach(c=>{ chaSet[Number(c)] = 1; byCha[Number(c)] = ov.cha[c]; });
+      Object.keys(ov.cha || {}).forEach(c=>{
+        const n = Number(c);
+        if (n >= 1 && n <= 6) byCha[n] = ov.cha[c];   /* 7차월 이상은 표시하지 않음 */
+      });
       misc = ov.미배정 || { p:0, w:0 };
     } else {
-      if (isAdmin){   /* 지점장 권한은 본인 데이터에서 나온 차월만 컬럼으로 표시 */
-        ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(m=>{
-          if(isMgrInactiveStatus(m.상태)) return;
-          const v = String((autoMonthOf(m.입사월) || m.차월 || '')).replace(/[^0-9]/g,'');
-          if(v) chaSet[Number(v)] = 1;
-        });
-      }
       passed.forEach(d=>{
-        /* 담당EM(배정지점장)이 비어 있으면 담당자(지점장) 기준으로 차월 분류 */
-        const who = String(d.배정지점장||'').trim() || String(d.담당자||'').trim();
+        const who = String(d.지점장명||'').trim();
         const c = mgrChaByName(who);
-        if(c === null){ misc.p++; if(isWi(d)) misc.w++; return; }
-        chaSet[c] = 1;
+        if(c === null || c < 1 || c > 6){ misc.p++; if(isWi(d)) misc.w++; return; }   /* 미배정 · 7차월 이상은 여기로 */
         if(!byCha[c]) byCha[c] = { p:0, w:0 };
         byCha[c].p++; if(isWi(d)) byCha[c].w++;
       });
     }
-    const cols = Object.keys(chaSet).map(Number).sort((a,b)=>a-b);
+    const cols = [1,2,3,4,5,6];   /* ★ 항상 1~6차월 고정, 데이터 없는 차월은 0으로 표시 */
     const hasMisc = misc.p > 0;
     /* 다운로드용 스냅샷 + 상태 배지·버튼 */
-    window._wiLast = { month: baseKey, A: A, B: B, cols: cols, byCha: byCha, misc: misc };
+    window._wiLast = { month: baseKey, T: T, cols: cols, byCha: byCha, misc: misc };
     window._wiRefill = fillApply;
     const badge = document.getElementById('wi-badge');
     if (badge){
@@ -2897,8 +2890,9 @@ function renderStatsPage(keepFilters=false){
     document.getElementById('st-apply').innerHTML = tbl1 + tbl2;
   }
   fillApply();
-  /* 지점장 차월·수기 보정 데이터를 불러온 뒤 다시 채움 */
+  /* 지점장 차월·수기 보정·위촉현황 데이터를 불러온 뒤 다시 채움 */
   if (typeof MGR !== 'undefined' && MGR.ensure) MGR.ensure().then(fillApply).catch(()=>{});
+  if (typeof WK !== 'undefined' && WK.ensure) WK.ensure().then(fillApply).catch(()=>{});
   if (WI_DATA === null) loadWI().then(fillApply); else loadWI().then(fillApply);
 
   /* --- 매출 (비동기 로드) --- */
@@ -3830,11 +3824,18 @@ var WK = (function(){
     });
   }
 
+  function ensureLoaded(){
+    if(loaded) return Promise.resolve(rows);
+    return load();
+  }
+  function getRowsFlat(){ return allRows(); }
+  function monthKeyOf(r){ return monthOf(r); }
+
   return {
     enter: enter, render: render, monthShift: monthShift, onFilterChange: onFilterChange,
     setSort: setSort, openAdd: openAdd, openEdit: openEdit, doSave: doSave, doDelete: doDelete,
     closeWkModal: closeWkModal, download: download, openUpload: openUpload, handleFile: handleFile,
-    applyUpload: applyUpload
+    applyUpload: applyUpload, ensure: ensureLoaded, getRowsFlat: getRowsFlat, monthKeyOf: monthKeyOf
   };
 })();
 /* ═══════════════════ 엑셀 다운로드 / 업로드 ═══════════════════ */
