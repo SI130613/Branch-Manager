@@ -568,7 +568,8 @@ tr.today-row td{background:#fdf8ee}
 
   <div class="section" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding:10px 14px;margin-bottom:12px">
     <select id="wk-f-center" onchange="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">센터</option></select>
-    <select id="wk-f-mgr" onchange="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto"><option value="">지점장명</option></select>
+    <input type="text" id="wk-f-mgr" list="wk-f-mgr-list" placeholder="🔍 지점장명" oninput="WK.onFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
+    <datalist id="wk-f-mgr-list"></datalist>
     <select id="wk-f-mcha" onchange="WK.onFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px;flex:0 0 auto">
       <option value="">지점장 차월</option>
       <option value="1">1차월</option><option value="2">2차월</option><option value="3">3차월</option>
@@ -3521,7 +3522,7 @@ var WK = (function(){
       var mo = monthOf(r);
       if(mo && mo !== curMonth) return false;
       if(F.center && String(r.센터||'').trim() !== F.center) return false;
-      if(F.mgr && String(r.지점장명||'').trim() !== F.mgr) return false;
+      if(F.mgr && String(r.지점장명||'').trim().toLowerCase().indexOf(String(F.mgr).trim().toLowerCase()) < 0) return false;
       if(F.status && String(r.위촉여부||'').trim() !== F.status) return false;
       if(F.mcha){
         var c = fn ? fn(String(r.지점장명||'').trim()) : null;
@@ -3565,16 +3566,24 @@ var WK = (function(){
   }
 
   function updateFilterOptions(){
-    var cSel = $('wk-f-center'), mSel = $('wk-f-mgr');
+    var cSel = $('wk-f-center'), mgrDL = $('wk-f-mgr-list');
     if(cSel){
       var cv = cSel.value;
       cSel.innerHTML = '<option value="">센터</option>' + centerOptions().map(function(c){ return '<option value="'+esc(c)+'"'+(c===cv?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
       F.center = cSel.value;
     }
-    if(mSel){
-      var mv = mSel.value;
-      mSel.innerHTML = '<option value="">지점장명</option>' + mgrOptions().map(function(m){ return '<option value="'+esc(m)+'"'+(m===mv?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
-      F.mgr = mSel.value;
+    if(mgrDL){
+      var fn = (typeof mgrChaByName==='function') ? mgrChaByName : null;
+      var cands = allRows().filter(function(r){
+        if(F.center && String(r.센터||'').trim() !== F.center) return false;
+        if(F.mcha){
+          var c = fn ? fn(String(r.지점장명||'').trim()) : null;
+          if(String(c==null?'':c) !== String(F.mcha)) return false;
+        }
+        return true;
+      });
+      var names = uniq(cands.map(function(r){ return String(r.지점장명||'').trim(); }));
+      mgrDL.innerHTML = names.map(function(m){ return '<option value="'+esc(m)+'">'; }).join('');
     }
   }
 
