@@ -3922,9 +3922,9 @@ var WK = (function(){
     reader.readAsArrayBuffer(file);
   }
   function Utilities_fmtDate(d){
-    /* ★ SheetJS(xlsx.js)가 cellDates:true로 만든 Date는 UTC 기준 날짜이므로
-       로컬 getter를 쓰면 시간대에 따라 하루 밀릴 수 있음 → UTC getter로 정확한 날짜 복원 */
-    var y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
+    /* ★ SheetJS(xlsx.js)가 cellDates:true로 만든 Date는 "로컬 자정" 기준으로 생성되므로
+       UTC getter를 쓰면 시간대에 따라 하루 앞으로 밀릴 수 있음 → 로컬 getter로 정확한 날짜 복원 */
+    var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
     return y+'-'+m+'-'+day;
   }
   function renderUploadModes(){
@@ -4292,7 +4292,9 @@ var XL = (function(){
           FIELDS.forEach(f=>{ o[f] = ''; });
           Object.keys(map).forEach(hd=>{
             let v = r[hd];
-            if(v instanceof Date) v = cleanDate(v.toISOString().slice(0,10));
+            /* ★ SheetJS(cellDates:true)는 로컬 자정 기준 Date 객체를 만들기 때문에
+               toISOString()(UTC)으로 읽으면 시간대에 따라 하루 앞으로 밀릴 수 있음 → 로컬 getter로 정확히 복원 */
+            if(v instanceof Date) v = v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
             o[map[hd]] = (v===null||v===undefined) ? '' : String(v).trim();
           });
           return o;
