@@ -507,7 +507,7 @@ tr.today-row td{background:#fdf8ee}
         <table>
           <thead><tr>
             <th>No.</th><th data-msort="센터">센터</th><th data-msort="지점장명">지점장명</th><th data-msort="연락처">연락처</th><th data-msort="담당코치">담당코치</th><th data-msort="패키지">패키지</th><th data-msort="상태">상태</th><th data-msort="위촉코드">위촉코드</th><th data-msort="입사월">입사월</th><th data-msort="기수">기수</th><th data-msort="차월">차월</th>
-            <th>교육 이수 내용</th><th>경력사항</th><th>특이사항</th><th>관리</th>
+            <th>교육 이수 내용</th><th>경력사항</th><th>특이사항</th>
           </tr></thead>
           <tbody id="mi-body"></tbody>
         </table>
@@ -541,12 +541,13 @@ tr.today-row td{background:#fdf8ee}
     <div class="st-h" style="margin:0 0 10px">📊 지점장별 위촉현황 통계 <span class="sub">현재 조회월(응시날짜) 기준 · 지점장차월 → 센터 → 지점장이름 순</span></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
       <select id="wk-st-center" onchange="WK.onStatFilterChange()" style="width:110px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px"><option value="">센터</option></select>
+      <input type="text" id="wk-st-mgr" list="wk-st-mgr-list" placeholder="🔍 지점장 이름" oninput="WK.onStatFilterChange()" style="width:130px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px">
+      <datalist id="wk-st-mgr-list"></datalist>
       <select id="wk-st-mcha" onchange="WK.onStatFilterChange()" style="width:100px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px">
         <option value="">지점장 차월</option>
         <option value="1">1차월</option><option value="2">2차월</option><option value="3">3차월</option>
         <option value="4">4차월</option><option value="5">5차월</option><option value="6">6차월</option>
       </select>
-      <select id="wk-st-mgr" onchange="WK.onStatFilterChange()" style="width:120px;padding:7px 8px;border:1px solid #d8d8d4;border-radius:8px;font-size:12.5px"><option value="">지점장 이름</option></select>
     </div>
     <div class="table-wrap" style="max-height:50vh;overflow-y:auto;overflow-x:auto;border:1px solid #EEE;border-radius:8px">
       <table class="st-t" style="min-width:480px;white-space:nowrap">
@@ -3126,12 +3127,12 @@ var MGR = (function(){
       reload();   /* ★ 다른 관리자가 바꾼 최신 명단으로 조용히 갱신 (덮어쓰기 사고 예방) */
       return;
     }
-    document.getElementById('mi-body').innerHTML = '<tr><td colspan="15" class="empty">불러오는 중…</td></tr>';
+    document.getElementById('mi-body').innerHTML = '<tr><td colspan="14" class="empty">불러오는 중…</td></tr>';
     ensure()
       .then(()=>{ fillCenters(); render(); })
       .catch(e=>{
         document.getElementById('mi-body').innerHTML =
-          `<tr><td colspan="15" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
+          `<tr><td colspan="14" class="empty">불러오기 실패: ${e.message||e}</td></tr>`;
       });
   }
 
@@ -3231,11 +3232,11 @@ var MGR = (function(){
     }
     if(typeof updateMSortArrows === 'function') updateMSortArrows();
     const tb = document.getElementById('mi-body');
-    if(!f.length){ tb.innerHTML = '<tr><td colspan="15" class="empty">데이터가 없습니다</td></tr>'; return; }
+    if(!f.length){ tb.innerHTML = '<tr><td colspan="14" class="empty">데이터가 없습니다</td></tr>'; return; }
     tb.innerHTML = f.map((x,i)=>{
       const ri = list.indexOf(x);
       const cha = autoMonth(x.입사월) || x.차월 || '-';
-      return `<tr>
+      return `<tr style="cursor:pointer" onclick="MGR.openEdit(${ri})">
         <td style="color:#aaa;text-align:center">${i+1}</td>
         <td style="font-size:11px">${x.센터||'-'}</td>
         <td style="font-weight:600">${x.지점장명||'-'}</td>
@@ -3256,7 +3257,6 @@ var MGR = (function(){
         <td class="mi-cell" title="${(x.교육이수||'').replace(/"/g,'&quot;')}">${x.교육이수||'-'}</td>
         <td class="mi-cell" title="${(x.경력사항||'').replace(/"/g,'&quot;')}">${x.경력사항||'-'}</td>
         <td class="mi-cell" title="${(x.특이사항||'').replace(/"/g,'&quot;')}">${x.특이사항||'-'}</td>
-        <td><button class="btn btn-sm btn-edit" onclick="MGR.openEdit(${ri})">✏️</button></td>
       </tr>`;
     }).join('');
   }
@@ -3609,24 +3609,31 @@ var WK = (function(){
       var cha = fn ? fn(mgrName) : null;
       return !(cha===null || cha===undefined || isNaN(cha) || cha<1 || cha>6);
     });
+    /* ★ 센터/차월이 선택돼 있으면 지점장명 후보를 그 조건에 맞는 사람들로만 좁힘 */
+    var mgrList = list.filter(function(r){
+      if(ST.center && String(r.센터||'').trim() !== ST.center) return false;
+      if(ST.mcha){
+        var c = fn ? fn(String(r.지점장명||'').trim()) : null;
+        if(String(c==null?'':c) !== String(ST.mcha)) return false;
+      }
+      return true;
+    });
     return {
       centers: uniq(list.map(function(r){ return String(r.센터||'').trim(); })),
-      mgrs: uniq(list.map(function(r){ return String(r.지점장명||'').trim(); }))
+      mgrs: uniq(mgrList.map(function(r){ return String(r.지점장명||'').trim(); }))
     };
   }
 
   function updateStatFilterOptions(){
     var opts = statFilterOptions();
-    var cSel = $('wk-st-center'), mSel = $('wk-st-mgr');
+    var cSel = $('wk-st-center'), mgrDL = $('wk-st-mgr-list');
     if(cSel){
       var cv = cSel.value;
       cSel.innerHTML = '<option value="">센터</option>' + opts.centers.map(function(c){ return '<option value="'+esc(c)+'"'+(c===cv?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
       ST.center = cSel.value;
     }
-    if(mSel){
-      var mv = mSel.value;
-      mSel.innerHTML = '<option value="">지점장 이름</option>' + opts.mgrs.map(function(m){ return '<option value="'+esc(m)+'"'+(m===mv?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
-      ST.mgr = mSel.value;
+    if(mgrDL){
+      mgrDL.innerHTML = opts.mgrs.map(function(m){ return '<option value="'+esc(m)+'">'; }).join('');
     }
   }
 
@@ -3649,7 +3656,7 @@ var WK = (function(){
       var cha = fn ? fn(mgrName) : null;
       if(cha===null || cha===undefined || isNaN(cha) || cha<1 || cha>6) return false;   /* ★ 1~6차월만 */
       if(ST.center && String(r.센터||'').trim() !== ST.center) return false;
-      if(ST.mgr && mgrName !== ST.mgr) return false;
+      if(ST.mgr && mgrName.toLowerCase().indexOf(String(ST.mgr).trim().toLowerCase()) < 0) return false;
       if(ST.mcha && String(cha) !== String(ST.mcha)) return false;
       return true;
     });
