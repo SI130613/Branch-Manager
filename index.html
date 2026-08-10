@@ -1950,7 +1950,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 });
 
-/* ── 영업일 계산 (월~금 기준 · 공휴일 미반영) ── */
+/* ── 영업일 계산 (월~금 기준 + 아래 휴일 목록 제외) ──
+   ★ 임시공휴일 등 회사 휴무일이 생기면 이 목록에 'yyyy-mm-dd'만 추가해주면 됩니다 */
+var HOLIDAYS = ['2026-08-17'];  /* 2026-08-15(토, 광복절)가 주말이라 8/17(월)이 대체 임시공휴일로 지정됨 */
 function bizDaysBetween(fromStr, toStr){
   if(!fromStr || !toStr || fromStr > toStr) return 0;
   let n = 0;
@@ -1958,7 +1960,8 @@ function bizDaysBetween(fromStr, toStr){
   const end = new Date(toStr + 'T00:00:00');
   while(d <= end){
     const w = d.getDay();
-    if(w >= 1 && w <= 5) n++;
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    if(w >= 1 && w <= 5 && HOLIDAYS.indexOf(key) < 0) n++;
     d.setDate(d.getDate() + 1);
   }
   return n;
@@ -4810,11 +4813,6 @@ function pruneFilters(){
 var MS_DEFS = [
   { id: "center",  label: "센터",     opts: function(){ return uniq(rows.map(function(r){ return r.center; })); } },
   { id: "mgr",     label: "지점장명", opts: mgrOptions },
-  { id: "partner", label: "파트너스명", opts: partnerOptions, width: 170 },
-  { id: "holder",  label: "계약자명", opts: function(){ return uniq(rows.map(function(r){ return r.holder; })).sort(function(a,b){ return a.localeCompare(b,"ko"); }); } },
-  { id: "insured", label: "피보험자명", opts: function(){ return uniq(rows.map(function(r){ return r.insured; })).sort(function(a,b){ return a.localeCompare(b,"ko"); }); } },
-  { id: "career",  label: "경력구분", opts: function(){ return CAREERS.slice(); } },
-  { id: "month",   label: "파트너스 차월", opts: function(){ return uniq(rows.map(function(r){ return (r.month === null || r.month === undefined || r.month === "") ? null : String(r.month); })).sort(function(a,b){ return Number(a) - Number(b); }); }, width: 100 },
   { id: "mcha",    label: "지점장 차월", opts: function(){
       var s = {};
       ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(function(m){
@@ -4823,7 +4821,12 @@ var MS_DEFS = [
         if (c !== null) s[String(c)] = 1;
       });
       return Object.keys(s).sort(function(a,b){ return Number(a) - Number(b); });
-    }, width: 100 }
+    }, width: 100 },
+  { id: "partner", label: "파트너스명", opts: partnerOptions, width: 170 },
+  { id: "holder",  label: "계약자명", opts: function(){ return uniq(rows.map(function(r){ return r.holder; })).sort(function(a,b){ return a.localeCompare(b,"ko"); }); } },
+  { id: "insured", label: "피보험자명", opts: function(){ return uniq(rows.map(function(r){ return r.insured; })).sort(function(a,b){ return a.localeCompare(b,"ko"); }); } },
+  { id: "career",  label: "경력구분", opts: function(){ return CAREERS.slice(); } },
+  { id: "month",   label: "파트너스 차월", opts: function(){ return uniq(rows.map(function(r){ return (r.month === null || r.month === undefined || r.month === "") ? null : String(r.month); })).sort(function(a,b){ return Number(a) - Number(b); }); }, width: 100 }
 ];
 /* 지점장 이름 → 지점장 차월 */
 function mgrChaOf(name){
