@@ -5682,9 +5682,16 @@ function applyUpload(){
   if (!parsedUpload || !parsedUpload.length) return;
   var mode = document.querySelector('input[name="upMode"]:checked').value;
   $("upApplyBtn").disabled = true; $("upApplyBtn").textContent = "반영 중…";
-  call(mode === "replace" ? "replace" : "append", { rows: parsedUpload }).then(function(){
+  call(mode === "replace" ? "replace" : "append", { rows: parsedUpload }).then(function(j){
     closeModal("uploadModal");
-    flash(parsedUpload.length + "건이 구글 시트에 반영되었습니다");
+    if(mode !== "replace" && j && typeof j.added === "number"){
+      var added = j.added, skip = j.skipped || 0;
+      if(added === 0 && skip > 0) flash("추가된 건 없음 · 전부 이미 등록된 데이터입니다 (중복 " + skip + "건 건너뜀)");
+      else if(skip > 0) flash("신규 " + added + "건 추가 · 중복 " + skip + "건 건너뜀");
+      else flash(added + "건이 구글 시트에 반영되었습니다");
+    } else {
+      flash(parsedUpload.length + "건이 구글 시트에 반영되었습니다");
+    }
     return refresh();
   }).catch(function(e){ alert(e.message); })
     .finally(function(){ $("upApplyBtn").disabled = false; $("upApplyBtn").textContent = "반영하기"; });
@@ -5723,11 +5730,11 @@ function doChangeMyPw(){
 }
 function doRollover(){
   var msg = $("roMsg");
-  if (!confirm("월 마감을 진행할까요?\n\n· 현재 데이터는 구글 시트의 백업 탭으로 보관됩니다\n· 파트너스 명단은 유지되고 차월이 +1 됩니다\n· 매출/계약/도움요청 입력칸은 새로 비워집니다")) return;
-  if (!confirm("정말 진행합니다. 매월 1회만 눌러야 합니다. 계속할까요?")) return;
+  if (!confirm("월 마감을 진행할까요?\n\n· 기존 데이터는 지워지지 않고 그대로 유지됩니다\n· 파트너스별로 차월만 +1 한 다음 달 새 건이 시트 맨 아래에 추가됩니다\n· 새로 추가되는 건의 매출/계약/도움요청 입력칸은 비어있는 상태로 시작합니다")) return;
+  if (!confirm("정말 진행합니다. 매월 1회만 눌러야 합니다 (여러 번 누르면 다음 달 건이 중복 추가돼요). 계속할까요?")) return;
   $("roBtn").disabled = true; $("roBtn").textContent = "마감 처리 중…";
   call("rollover").then(function(j){
-    msg.textContent = "완료! 이전 데이터는 시트의 '" + j.archived + "' 탭에 보관되었고, 새 달 " + j.count + "건(조직 기준)으로 시작합니다.";
+    msg.textContent = "완료! 새 달 " + j.count + "건(조직 기준)이 기존 데이터 아래에 추가되었습니다. 이전 데이터는 그대로 남아있습니다.";
     msg.className = "okmsg";
     return refresh();
   }).catch(function(e){
