@@ -2107,23 +2107,30 @@ function isMgrInactiveStatus(status){
   return s === '폐쇄' || s === '보직변경';
 }
 
-function autoMonthOf(joinM){
+function autoMonthOf(joinM, asOfYM){
   if(!joinM) return '';
   const p = String(joinM).split('-').map(Number), y = p[0], m = p[1];
   if(!y || !m) return '';
-  const now = new Date();
-  const d = (now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m) + 1;
+  let ny, nm;
+  if(asOfYM){
+    const ap = String(asOfYM).split('-').map(Number);
+    ny = ap[0]; nm = ap[1];
+  } else {
+    const now = new Date();
+    ny = now.getFullYear(); nm = now.getMonth() + 1;
+  }
+  const d = (ny - y) * 12 + (nm - m) + 1;
   return d > 0 ? d : 1;
 }
 
-/* 지점장 이름 → 차월 (입사월 기준 자동, 없으면 수기 차월) */
-function mgrChaByName(name){
+/* 지점장 이름 → 차월 (입사월 기준 자동, 없으면 수기 차월). asOfYM('YYYY-MM')을 주면 그 시점 기준으로 계산 */
+function mgrChaByName(name, asOfYM){
   const l = ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []);
   const n = String(name||'').trim();
   if(!n) return null;
   for(const m of l){
     if(String(m.지점장명||'').trim() === n){
-      const v = String((autoMonthOf(m.입사월) || m.차월 || '')).replace(/[^0-9]/g,'');
+      const v = String((autoMonthOf(m.입사월, asOfYM) || m.차월 || '')).replace(/[^0-9]/g,'');
       return v ? Number(v) : null;
     }
   }
@@ -3029,7 +3036,7 @@ function renderStatsSales(prevKey, baseKey, fc, fp, ft){
   } else { fillWeek(); }
 
   /* 주단위 매출 하단: 차월별 목표 달성 진척현황 */
-  if (typeof S !== 'undefined' && S.renderTargetSection) S.renderTargetSection('st-target');
+  if (typeof S !== 'undefined' && S.renderTargetSection) S.renderTargetSection('st-target', baseKey);
 }
 
 /* ═══════════════════ 지점장 정보 (관리자 전용) ═══════════════════ */
@@ -4817,7 +4824,7 @@ var MS_DEFS = [
       var s = {};
       ((typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : []).forEach(function(m){
         if ((typeof isMgrInactiveStatus === 'function') ? isMgrInactiveStatus(m.상태) : String(m.상태||'').trim() === '폐쇄') return;
-        var c = mgrCha(m);
+        var c = mgrCha(m, viewYM);
         if (c !== null) s[String(c)] = 1;
       });
       return Object.keys(s).sort(function(a,b){ return Number(a) - Number(b); });
@@ -4828,12 +4835,13 @@ var MS_DEFS = [
   { id: "career",  label: "경력구분", opts: function(){ return CAREERS.slice(); } },
   { id: "month",   label: "파트너스 차월", opts: function(){ return uniq(rows.map(function(r){ return (r.month === null || r.month === undefined || r.month === "") ? null : String(r.month); })).sort(function(a,b){ return Number(a) - Number(b); }); }, width: 100 }
 ];
-/* 지점장 이름 → 지점장 차월 */
-function mgrChaOf(name){
+/* 지점장 이름 → 지점장 차월 (조회월 기준) */
+function mgrChaOf(name, asOfYM){
   var l = (typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : [];
   var n = String(name||'').trim();
+  var ym = asOfYM || (typeof viewYM !== 'undefined' ? viewYM : null);
   for (var i = 0; i < l.length; i++){
-    if (String(l[i].지점장명||'').trim() === n) return mgrCha(l[i]);
+    if (String(l[i].지점장명||'').trim() === n) return mgrCha(l[i], ym);
   }
   return null;
 }
@@ -5855,8 +5863,8 @@ function ensureRows(force){
 
 /* ═══ 지점장별 목표 달성 (v18: 이미지 형식 + 엑셀 다운·업로드) ═══ */
 var CENTER_ORDER = ["강남센터","서울센터","경인센터","충청센터","호남센터","부경센터","대경센터"];
-function mgrCha(m){
-  var v = (typeof autoMonthOf === "function" ? autoMonthOf(m.입사월) : null) || m.차월;
+function mgrCha(m, asOfYM){
+  var v = (typeof autoMonthOf === "function" ? autoMonthOf(m.입사월, asOfYM) : null) || m.차월;
   v = String(v === null || v === undefined ? "" : v).replace(/[^0-9]/g, "");
   return v === "" ? null : Number(v);
 }
@@ -5870,14 +5878,17 @@ function tgNum(v){
   return s === "" ? 0 : (Number(s) || 0);
 }
 /* 표시용 데이터 계산: 폐쇄 제외, 차월→센터→이름 정렬, 진척·부족·달성률 산출 */
-function targetRows(mlist){
-  /* 당월 범위·영업일: ② 매출 목표 = 월 목표 × (오늘까지 누적 영업일 ÷ 당월 전체 영업일) — 매일 자동 증가 */
-  var mKey = todayStr.substring(0, 7);
+var _lastTargetBaseKey = null;
+function targetRows(mlist, baseKey){
+  /* 기준월 범위·영업일: ② 매출 목표 = 월 목표 × (해당월 누적 영업일 ÷ 해당월 전체 영업일)
+     · 조회 기준월이 이번 달이면 "오늘까지"만 반영해 매일 자동 증가
+     · 지난 달이면 이미 끝난 달이므로 자동으로 100%(전체 영업일)까지 반영됨 */
+  var mKey = baseKey || todayStr.substring(0, 7);
   var mr = monthRangeOf(mKey);
   var bizTotal = bizDaysBetween(mr.from, mr.to);
   var todayClamp = todayStr > mr.to ? mr.to : todayStr;
   var bizToDate = bizDaysBetween(mr.from, todayClamp);
-  /* 매출 진척: 당월(1일~말일) 실매출일 기준 실제 매출 합계 */
+  /* 매출 진척: 기준월(1일~말일) 실매출일 기준 실제 매출 합계 */
   var sums = {};
   rows.forEach(function(r){
     var k = String(r.mgr || "").trim();
@@ -5895,13 +5906,13 @@ function targetRows(mlist){
         /* 지점장 본인 화면: 본인 차월과 상관없이 본인 것만 그대로 표시 */
         return String(m.지점장명).trim() === String(AUTH.name || "").trim();
       }
-      /* ★ 관리자 화면: 목표 관리 대상인 1~6차월 지점장까지만 */
-      var cha = mgrCha(m);
+      /* ★ 관리자 화면: 목표 관리 대상인 1~6차월 지점장까지만 (기준월 시점 차월) */
+      var cha = mgrCha(m, mKey);
       if (cha === null || cha < 1 || cha > 6) return false;
       return true;
     })
     .sort(function(a,b){
-      var ca = mgrCha(a), cb = mgrCha(b);
+      var ca = mgrCha(a, mKey), cb = mgrCha(b, mKey);
       if ((ca === null) !== (cb === null)) return ca === null ? 1 : -1;
       if (ca !== null && ca !== cb) return ca - cb;
       var ia = CENTER_ORDER.indexOf(normCenter(a.센터)), ib = CENTER_ORDER.indexOf(normCenter(b.센터));
@@ -5916,7 +5927,7 @@ function targetRows(mlist){
       var ach = Math.round((sums[name] || 0) / 1000);         /* 원 → 천원 */
       var lack = Math.max(monthTgt - ach, 0);
       var pct = monthTgt > 0 ? Math.round(ach / monthTgt * 100) : null;
-      return { m: m, name: name, cha: mgrCha(m), center: String(m.센터 || "").replace(/센터$/, ""),
+      return { m: m, name: name, cha: mgrCha(m, mKey), center: String(m.센터 || "").replace(/센터$/, ""),
                code: String(m.위촉코드 || ""), monthTgt: monthTgt, tgt: tgt, ach: ach, lack: lack,
                pct: pct, coach: String(m.담당코치 || "") };
     });
@@ -5926,14 +5937,15 @@ function pickTargetsFile(){
   if (f) f.click();
 }
 /* 통계 화면(주단위 매출 하단)에 목표달성 섹션을 렌더 */
-function renderTargetSection(elId){
+function renderTargetSection(elId, baseKey){
   var host = document.getElementById(elId);
   if (!host) return;
   var admin = AUTH && AUTH.role === "admin";
+  var mKeyLabel = baseKey ? (Number(baseKey.split('-')[1]) + '월') : '';
   host.innerHTML =
     '<div class="section" style="padding:14px 16px;margin-top:14px">' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
-        '<div class="st-h" style="margin:0">🎯 차월별 매출 달성 진척현황 <span class="sub">매출 목표 = 월 목표 × 누적 영업일 비율(매일 자동 증가) · 진척 = 당월 실매출(천원) · 폐쇄 제외</span></div>' +
+        '<div class="st-h" style="margin:0">🎯 ' + esc(mKeyLabel) + ' 차월별 매출 달성 진척현황 <span class="sub">매출 목표 = 월 목표 × 누적 영업일 비율(매일 자동 증가, 지난달은 100%) · 진척 = 해당월 실매출(천원) · 폐쇄 제외</span></div>' +
         '<div style="flex:1"></div>' +
         '<button class="btn btn-sm" onclick="S.targetsDown()">⬇ 엑셀 다운로드</button>' +
         (admin
@@ -5954,14 +5966,15 @@ function renderTargetSection(elId){
       '</div>' +
     '</div>';
   Promise.all([ MGR.ensure(), ensureRows() ]).then(function(res){
-    renderTargets(res[0]);
+    renderTargets(res[0], baseKey);
   }).catch(function(e){
     var tb = document.getElementById("tgBody");
     if (tb) tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#B3251E;padding:16px">불러오기 실패: ' + esc(e.message || e) + '</td></tr>';
   });
 }
-function renderTargets(mlist){
-  var list = targetRows(mlist);
+function renderTargets(mlist, baseKey){
+  _lastTargetBaseKey = baseKey || todayStr.substring(0, 7);
+  var list = targetRows(mlist, baseKey);
   if (!list.length){
     $("tgBody").innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:16px">표시할 지점장이 없습니다. [⬆ 목표 엑셀 업로드]로 명단·목표를 등록해 주세요.</td></tr>';
     return;
@@ -6005,7 +6018,7 @@ function renderTargets(mlist){
 }
 /* 엑셀 다운로드: 현재 표 그대로 */
 function targetsDown(){
-  var list = targetRows(MGR.getList());
+  var list = targetRows(MGR.getList(), _lastTargetBaseKey);
   var aoa = [["차월","센터","지점장명","코드","월매출목표(천원)","매출목표(천원)","매출진척(천원)","부족금액(천원)","월매출달성률(%)","담당코치"]];
   list.forEach(function(r){
     aoa.push([r.cha === null ? "" : r.cha, r.center, r.name, r.code, r.monthTgt, r.tgt, r.ach, r.lack, r.pct === null ? "" : r.pct, r.coach]);
