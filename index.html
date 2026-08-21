@@ -2845,7 +2845,10 @@ function renderStatsPage(keepFilters=false){
     const wkAll = (typeof WK !== 'undefined' && WK.getRowsFlat) ? WK.getRowsFlat() : [];
     const passed = wkAll.filter(d => {
       const mk = (typeof WK !== 'undefined' && WK.monthKeyOf) ? WK.monthKeyOf(d) : (String(d.날짜||'').trim().substring(0,7));
-      return mk === baseKey;
+      if (mk !== baseKey) return false;
+      /* ★ 지점장(관리자 아님) 로그인 시 본인 것만 */
+      if (!isAdmin && String(d.지점장명||'').trim() !== String(AUTH.name||'').trim()) return false;
+      return true;
     });
     const isWi = d => String(d.위촉여부||'').trim() === '완료';
     const ov = (!wiViewAuto && WI_DATA && WI_DATA[baseKey]) ? WI_DATA[baseKey] : null;
@@ -4091,8 +4094,8 @@ var XL = (function(){
 
   /* ---------- ② 지점장 정보 다운로드 ---------- */
   async function downloadMgr(){
-    const rows = MGR.getList();
-    if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
+    const rows = MGR.getList().filter(r => String(r.상태 || '정상').trim() === '정상');
+    if(!rows.length){ showToast('다운로드할 데이터가 없습니다. (상태: 정상인 지점장이 없어요)','err'); return; }
     /* ★ 차월은 화면에 표시되는 계산값(입사월 기준 자동 갱신)으로 내보냄 — 저장된 옛 값이 아님 */
     const exportRows = rows.map(r => Object.assign({}, r, {
       차월: (typeof autoMonthOf === 'function' ? (autoMonthOf(r.입사월) || r.차월 || '') : (r.차월 || ''))
@@ -4108,7 +4111,7 @@ var XL = (function(){
     ws.views = [{ state:'frozen', ySplit:1 }];
 
     await writeWb(wb, `지점장_정보_${today()}.xlsx`);
-    showToast(`${rows.length}명을 엑셀로 저장했습니다`,'ok');
+    showToast(`상태 '정상'인 ${rows.length}명을 엑셀로 저장했습니다`,'ok');
   }
 
   /* ---------- ③ 통계 결과 다운로드 (한 시트 · 표에 선 포함) ---------- */
@@ -6077,7 +6080,7 @@ function targetsUp(inp){
       if (!confirm(items.length + "명의 목표를 반영합니다.\n(명단에 없는 지점장은 새로 등록됩니다)\n진행할까요?")) return;
       MGR.applyTargetRows(items).then(function(res){
         flash("목표 반영 완료 · 갱신 " + res.updated + "명 · 신규 " + res.added + "명");
-        renderTargets(MGR.getList());
+        renderTargets(MGR.getList(), _lastTargetBaseKey);
       }).catch(function(err){ alert("저장 실패: " + (err.message || err)); });
     }catch(ex){ alert("업로드 실패: " + (ex.message || ex)); }
   };
