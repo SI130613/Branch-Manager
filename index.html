@@ -1054,11 +1054,11 @@ tr.today-row td{background:#fdf8ee}
       <div class="form-group"><label>연락처</label><input type="text" id="mi-f-연락처" placeholder="예: 010-1234-5678" autocomplete="off"></div>
       <div class="form-group"><label>위촉코드 (로그인용 · 9자리)</label><input type="text" id="mi-f-위촉코드" placeholder="예: 326007547" autocomplete="off"></div>
       <div class="form-group"><label>기수</label>
-        <select id="mi-f-기수" onchange="MGR.onGisu()">
-          <option value="">선택</option>
+        <input type="text" id="mi-f-기수" list="mi-f-기수-list" placeholder="예: 25기 (목록에 없으면 직접 입력)" onchange="MGR.onGisu()">
+        <datalist id="mi-f-기수-list">
           <option>24기</option><option>23기</option><option>22기</option><option>21기</option>
           <option>20기</option><option>19기</option><option>18기</option>
-        </select>
+        </datalist>
       </div>
       <div class="form-group"><label>입사월</label><input type="month" id="mi-f-입사월" onchange="MGR.calcMonth()"></div>
       <div class="form-group"><label>차월 (입사월 기준 자동)</label><input type="number" id="mi-f-차월" placeholder="입사월 입력 시 자동"></div>
