@@ -993,7 +993,13 @@ tr.today-row td{background:#fdf8ee}
     <select id="e-재통화일정-min" style="flex:1;min-width:70px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff"><option value="00">00분</option><option value="10">10분</option><option value="20">20분</option><option value="30">30분</option><option value="40">40분</option><option value="50">50분</option></select>
   </div>
 </div>
-        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">상담이력 및 특이사항</label><textarea id="e-상담이력" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px;min-height:60px;resize:vertical;font-family:inherit"></textarea></div>
+        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label style="font-size:11px;color:#888;font-weight:600">상담이력 및 특이사항</label>
+            <button type="button" class="btn btn-sm" style="background:#B4372F;color:#fff;border-color:#B4372F;padding:3px 14px;font-size:11px" onclick="addNoteEntry('e')">입력</button>
+          </div>
+          <div id="e-상담이력-list" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto"></div>
+        </div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">응시날짜</label><input type="date" id="e-응시날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">구분</label><select id="e-구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>선행</option><option>정규</option><option>후속</option></select></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">지역</label><select id="e-지역" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>서울</option><option>수원</option><option>대전</option><option>대구</option><option>광주</option><option>부산</option><option>인천</option><option>강릉</option><option>원주</option><option>전주</option><option>울산</option><option>순천</option><option>창원</option><option>제주</option><option>포항</option></select></div>
@@ -1168,6 +1174,75 @@ function buildRecall(dateEl, ampmEl, hourEl, minEl){
   const m = document.getElementById(minEl)?.value||'00';
   if(!d) return '';
   return `${d} ${a} ${h}시 ${m}분`;
+}
+/* ══════════ 상담이력: 클릭 한 번에 날짜·시간 도장이 찍히는 로그 방식 ══════════
+   저장 형식: ◆yymmdd.HH:MM◆ 줄 다음에 그 항목의 내용이 이어짐.
+   ◆..◆ 표식이 없는 옛날 자유서식 메모는 "기존" 항목으로 그대로 보존됩니다. */
+let noteEntries_e = [];
+const NOTE_MARK = /^◆(\d{6}\.\d{2}:\d{2})◆$/;
+function nowStamp(){
+  const d = new Date();
+  const p2 = n => String(n).padStart(2,'0');
+  return `${String(d.getFullYear()).slice(2)}${p2(d.getMonth()+1)}${p2(d.getDate())}.${p2(d.getHours())}:${p2(d.getMinutes())}`;
+}
+function parseNoteLog(raw){
+  const lines = String(raw||'').split('\n');
+  const out = []; let cur = null; let legacy = [];
+  lines.forEach(line=>{
+    const m = line.match(NOTE_MARK);
+    if(m){
+      if(cur) out.push(cur);
+      else if(legacy.join('\n').trim()) out.push({ stamp:null, text: legacy.join('\n').trim() });
+      legacy = [];
+      cur = { stamp: m[1], text: '' };
+    } else if(cur){
+      cur.text += (cur.text ? '\n' : '') + line;
+    } else legacy.push(line);
+  });
+  if(cur) out.push(cur);
+  else if(legacy.join('\n').trim()) out.push({ stamp:null, text: legacy.join('\n').trim() });
+  /* ★ 최신 항목이 위로 오도록 정렬 (yymmdd.HH:MM는 문자열 비교로도 최신순 정렬됨) · 스탬프 없는 기존기록은 맨 아래 */
+  out.sort((a,b)=>{
+    if(a.stamp === null && b.stamp === null) return 0;
+    if(a.stamp === null) return 1;
+    if(b.stamp === null) return -1;
+    return b.stamp.localeCompare(a.stamp);
+  });
+  return out;
+}
+function serializeNoteLog(entries){
+  return entries.map(en => en.stamp ? (`◆${en.stamp}◆\n${en.text}`) : en.text).join('\n').trim();
+}
+function renderNoteList(prefix){
+  const box = document.getElementById(prefix+'-상담이력-list');
+  if(!box) return;
+  const arr = noteEntries_e;
+  box.innerHTML = arr.length ? arr.map((en,i)=>{
+    const tag = en.stamp
+      ? `<div style="flex:0 0 84px;background:#4A7FC1;color:#fff;font-size:11px;font-weight:700;text-align:center;padding:8px 4px;border-radius:6px 0 0 6px;line-height:1.3">${en.stamp}</div>`
+      : `<div style="flex:0 0 84px;background:#9AA0A6;color:#fff;font-size:10px;font-weight:700;text-align:center;padding:8px 4px;border-radius:6px 0 0 6px">기존기록</div>`;
+    return `<div style="display:flex;align-items:stretch">
+      ${tag}
+      <textarea oninput="updateNoteText(${i},this.value)" placeholder="내용 입력" style="flex:1;background:#4A7FC1;color:#fff;border:none;border-radius:0;padding:8px 10px;font-size:12.5px;resize:vertical;min-height:38px;font-family:inherit">${esc_(en.text)}</textarea>
+      <button type="button" onclick="removeNoteEntry(${i})" title="삭제" style="flex:0 0 26px;background:#4A7FC1;border:none;border-left:1px solid rgba(255,255,255,.35);border-radius:0 6px 6px 0;color:#fff;cursor:pointer;font-size:13px">✕</button>
+    </div>`;
+  }).join('') : '<div style="color:#bbb;font-size:12px;padding:4px 0">입력된 상담이력이 없습니다 — 위 [입력] 버튼을 눌러 추가하세요</div>';
+}
+function esc_(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* 목록·툴팁 표시용: ◆stamp◆ 마커를 [stamp] 형태로 보기 좋게 바꿔줌 */
+function noteDisplay(raw){
+  return parseNoteLog(raw).map(en => en.stamp ? `[${en.stamp}] ${en.text}` : en.text).join('\n');
+}
+function addNoteEntry(prefix){
+  noteEntries_e.unshift({ stamp: nowStamp(), text: '' });
+  renderNoteList(prefix);
+}
+function updateNoteText(idx, v){
+  if(noteEntries_e[idx]) noteEntries_e[idx].text = v;
+}
+function removeNoteEntry(idx){
+  noteEntries_e.splice(idx,1);
+  renderNoteList('e');
 }
 let data = [];
 let currentUser = null;
@@ -2327,8 +2402,8 @@ function renderTable(){
       <td style="text-align:center">${prepBadge(d.브릿지콜)}</td>
       <td style="text-align:center">${prepBadge(d.가계약)}</td>
       <td class="memo-cell">
-        ${d.상담이력?`<div class="memo-preview">${d.상담이력.split('\n').join(' ')}</div>
-        <div class="memo-tooltip">${d.상담이력.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:'<span style="color:#ddd;font-size:11px">-</span>'}
+        ${d.상담이력?`<div class="memo-preview">${noteDisplay(d.상담이력).split('\n').join(' ')}</div>
+        <div class="memo-tooltip">${noteDisplay(d.상담이력).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:'<span style="color:#ddd;font-size:11px">-</span>'}
       </td>
       <td>${d.위촉여부?`<span class="badge badge-new">${d.위촉여부}</span>`:'-'}</td>
       <td style="font-size:11px">${d.위촉코드||'-'}</td>
@@ -2355,7 +2430,7 @@ function showRecallPopup(force=false){
       <div style="flex:1">
         <div class="recall-name">${d.파트너스명||'이름없음'} <span style="font-size:11px;color:#aaa">(담당: ${d.담당자||'-'})</span></div>
         <div class="recall-sub">${d.전화번호||'-'} · ${d.직업||''} · ${d.경력구분||''}</div>
-        ${d.상담이력?`<div class="recall-sub" style="margin-top:2px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.상담이력.split('\n').join(' ')}</div>`:''}
+        ${d.상담이력?`<div class="recall-sub" style="margin-top:2px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${noteDisplay(d.상담이력).split('\n').join(' ')}</div>`:''}
         <div style="display:flex;gap:5px;margin-top:8px;align-items:center;flex-wrap:wrap">
           <input type="date" id="new-date-${ri}" value="${rp.date||todayStr}" style="padding:4px 6px;border:1px solid #d8d8d4;border-radius:6px;font-size:12px;font-family:inherit;width:auto">
           <select id="new-ampm-${ri}" style="padding:4px 6px;border:1px solid #d8d8d4;border-radius:6px;font-size:12px;font-family:inherit;width:auto;margin-top:0">
@@ -2489,9 +2564,10 @@ function openAddModal(){
   document.getElementById('edit-modal-save-btn').textContent = '💾 추가';
   /* 입력칸 초기화 */
   ['e-인입날짜','e-가코드','e-파트너스명','e-생년월일','e-경력구분','e-직업','e-전화번호','e-상담가능시간',
-   'e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min','e-상담이력','e-응시날짜','e-구분',
+   'e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min','e-응시날짜','e-구분',
    'e-지역','e-시험시간','e-합격날짜','e-배정지점장','e-위촉코드','e-보장분석동의','e-브릿지콜','e-가계약']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  noteEntries_e = []; renderNoteList('e');
   const wiEl = document.getElementById('e-위촉여부'); if(wiEl) wiEl.value = '미위촉';   /* ★ 기본값: 미위촉 */
   const ow=document.getElementById('e-owner-wrap');
   if(ow){
@@ -2526,8 +2602,10 @@ function openEdit(idx){
     }
   }
   const rp=parseRecall(d.재통화일정);document.getElementById('e-재통화일정-date').value=rp.date;document.getElementById('e-재통화일정-ampm').value=rp.ampm;document.getElementById('e-재통화일정-hour').value=rp.hour;document.getElementById('e-재통화일정-min').value=rp.min;
-  const fields={'e-인입날짜':cleanDate(d.인입날짜),'e-가코드':d.가코드,'e-파트너스명':d.파트너스명,'e-생년월일':cleanDate(d.생년월일),'e-경력구분':d.경력구분,'e-직업':d.직업,'e-전화번호':d.전화번호,'e-상담가능시간':d.상담가능시간,'e-재통화일정':d.재통화일정,'e-상담이력':d.상담이력,'e-응시날짜':cleanDate(d.응시날짜),'e-구분':d.구분,'e-지역':d.지역,'e-시험시간':d.시험시간,'e-합격날짜':cleanDate(d.합격날짜),'e-배정지점장':d.배정지점장,'e-위촉여부':d.위촉여부,'e-위촉코드':d.위촉코드,'e-보장분석동의':d.보장분석동의,'e-브릿지콜':d.브릿지콜,'e-가계약':d.가계약,'e-배당':d.배당};
+  const fields={'e-인입날짜':cleanDate(d.인입날짜),'e-가코드':d.가코드,'e-파트너스명':d.파트너스명,'e-생년월일':cleanDate(d.생년월일),'e-경력구분':d.경력구분,'e-직업':d.직업,'e-전화번호':d.전화번호,'e-상담가능시간':d.상담가능시간,'e-재통화일정':d.재통화일정,'e-응시날짜':cleanDate(d.응시날짜),'e-구분':d.구분,'e-지역':d.지역,'e-시험시간':d.시험시간,'e-합격날짜':cleanDate(d.합격날짜),'e-배정지점장':d.배정지점장,'e-위촉여부':d.위촉여부,'e-위촉코드':d.위촉코드,'e-보장분석동의':d.보장분석동의,'e-브릿지콜':d.브릿지콜,'e-가계약':d.가계약,'e-배당':d.배당};
   Object.entries(fields).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||''});
+  noteEntries_e = parseNoteLog(d.상담이력);
+  renderNoteList('e');
   document.getElementById('edit-modal').classList.add('open');
 }
 
@@ -2546,7 +2624,7 @@ async function saveEdit(){
       담당자:(isAdmin ? get('e-담당자') : currentUser), 센터:(get('e-센터')||currentCenter), 인입날짜:get('e-인입날짜'), 가코드:get('e-가코드'), 파트너스명:get('e-파트너스명'),
       생년월일:get('e-생년월일'), 경력구분:get('e-경력구분'), 직업:get('e-직업'),
       전화번호:get('e-전화번호'), 상담가능시간:get('e-상담가능시간'), 재통화일정:buildRecall('e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min'),
-      상담이력:get('e-상담이력'), 응시날짜:get('e-응시날짜'), 구분:get('e-구분'),
+      상담이력:serializeNoteLog(noteEntries_e), 응시날짜:get('e-응시날짜'), 구분:get('e-구분'),
       지역:get('e-지역'), 시험시간:get('e-시험시간'), 합격날짜:get('e-합격날짜'),
       배정지점장:get('e-배정지점장'), 위촉여부:get('e-위촉여부'), 위촉코드:get('e-위촉코드'), 배당:get('e-배당'),
       보장분석동의:get('e-보장분석동의'), 브릿지콜:get('e-브릿지콜'), 가계약:get('e-가계약'),
@@ -2568,7 +2646,7 @@ async function saveEdit(){
   d.인입날짜=get('e-인입날짜');d.가코드=get('e-가코드');d.파트너스명=get('e-파트너스명');
   d.생년월일=get('e-생년월일');d.경력구분=get('e-경력구분');d.직업=get('e-직업');
   d.전화번호=get('e-전화번호');d.상담가능시간=get('e-상담가능시간');d.재통화일정=buildRecall('e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min');
-  d.상담이력=get('e-상담이력');d.응시날짜=get('e-응시날짜');d.구분=get('e-구분');
+  d.상담이력=serializeNoteLog(noteEntries_e);d.응시날짜=get('e-응시날짜');d.구분=get('e-구분');
   d.지역=get('e-지역');d.시험시간=get('e-시험시간');d.합격날짜=get('e-합격날짜');
   if(isAdmin){
     const own=get('e-담당자'), ct=get('e-센터');
