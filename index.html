@@ -378,6 +378,7 @@ tr.today-row td{background:#fdf8ee}
     <!-- 엑셀 -->
     <div id="list-toolbar" style="display:flex;gap:8px;margin:-4px 0 12px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-sm" onclick="XL.downloadPartners()" title="현재 화면에 보이는 목록을 엑셀로 저장">⬇ 엑셀 다운로드</button>
+      <button class="btn btn-sm" onclick="XL.downloadPartnersBlank()" title="데이터 없이 헤더만 있는 빈 양식을 저장">⬇ 빈 양식 다운로드</button>
       <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
       <button class="btn btn-sm btn-danger" id="p-del-btn" onclick="DEL.confirm()" disabled>🗑 선택 삭제</button>
       <span id="list-count" style="font-size:12px;color:#888;margin-left:auto"></span>
@@ -501,6 +502,7 @@ tr.today-row td{background:#fdf8ee}
       <select id="mi-cha" onchange="MGR.render()" style="width:120px"><option value="">지점장 차월 전체</option></select>
       <select id="mi-coach" onchange="MGR.render()" style="width:120px"><option value="">담당코치 전체</option></select>
       <button class="btn btn-sm" onclick="XL.downloadMgr()">⬇ 엑셀 다운로드</button>
+      <button class="btn btn-sm" onclick="XL.downloadMgrBlank()" title="데이터 없이 헤더만 있는 빈 양식을 저장">⬇ 빈 양식 다운로드</button>
       <button class="btn btn-sm" onclick="XL.openMgrUpload()">⬆ 엑셀 업로드</button>
       <button class="btn btn-sm" onclick="MGR.applyPreset()" title="위촉코드·기수·입사월을 한 번에 채웁니다">📥 코드·기수 일괄 입력</button>
       <button class="btn btn-sm" onclick="MGR.openDupCheck()" title="이름이 비슷한 중복 의심 지점장을 찾아 병합합니다">🔍 중복 확인</button>
@@ -605,6 +607,7 @@ tr.today-row td{background:#fdf8ee}
     </select>
     <div style="flex:1;min-width:8px"></div>
     <button class="btn btn-sm" onclick="WK.download()" style="flex:0 0 auto;white-space:nowrap">⬇ 엑셀다운</button>
+    <button class="btn btn-sm" onclick="WK.downloadBlank()" style="flex:0 0 auto;white-space:nowrap" title="데이터 없이 헤더만 있는 빈 양식">⬇ 빈 양식</button>
     <button class="btn btn-sm" onclick="WK.openUpload()" style="flex:0 0 auto;white-space:nowrap">⬆ 엑셀업로드</button>
   </div>
 
@@ -4118,6 +4121,23 @@ var WK = (function(){
       setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
     });
   }
+  function downloadBlank(){
+    if(typeof ExcelJS === 'undefined'){ showToast('엑셀 기능을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.','err'); return; }
+    var wb = new ExcelJS.Workbook();
+    var ws = wb.addWorksheet('위촉현황');
+    ws.addRow(WK_FIELDS);
+    ws.getRow(1).font = { bold:true };
+    ws.getRow(1).fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFF3D6'} };
+    ws.columns = [{width:12},{width:10},{width:12},{width:10},{width:14},{width:14},{width:14},{width:10},{width:30}];
+    wb.xlsx.writeBuffer().then(function(buf){
+      var blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '위촉현황_빈양식.xlsx';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+    });
+  }
 
   /* ── 엑셀 업로드 ── */
   function openUpload(){
@@ -4213,7 +4233,7 @@ var WK = (function(){
   return {
     enter: enter, render: render, monthShift: monthShift, onFilterChange: onFilterChange,
     setSort: setSort, openAdd: openAdd, openEdit: openEdit, doSave: doSave, doDelete: doDelete,
-    closeWkModal: closeWkModal, download: download, openUpload: openUpload, handleFile: handleFile,
+    closeWkModal: closeWkModal, download: download, downloadBlank: downloadBlank, openUpload: openUpload, handleFile: handleFile,
     applyUpload: applyUpload, ensure: ensureLoaded, getRowsFlat: getRowsFlat, monthKeyOf: monthKeyOf,
     onStatFilterChange: onStatFilterChange
   };
@@ -4311,6 +4331,20 @@ var XL = (function(){
     showToast(`${rows.length}건을 엑셀로 저장했습니다`,'ok');
   }
 
+  /* ---------- ①-2 파트너스 빈 양식 다운로드 (헤더만, 데이터 없음) ---------- */
+  async function downloadPartnersBlank(){
+    if(!hasExcelJS()){ save([{ name:'파트너스', header:P_FIELDS, rows: [] }], `파트너스_빈양식_${today()}.xlsx`); return; }
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('파트너스');
+    ws.addRow(P_FIELDS);
+    ws.columns = P_FIELDS.map(k => ({ width: Math.max(11, k.length * 2 + 3) }));
+    styleRange(ws, 1, 1, P_FIELDS.length, { header:true });
+    ws.views = [{ state:'frozen', ySplit:1 }];
+    ws.autoFilter = { from:{ row:1, column:1 }, to:{ row:1, column:P_FIELDS.length } };
+    await writeWb(wb, `파트너스_빈양식_${today()}.xlsx`);
+    showToast('빈 양식을 저장했습니다','ok');
+  }
+
   /* ---------- ② 지점장 정보 다운로드 ---------- */
   async function downloadMgr(){
     const rows = MGR.getList().filter(r => String(r.상태 || '정상').trim() === '정상');
@@ -4331,6 +4365,19 @@ var XL = (function(){
 
     await writeWb(wb, `지점장_정보_${today()}.xlsx`);
     showToast(`상태 '정상'인 ${rows.length}명을 엑셀로 저장했습니다`,'ok');
+  }
+
+  /* ---------- ②-2 지점장 정보 빈 양식 다운로드 (헤더만, 데이터 없음) ---------- */
+  async function downloadMgrBlank(){
+    if(!hasExcelJS()){ save([{ name:'지점장정보', header:M_FIELDS, rows: [] }], `지점장_정보_빈양식_${today()}.xlsx`); return; }
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('지점장정보');
+    ws.addRow(M_FIELDS);
+    ws.columns = [{width:12},{width:12},{width:15},{width:14},{width:9},{width:12},{width:8},{width:10},{width:28},{width:28},{width:28}];
+    styleRange(ws, 1, 1, M_FIELDS.length, { header:true });
+    ws.views = [{ state:'frozen', ySplit:1 }];
+    await writeWb(wb, `지점장_정보_빈양식_${today()}.xlsx`);
+    showToast('빈 양식을 저장했습니다','ok');
   }
 
   /* ---------- ③ 통계 결과 다운로드 (한 시트 · 표에 선 포함) ---------- */
@@ -4678,7 +4725,7 @@ var XL = (function(){
     if(f) f.addEventListener('change', onFile);
   });
 
-  return { downloadPartners, downloadMgr, downloadStats, openPartnerUpload, openMgrUpload, apply };
+  return { downloadPartners, downloadPartnersBlank, downloadMgr, downloadMgrBlank, downloadStats, openPartnerUpload, openMgrUpload, apply };
 })();
 
 
