@@ -333,7 +333,27 @@ tr.today-row td{background:#fdf8ee}
   <!-- 목록 -->
   <div id="tab-list">
     <div class="stats" id="stats-bar"></div>
-    <div class="search-bar">
+    <div class="search-bar" id="filter-row-1" style="margin-bottom:8px">
+      <select id="filter-인입월" onchange="renderTable()" style="width:120px"><option value="">인입월 전체</option></select>
+
+      <!-- 관리자 전용: 센터 · 지점장차월 · 지점장 (다중/단일 선택) -->
+      <div class="pf" id="pf-wrap-center" style="display:none">
+        <button class="pf-btn" id="pf-btn-center" onclick="PF.toggle('center',event)">
+          <span class="pf-txt">🏢 센터 전체</span><span>▾</span>
+        </button>
+        <div class="pf-pop hidden" id="pf-pop-center"></div>
+      </div>
+      <select id="filter-mcha" onchange="renderTable()" style="width:110px;display:none"><option value="">지점장 차월 전체</option></select>
+
+      <input type="text" id="filter-배당" list="filter-배당-list" placeholder="🔍 배당" oninput="renderTable()" style="width:110px">
+      <datalist id="filter-배당-list"><option value="2차배당"></option><option value="3차배당"></option></datalist>
+      <select id="filter-재통화" onchange="renderTable()" style="width:125px">
+        <option value="">재통화 전체</option>
+        <option value="today">오늘</option>
+        <option value="week">이번주</option>
+        <option value="past">지난 미완료</option>
+      </select>
+
       <select id="filter-사전준비" onchange="renderTable()" style="width:150px">
         <option value="">사전준비 전체</option>
         <option value="보장분석동의">보장분석 동의 O</option>
@@ -341,36 +361,20 @@ tr.today-row td{background:#fdf8ee}
         <option value="가계약">가계약 O</option>
         <option value="미완료">사전준비 미완료</option>
       </select>
-
-      <!-- 관리자 전용: 센터 · 지점장 (다중 선택) -->
-      <div class="pf" id="pf-wrap-center" style="display:none">
-        <button class="pf-btn" id="pf-btn-center" onclick="PF.toggle('center',event)">
-          <span class="pf-txt">🏢 센터 전체</span><span>▾</span>
-        </button>
-        <div class="pf-pop hidden" id="pf-pop-center"></div>
-      </div>
       <div class="pf" id="pf-wrap-mgr" style="display:none">
         <button class="pf-btn" id="pf-btn-mgr" onclick="PF.toggle('mgr',event)">
           <span class="pf-txt">👤 지점장 전체</span><span>▾</span>
         </button>
         <div class="pf-pop hidden" id="pf-pop-mgr"></div>
       </div>
-
       <select id="filter-년" onchange="updateMonthFilter();renderTable()" style="width:105px"><option value="">응시년 전체</option></select>
       <select id="filter-월" onchange="renderTable()" style="width:100px"><option value="">응시월 전체</option></select>
       <select id="filter-구분" onchange="renderTable()" style="width:115px"><option value="">구분 전체</option><option>선행</option><option>정규</option><option>후속</option></select>
       <select id="filter-경력" onchange="renderTable()" style="width:115px"><option value="">경력 전체</option><option>신인</option><option>경력</option><option>재등록</option></select>
-      <select id="filter-재통화" onchange="renderTable()" style="width:125px">
-        <option value="">재통화 전체</option>
-        <option value="today">오늘</option>
-        <option value="week">이번주</option>
-        <option value="past">지난 미완료</option>
-      </select>
       <select id="filter-합격" onchange="renderTable()" style="width:115px"><option value="">합격 전체</option><option value="y">합격</option><option value="n">미합격</option></select>
-      <input type="text" id="filter-배당" list="filter-배당-list" placeholder="🔍 배당" oninput="renderTable()" style="width:110px">
-      <datalist id="filter-배당-list"><option value="2차배당"></option><option value="3차배당"></option></datalist>
       <button class="btn btn-sm btn-blue" id="filter-reset" onclick="resetListFilters()" style="display:none">↺ 필터 초기화</button>
-
+    </div>
+    <div class="search-bar" id="filter-row-2">
       <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." style="flex:0 0 auto;width:430px;min-width:0" oninput="renderTable()">
       <button class="btn btn-sm" onclick="openAddModal()" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:#E0403A;color:#fff;border-color:#E0403A;white-space:nowrap">+ 건 추가</button>
     </div>
@@ -1420,6 +1424,8 @@ var PF = (function(){
       const el = document.getElementById('pf-wrap-' + (k==='center'?'center':'mgr'));
       if(el) el.style.display = on ? '' : 'none';
     });
+    const mc = document.getElementById('filter-mcha');
+    if(mc) mc.style.display = on ? '' : 'none';
     if(!on) reset();
   }
 
@@ -1444,13 +1450,15 @@ function syncListFilters(){
     || document.getElementById('filter-재통화').value
     || document.getElementById('filter-합격').value
     || document.getElementById('filter-사전준비').value
-    || document.getElementById('filter-배당').value;
+    || document.getElementById('filter-배당').value
+    || document.getElementById('filter-인입월').value
+    || document.getElementById('filter-mcha').value;
   rst.style.display = anyF ? '' : 'none';
 }
 
 /* 필터 전부 해제 */
 function resetListFilters(){
-  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비','filter-배당']
+  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비','filter-배당','filter-인입월','filter-mcha']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   PF.reset();
   updateMonthFilter();
@@ -1466,6 +1474,19 @@ function updateYearFilter(){
   const cur=sel.value;
   sel.innerHTML='<option value="">응시년 전체</option>'+years.map(y=>`<option value="${y}" ${y===cur?'selected':''}>응시 ${y}년</option>`).join('');
   updateMonthFilter();
+  updateInDateFilter();
+}
+
+/* 인입월(YYYY-MM) 필터 옵션 — 최신월 순 */
+function updateInDateFilter(){
+  const sel=document.getElementById('filter-인입월');
+  if(!sel) return;
+  const yms=[...new Set(data.map(d=>cleanDate(d.인입날짜)).filter(Boolean).map(s=>s.substring(0,7)))].sort((a,b)=>b.localeCompare(a));
+  const cur=sel.value;
+  sel.innerHTML='<option value="">인입월 전체</option>'+yms.map(ym=>{
+    const [y,m]=ym.split('-');
+    return `<option value="${ym}" ${ym===cur?'selected':''}>${y}년 ${parseInt(m)}월</option>`;
+  }).join('');
 }
 
 function updateMonthFilter(){
@@ -2317,6 +2338,8 @@ function renderTable(){
   const fp=document.getElementById('filter-사전준비').value;
   const fy=document.getElementById('filter-년').value,fm=document.getElementById('filter-월').value;
   const fd=(document.getElementById('filter-배당').value||'').trim().toLowerCase();
+  const fin=document.getElementById('filter-인입월').value;
+  const fmc=document.getElementById('filter-mcha').value;
   const weekEnd=getWeekEnd();
   /* 배당 자동완성 목록: 기본 후보 + 실제 데이터에 있는 값 */
   const ddl = document.getElementById('filter-배당-list');
@@ -2324,6 +2347,11 @@ function renderTable(){
     const known = ['2차배당','3차배당'];
     const extra = [...new Set(vis.map(d=>String(d.배당||'').trim()).filter(v=>v && !known.includes(v)))];
     ddl.innerHTML = known.concat(extra.sort()).map(v=>`<option value="${v}"></option>`).join('');
+  }
+  /* 지점장 차월 필터 옵션 (관리자 전용, 1~6차월 고정) */
+  const mchaSel = document.getElementById('filter-mcha');
+  if(mchaSel && mchaSel.options.length <= 1){
+    mchaSel.innerHTML = '<option value="">지점장 차월 전체</option>' + [1,2,3,4,5,6].map(c=>`<option value="${c}">${c}차월</option>`).join('');
   }
   /* 관리자 전용: 센터 · 지점장 (다중 선택) */
   const fcs = isAdmin ? PF.get('center') : [];
@@ -2334,6 +2362,11 @@ function renderTable(){
     if(fms.length && !fms.includes(String(d.담당자||'')))return false;
     if(q&&![(d.파트너스명||''),(d.전화번호||''),(d.가코드||''),(d.담당자||''),(d.센터||'')].join(' ').toLowerCase().includes(q))return false;
     if(fd&&!String(d.배당||'').toLowerCase().includes(fd))return false;
+    if(fin&&cleanDate(d.인입날짜).substring(0,7)!==fin)return false;
+    if(fmc){
+      const c = mgrChaByName(String(d.담당자||'').trim());
+      if(String(c==null?'':c)!==String(fmc))return false;
+    }
     if(fg&&d.구분!==fg)return false;if(fe&&d.경력구분!==fe)return false;
     if(fh==='y'&&!d.합격날짜)return false;if(fh==='n'&&d.합격날짜)return false;
     if(fp){
@@ -2354,7 +2387,7 @@ function renderTable(){
     return true;
   });
   /* 필터가 바뀌면 1페이지로 */
-  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fd,fcs.join(','),fms.join(',')].join('|');
+  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fd,fin,fmc,fcs.join(','),fms.join(',')].join('|');
   if(sig !== _pFilterSig){ _pFilterSig = sig; PPAGE = 1; }
 
   /* 헤더 클릭 정렬 적용 */
