@@ -367,6 +367,8 @@ tr.today-row td{background:#fdf8ee}
         <option value="past">지난 미완료</option>
       </select>
       <select id="filter-합격" onchange="renderTable()" style="width:115px"><option value="">합격 전체</option><option value="y">합격</option><option value="n">미합격</option></select>
+      <input type="text" id="filter-배당" list="filter-배당-list" placeholder="🔍 배당" oninput="renderTable()" style="width:110px">
+      <datalist id="filter-배당-list"><option value="2차배당"></option><option value="3차배당"></option></datalist>
       <button class="btn btn-sm btn-blue" id="filter-reset" onclick="resetListFilters()" style="display:none">↺ 필터 초기화</button>
 
       <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." style="flex:0 0 auto;width:430px;min-width:0" oninput="renderTable()">
@@ -1438,13 +1440,14 @@ function syncListFilters(){
     || document.getElementById('filter-경력').value
     || document.getElementById('filter-재통화').value
     || document.getElementById('filter-합격').value
-    || document.getElementById('filter-사전준비').value;
+    || document.getElementById('filter-사전준비').value
+    || document.getElementById('filter-배당').value;
   rst.style.display = anyF ? '' : 'none';
 }
 
 /* 필터 전부 해제 */
 function resetListFilters(){
-  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비']
+  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비','filter-배당']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   PF.reset();
   updateMonthFilter();
@@ -2310,7 +2313,15 @@ function renderTable(){
   const fh=document.getElementById('filter-합격').value,fr=document.getElementById('filter-재통화').value;
   const fp=document.getElementById('filter-사전준비').value;
   const fy=document.getElementById('filter-년').value,fm=document.getElementById('filter-월').value;
+  const fd=(document.getElementById('filter-배당').value||'').trim().toLowerCase();
   const weekEnd=getWeekEnd();
+  /* 배당 자동완성 목록: 기본 후보 + 실제 데이터에 있는 값 */
+  const ddl = document.getElementById('filter-배당-list');
+  if(ddl){
+    const known = ['2차배당','3차배당'];
+    const extra = [...new Set(vis.map(d=>String(d.배당||'').trim()).filter(v=>v && !known.includes(v)))];
+    ddl.innerHTML = known.concat(extra.sort()).map(v=>`<option value="${v}"></option>`).join('');
+  }
   /* 관리자 전용: 센터 · 지점장 (다중 선택) */
   const fcs = isAdmin ? PF.get('center') : [];
   const fms = isAdmin ? PF.get('mgr')    : [];
@@ -2319,6 +2330,7 @@ function renderTable(){
     if(fcs.length && !fcs.includes(String(d.센터||'')))return false;
     if(fms.length && !fms.includes(String(d.담당자||'')))return false;
     if(q&&![(d.파트너스명||''),(d.전화번호||''),(d.가코드||''),(d.담당자||''),(d.센터||'')].join(' ').toLowerCase().includes(q))return false;
+    if(fd&&!String(d.배당||'').toLowerCase().includes(fd))return false;
     if(fg&&d.구분!==fg)return false;if(fe&&d.경력구분!==fe)return false;
     if(fh==='y'&&!d.합격날짜)return false;if(fh==='n'&&d.합격날짜)return false;
     if(fp){
@@ -2339,7 +2351,7 @@ function renderTable(){
     return true;
   });
   /* 필터가 바뀌면 1페이지로 */
-  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fcs.join(','),fms.join(',')].join('|');
+  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fd,fcs.join(','),fms.join(',')].join('|');
   if(sig !== _pFilterSig){ _pFilterSig = sig; PPAGE = 1; }
 
   /* 헤더 클릭 정렬 적용 */
