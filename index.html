@@ -334,7 +334,11 @@ tr.today-row td{background:#fdf8ee}
   <div id="tab-list">
     <div class="stats" id="stats-bar"></div>
     <div class="search-bar" id="filter-row-1" style="margin-bottom:8px">
-      <select id="filter-인입월" onchange="renderTable()" style="width:120px"><option value="">인입월 전체</option></select>
+      <div style="display:flex;align-items:center;gap:4px" title="인입날짜 기간 조회">
+        <input type="date" id="filter-인입-from" onchange="renderTable()" style="width:140px;padding:8px 6px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;font-family:inherit">
+        <span style="color:#aaa;font-size:12px">~</span>
+        <input type="date" id="filter-인입-to" onchange="renderTable()" style="width:140px;padding:8px 6px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;font-family:inherit">
+      </div>
 
       <!-- 관리자 전용: 센터 · 지점장차월 · 지점장 (다중/단일 선택) -->
       <div class="pf" id="pf-wrap-center" style="display:none">
@@ -400,7 +404,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th style="width:90px" data-psort="배당">배당</th><th style="width:60px">관리</th><th data-psort="담당자">담당자</th><th data-psort="센터">센터</th><th data-psort="인입날짜">인입날짜</th><th data-psort="가코드">가코드</th><th data-psort="파트너스명">파트너스명</th><th data-psort="경력구분">경력구분</th><th data-psort="직업">직업</th><th data-psort="전화번호">전화번호</th><th data-psort="재통화일정">재통화일정</th><th data-psort="응시날짜">응시일</th><th data-psort="구분">구분</th><th data-psort="지역">지역</th><th data-psort="합격날짜">합격여부</th><th class="prep-th" data-psort="보장분석동의">보장분석<br>동의</th><th class="prep-th" data-psort="브릿지콜">브릿지콜</th><th class="prep-th" data-psort="가계약">가계약</th><th style="width:90px">상담이력</th><th data-psort="위촉여부">위촉여부</th><th data-psort="위촉코드">위촉코드</th></tr>
+            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th style="width:64px" data-psort="배당">배당</th><th style="width:60px">관리</th><th data-psort="담당자">담당자</th><th data-psort="센터">센터</th><th data-psort="인입날짜">인입날짜</th><th data-psort="가코드">가코드</th><th data-psort="위촉여부">위촉여부</th><th data-psort="위촉코드">위촉코드</th><th data-psort="파트너스명">파트너스명</th><th data-psort="경력구분">경력구분</th><th data-psort="직업">직업</th><th data-psort="전화번호">전화번호</th><th style="width:220px">상담이력</th><th data-psort="재통화일정">재통화일정</th><th data-psort="응시날짜">응시일</th><th data-psort="구분">구분</th><th data-psort="지역">지역</th><th data-psort="합격날짜">합격여부</th><th class="prep-th" data-psort="보장분석동의">보장분석<br>동의</th><th class="prep-th" data-psort="브릿지콜">브릿지콜</th><th class="prep-th" data-psort="가계약">가계약</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -1451,14 +1455,15 @@ function syncListFilters(){
     || document.getElementById('filter-합격').value
     || document.getElementById('filter-사전준비').value
     || document.getElementById('filter-배당').value
-    || document.getElementById('filter-인입월').value
+    || document.getElementById('filter-인입-from').value
+    || document.getElementById('filter-인입-to').value
     || document.getElementById('filter-mcha').value;
   rst.style.display = anyF ? '' : 'none';
 }
 
 /* 필터 전부 해제 */
 function resetListFilters(){
-  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비','filter-배당','filter-인입월','filter-mcha']
+  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비','filter-배당','filter-인입-from','filter-인입-to','filter-mcha']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   PF.reset();
   updateMonthFilter();
@@ -1466,34 +1471,23 @@ function resetListFilters(){
 }
 
 function updateYearFilter(){
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   const years=[...new Set(data.map(d=>{
     const date=d.응시날짜?d.응시날짜.substring(0,10):'';
-    return date?date.split('-')[0]:'';
+    return DATE_RE.test(date)?date.split('-')[0]:'';
   }).filter(Boolean))].sort((a,b)=>b-a);
   const sel=document.getElementById('filter-년');
   const cur=sel.value;
   sel.innerHTML='<option value="">응시년 전체</option>'+years.map(y=>`<option value="${y}" ${y===cur?'selected':''}>응시 ${y}년</option>`).join('');
   updateMonthFilter();
-  updateInDateFilter();
-}
-
-/* 인입월(YYYY-MM) 필터 옵션 — 최신월 순 */
-function updateInDateFilter(){
-  const sel=document.getElementById('filter-인입월');
-  if(!sel) return;
-  const yms=[...new Set(data.map(d=>cleanDate(d.인입날짜)).filter(Boolean).map(s=>s.substring(0,7)))].sort((a,b)=>b.localeCompare(a));
-  const cur=sel.value;
-  sel.innerHTML='<option value="">인입월 전체</option>'+yms.map(ym=>{
-    const [y,m]=ym.split('-');
-    return `<option value="${ym}" ${ym===cur?'selected':''}>${y}년 ${parseInt(m)}월</option>`;
-  }).join('');
 }
 
 function updateMonthFilter(){
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   const fy=document.getElementById('filter-년').value;
   const months=[...new Set(data.filter(d=>{
     const date=d.응시날짜?d.응시날짜.substring(0,10):'';
-    if(!date)return false;
+    if(!DATE_RE.test(date))return false;
     return fy?date.startsWith(fy):true;
   }).map(d=>d.응시날짜.substring(5,7)).filter(Boolean))].sort();
   const sel=document.getElementById('filter-월');
@@ -2338,7 +2332,8 @@ function renderTable(){
   const fp=document.getElementById('filter-사전준비').value;
   const fy=document.getElementById('filter-년').value,fm=document.getElementById('filter-월').value;
   const fd=(document.getElementById('filter-배당').value||'').trim().toLowerCase();
-  const fin=document.getElementById('filter-인입월').value;
+  const finFrom=document.getElementById('filter-인입-from').value;
+  const finTo=document.getElementById('filter-인입-to').value;
   const fmc=document.getElementById('filter-mcha').value;
   const weekEnd=getWeekEnd();
   /* 배당 자동완성 목록: 기본 후보 + 실제 데이터에 있는 값 */
@@ -2362,7 +2357,12 @@ function renderTable(){
     if(fms.length && !fms.includes(String(d.담당자||'')))return false;
     if(q&&![(d.파트너스명||''),(d.전화번호||''),(d.가코드||''),(d.담당자||''),(d.센터||'')].join(' ').toLowerCase().includes(q))return false;
     if(fd&&!String(d.배당||'').toLowerCase().includes(fd))return false;
-    if(fin&&cleanDate(d.인입날짜).substring(0,7)!==fin)return false;
+    if((finFrom||finTo)){
+      const dt = cleanDate(d.인입날짜);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(dt)) return false;   /* ★ 날짜 형식이 아니면(오입력) 기간 조회에서 제외 */
+      if(finFrom && dt<finFrom) return false;
+      if(finTo && dt>finTo) return false;
+    }
     if(fmc){
       const c = mgrChaByName(String(d.담당자||'').trim());
       if(String(c==null?'':c)!==String(fmc))return false;
@@ -2387,7 +2387,7 @@ function renderTable(){
     return true;
   });
   /* 필터가 바뀌면 1페이지로 */
-  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fd,fin,fmc,fcs.join(','),fms.join(',')].join('|');
+  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fd,finFrom,finTo,fmc,fcs.join(','),fms.join(',')].join('|');
   if(sig !== _pFilterSig){ _pFilterSig = sig; PPAGE = 1; }
 
   /* 헤더 클릭 정렬 적용 */
@@ -2428,20 +2428,22 @@ function renderTable(){
         canEdit ? `<input type="checkbox" class="p-sel" ${isSel?'checked':''} onchange="DEL.pick('${d.id}',this.checked)">` : ''
       }</td>
       <td style="color:#aaa;text-align:center">${pStart+fi+1}</td>
-      <td style="text-align:center;font-size:11px" onclick="event.stopPropagation()">
-        <input type="text" value="${(d.배당||'').replace(/"/g,'&quot;')}" list="row-배당-list" placeholder="-"
-          style="width:78px;border:1px solid #d8d8d4;border-radius:6px;padding:4px 6px;font-size:11px;text-align:center"
-          onchange="setPartnerField(${ri},'배당',this.value)">
-      </td>
+      <td style="text-align:center;font-size:11px">${d.배당||'-'}</td>
       <td class="row-actions" onclick="event.stopPropagation()">
         <button class="btn btn-sm" title="이 파트너스 매출 보기" onclick="openPartnerSales(${ri})">💰</button>
       </td>
       <td><span class="badge ${ADMINS.includes(d.담당자)?'badge-admin':'badge-new'}">${d.담당자||'-'}</span></td>
       <td style="font-size:11px">${d.센터||'-'}</td>
       <td>${cleanDate(d.인입날짜)||'-'}</td><td style="font-size:11px">${d.가코드||'-'}</td>
+      <td>${d.위촉여부?`<span class="badge badge-new">${d.위촉여부}</span>`:'-'}</td>
+      <td style="font-size:11px">${d.위촉코드||'-'}</td>
       <td style="font-weight:600">${d.파트너스명||'-'}</td>
       <td>${d.경력구분?`<span class="badge ${경력B}">${d.경력구분}</span>`:'-'}</td>
       <td>${d.직업||'-'}</td><td>${d.전화번호||'-'}</td>
+      <td class="memo-cell" style="max-width:220px">
+        ${d.상담이력?`<div class="memo-preview" style="max-width:210px">${noteDisplay(d.상담이력).split('\n').join(' ')}</div>
+        <div class="memo-tooltip" style="width:340px">${noteDisplay(d.상담이력).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:'<span style="color:#ddd;font-size:11px">-</span>'}
+      </td>
       <td>${recallCell}</td><td>${cleanDate(d.응시날짜)||'-'}</td>
       <td>${d.구분?`<span class="badge ${구분B}">${d.구분}</span>`:'-'}</td>
       <td>${d.지역||'-'}</td>
@@ -2449,12 +2451,6 @@ function renderTable(){
       <td style="text-align:center">${prepBadge(d.보장분석동의)}</td>
       <td style="text-align:center">${prepBadge(d.브릿지콜)}</td>
       <td style="text-align:center">${prepBadge(d.가계약)}</td>
-      <td class="memo-cell">
-        ${d.상담이력?`<div class="memo-preview">${noteDisplay(d.상담이력).split('\n').join(' ')}</div>
-        <div class="memo-tooltip">${noteDisplay(d.상담이력).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:'<span style="color:#ddd;font-size:11px">-</span>'}
-      </td>
-      <td>${d.위촉여부?`<span class="badge badge-new">${d.위촉여부}</span>`:'-'}</td>
-      <td style="font-size:11px">${d.위촉코드||'-'}</td>
     </tr>`;
   }).join('');
 }
