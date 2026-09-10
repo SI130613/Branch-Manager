@@ -389,6 +389,7 @@ tr.today-row td{background:#fdf8ee}
       <button class="btn btn-sm" onclick="XL.downloadPartnersBlank()" title="데이터 없이 헤더만 있는 빈 양식을 저장">⬇ 빈 양식 다운로드</button>
       <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
       <button class="btn btn-sm btn-danger" id="p-del-btn" onclick="DEL.confirm()" disabled>🗑 선택 삭제</button>
+      <button class="btn btn-sm" id="fill-baedang-btn" style="display:none" onclick="fillMissingBaeDangDate()" title="배당은 입력돼 있지만 배당일이 비어있는 기존 건에 날짜를 채워 통계에 반영합니다">🔧 기존 배당일 채우기</button>
       <span id="list-count" style="font-size:12px;color:#888;margin-left:auto"></span>
     </div>
     <style>
@@ -1007,8 +1008,8 @@ tr.today-row td{background:#fdf8ee}
   </div>
 </div>
         <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <label style="font-size:11px;color:#888;font-weight:600">상담이력 및 특이사항</label>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;background:#4A7FC1;border-radius:6px;padding:6px 10px">
+            <label style="font-size:12px;color:#fff;font-weight:700">상담이력 및 특이사항</label>
             <button type="button" class="btn btn-sm" style="background:#B4372F;color:#fff;border-color:#B4372F;padding:3px 14px;font-size:11px" onclick="addNoteEntry('e')">입력</button>
           </div>
           <div id="e-상담이력-list" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto"></div>
@@ -1231,13 +1232,14 @@ function renderNoteList(prefix){
   if(!box) return;
   const arr = noteEntries_e;
   box.innerHTML = arr.length ? arr.map((en,i)=>{
+    const parts = en.stamp ? en.stamp.split('.') : null;   /* ['260910','17:11'] */
     const tag = en.stamp
-      ? `<div style="flex:0 0 84px;background:#4A7FC1;color:#fff;font-size:11px;font-weight:700;text-align:center;padding:8px 4px;border-radius:6px 0 0 6px;line-height:1.3">${en.stamp}</div>`
-      : `<div style="flex:0 0 84px;background:#9AA0A6;color:#fff;font-size:10px;font-weight:700;text-align:center;padding:8px 4px;border-radius:6px 0 0 6px">기존기록</div>`;
+      ? `<div style="flex:0 0 64px;background:#EFF4FB;color:#2C5FA3;font-size:11px;font-weight:700;text-align:center;padding:8px 4px;border:1px solid #d8d8d4;border-right:none;border-radius:6px 0 0 6px;line-height:1.5">${parts[0]}<br>${parts[1]}</div>`
+      : `<div style="flex:0 0 64px;background:#F0F0F0;color:#888;font-size:10px;font-weight:700;text-align:center;padding:8px 4px;border:1px solid #d8d8d4;border-right:none;border-radius:6px 0 0 6px;display:flex;align-items:center;justify-content:center">기존기록</div>`;
     return `<div style="display:flex;align-items:stretch">
       ${tag}
-      <textarea oninput="updateNoteText(${i},this.value)" placeholder="내용 입력" style="flex:1;background:#4A7FC1;color:#fff;border:none;border-radius:0;padding:8px 10px;font-size:12.5px;resize:vertical;min-height:38px;font-family:inherit">${esc_(en.text)}</textarea>
-      <button type="button" onclick="removeNoteEntry(${i})" title="삭제" style="flex:0 0 26px;background:#4A7FC1;border:none;border-left:1px solid rgba(255,255,255,.35);border-radius:0 6px 6px 0;color:#fff;cursor:pointer;font-size:13px">✕</button>
+      <textarea oninput="updateNoteText(${i},this.value)" placeholder="내용 입력" style="flex:1;background:#fff;color:#1a1a1a;border:1px solid #d8d8d4;border-radius:0;padding:8px 10px;font-size:12.5px;resize:vertical;min-height:38px;font-family:inherit">${esc_(en.text)}</textarea>
+      <button type="button" onclick="removeNoteEntry(${i})" title="삭제" style="flex:0 0 26px;background:#fff;border:1px solid #d8d8d4;border-left:none;border-radius:0 6px 6px 0;color:#B4372F;cursor:pointer;font-size:13px">✕</button>
     </div>`;
   }).join('') : '<div style="color:#bbb;font-size:12px;padding:4px 0">입력된 상담이력이 없습니다 — 위 [입력] 버튼을 눌러 추가하세요</div>';
 }
@@ -1673,6 +1675,7 @@ function doLogin(restoring){
     document.getElementById('account-btn').textContent = (AUTH.role==='admin') ? '🔑 설정' : '🔑 비밀번호 변경';
     document.getElementById('tab-btn-mgrinfo').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('tab-btn-wichok').style.display = isAdmin ? 'block' : 'none';
+    const fbBtn = document.getElementById('fill-baedang-btn'); if(fbBtn) fbBtn.style.display = isAdmin ? '' : 'none';
     if(isAdmin && typeof MGR!=='undefined' && MGR.ensure){
       MGR.ensure().then(()=>{                      // 담당 지점장 드롭다운용 명단 미리 로드
         if(document.getElementById('tab-add').style.display !== 'none') syncCenterField();
@@ -1952,12 +1955,12 @@ function computeBaeDangStats(label){
 }
 function baeDangCardHtml(label){
   const s = computeBaeDangStats(label);
-  return `<div class="stat" style="background:#5B8FC7;border-color:#5B8FC7;text-align:left;padding:12px 14px">
-    <div style="color:#FFE27A;font-weight:700;font-size:13px;text-align:center;margin-bottom:4px">당월(${today.getMonth()+1}월) ${label}</div>
-    <div style="color:#fff;font-size:12.5px;text-align:center;margin-bottom:6px">총${s.total}건 중 1차터치 ${s.touched1}</div>
-    <div style="color:#fff;font-size:12px;line-height:1.6">
-      - 미터치(3~4일) : ${s.miss3}<br>
-      - 미터치(5일↑) : ${s.miss5}
+  return `<div class="stat">
+    <div class="stat-label" style="font-weight:700;color:#534AB7;margin-bottom:4px">당월(${today.getMonth()+1}월) ${label}</div>
+    <div style="font-size:13px;color:#1a1a1a;margin-bottom:6px">총 <b>${s.total}</b>건 중 1차터치 <b class="stat-num" style="font-size:15px">${s.touched1}</b></div>
+    <div class="stat-label" style="text-align:left;line-height:1.6">
+      - 미터치(3~4일) : <b style="color:#BA7517">${s.miss3}</b><br>
+      - 미터치(5일↑) : <b style="color:#c0392b">${s.miss5}</b>
     </div>
   </div>`;
 }
@@ -1973,19 +1976,18 @@ function renderStatsBar(){
   if(isAdmin){
     /* ★ 관리자 전용 통계바: 누적/당월 파트너스, 2차·3차 배당 터치 현황, 당월 합격자, 오늘 재통화 */
     document.getElementById('stats-bar').innerHTML=`
-      <div class="stat" style="background:#5B8FC7;border-color:#5B8FC7;color:#fff;text-align:left;padding:12px 14px">
-        <div style="font-size:14px;line-height:1.7">
-          누적 파트너스 : ${data.length}<br>
-          당월(${thisMonthLabel}) : ${total}
-        </div>
+      <div class="stat">
+        <div class="stat-num" style="font-size:17px">${data.length}</div>
+        <div class="stat-label">누적 파트너스</div>
+        <div class="stat-num" style="font-size:17px;margin-top:4px">${total}</div>
+        <div class="stat-label">당월(${thisMonthLabel})</div>
       </div>
       ${baeDangCardHtml('2차배당')}
       ${baeDangCardHtml('3차배당')}
-      <div class="stat" style="background:#5B8FC7;border-color:#5B8FC7;color:#fff">
-        <div style="font-size:14px">당월(${thisMonthLabel})합격자<br><b style="font-size:20px">${passed}</b></div>
-      </div>
-      <div class="stat" style="background:#5B8FC7;border-color:#5B8FC7;color:#fff;cursor:pointer" onclick="showRecallPopup(true)">
-        <div style="font-size:14px">오늘 재통화<br><b style="font-size:20px">${todayR}</b></div>
+      <div class="stat"><div class="stat-num">${passed}</div><div class="stat-label">당월(${thisMonthLabel}) 합격자</div></div>
+      <div class="stat" style="cursor:pointer" onclick="showRecallPopup(true)">
+        <div class="stat-num" style="color:${todayR>0?'#BA7517':'#534AB7'}">${todayR}</div>
+        <div class="stat-label">오늘 재통화 📞</div>
       </div>`;
     return;
   }
@@ -2023,6 +2025,35 @@ function renderStatsBar(){
       <div class="stat-num" style="color:${todayR>0?'#BA7517':'#534AB7'}">${todayR}</div>
       <div class="stat-label">오늘 재통화 📞</div>
     </div>`;
+}
+
+/* ★ 기존에 배당은 입력돼 있지만 배당일이 없는 건들에, 배당명별로 날짜를 지정해 한 번에 채워줌 */
+async function fillMissingBaeDangDate(){
+  const targets = data.filter(d => String(d.배당||'').trim() && !String(d.배당일||'').trim());
+  if(!targets.length){ showToast('배당일이 비어있는 배당 건이 없습니다','ok'); return; }
+  const labels = [...new Set(targets.map(d=>String(d.배당).trim()))];
+  const dateFor = {};
+  for(const label of labels){
+    const cnt = targets.filter(d=>String(d.배당).trim()===label).length;
+    const v = prompt(`"${label}" (${cnt}건)의 배당일로 채울 날짜를 입력해 주세요 (YYYY-MM-DD)\n건너뛰려면 취소를 누르세요.`, todayStr);
+    if(v && /^\d{4}-\d{2}-\d{2}$/.test(v.trim())) dateFor[label] = v.trim();
+  }
+  const toApply = targets.filter(d=>dateFor[String(d.배당).trim()]);
+  if(!toApply.length){ showToast('적용된 건이 없습니다','err'); return; }
+  if(!confirm(`총 ${toApply.length}건에 배당일을 채워 저장합니다.\n계속할까요?`)) return;
+  const btn = document.getElementById('fill-baedang-btn');
+  if(btn){ btn.disabled = true; }
+  let done = 0;
+  for(let i=0;i<toApply.length;i++){
+    const d = toApply[i];
+    if(btn) btn.textContent = `🔧 채우는 중… (${i+1}/${toApply.length})`;
+    d.배당일 = dateFor[String(d.배당).trim()];
+    const ok = await updateRow(d);
+    if(ok) done++;
+  }
+  if(btn){ btn.disabled = false; btn.textContent = '🔧 기존 배당일 채우기'; }
+  renderTable(); renderStatsBar();
+  showToast(`${done}건에 배당일을 채웠습니다`, 'ok');
 }
 
 /* 전체목록에서 현재 필터가 적용된 데이터 (엑셀 다운로드에서 재사용) */
