@@ -981,52 +981,75 @@ tr.today-row td{background:#fdf8ee}
 
 <!-- 수정 모달 -->
 <div class="overlay" id="edit-modal">
-  <div class="modal-box" style="max-width:640px">
+  <div class="modal-box" style="max-width:760px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
       <h3 id="edit-modal-title">✏️ 정보 수정</h3>
       <button class="btn btn-sm" onclick="closeModal('edit-modal')">✕</button>
     </div>
     <div style="border:1px solid #d8d8d4;border-radius:8px;overflow:hidden;margin-bottom:1rem">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+        <!-- 인입날짜 · 배당종류 -->
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">인입날짜</label><input type="date" id="e-인입날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">가코드</label><input type="text" id="e-가코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">파트너스명 *</label><input type="text" id="e-파트너스명" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">생년월일</label><input type="date" id="e-생년월일" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">경력구분</label><select id="e-경력구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>신인</option><option>경력</option><option>재등록</option></select></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">직업</label><input type="text" id="e-직업" placeholder="직접 입력" autocomplete="off" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">전화번호</label><input type="text" id="e-전화번호" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">상담가능시간</label><input type="text" id="e-상담가능시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">재통화일정</label>
-  <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
-    <input type="date" id="e-재통화일정-date" style="flex:2;min-width:120px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px">
-    <select id="e-재통화일정-ampm" style="flex:1;min-width:70px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff">
-      <option value="오전">오전</option><option value="오후">오후</option>
-    </select>
-    <select id="e-재통화일정-hour" style="flex:1;min-width:60px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff">
-      <option value="1">1시</option><option value="2">2시</option><option value="3">3시</option><option value="4">4시</option><option value="5">5시</option><option value="6">6시</option><option value="7">7시</option><option value="8">8시</option><option value="9">9시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option>
-    </select>
-    <select id="e-재통화일정-min" style="flex:1;min-width:70px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff"><option value="00">00분</option><option value="10">10분</option><option value="20">20분</option><option value="30">30분</option><option value="40">40분</option><option value="50">50분</option></select>
-  </div>
-</div>
-        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;background:#4A7FC1;border-radius:6px;padding:6px 10px">
-            <label style="font-size:12px;color:#fff;font-weight:700">상담이력 및 특이사항</label>
-            <button type="button" class="btn btn-sm" style="background:#B4372F;color:#fff;border-color:#B4372F;padding:3px 14px;font-size:11px" onclick="addNoteEntry('e')">입력</button>
-          </div>
-          <div id="e-상담이력-list" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto"></div>
+        <div style="padding:10px 12px;grid-column:span 2;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">배당 종류</label><input type="text" id="e-배당" list="e-배당-list" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px" placeholder="예: 2차배당">
+          <datalist id="e-배당-list"><option>2차배당</option><option>3차배당</option></datalist>
         </div>
+
+        <!-- 가코드 · 위촉여부 · 위촉코드 -->
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">가코드</label><input type="text" id="e-가코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉여부</label><select id="e-위촉여부" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>위촉</option><option>미위촉</option></select></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉코드</label><input type="text" id="e-위촉코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px" oninput="syncWichokStatus('e-위촉코드','e-위촉여부','위촉')"></div>
+
+        <!-- 파트너스명 · 생년월일 · 경력구분 -->
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">파트너스명 *</label><input type="text" id="e-파트너스명" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">생년월일</label><input type="date" id="e-생년월일" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">경력구분</label><select id="e-경력구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>신인</option><option>경력</option><option>재등록</option></select></div>
+
+        <!-- 전화번호 · 직업 · 상담가능시간 -->
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">전화번호</label><input type="text" id="e-전화번호" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">직업</label><input type="text" id="e-직업" placeholder="직접 입력" autocomplete="off" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">상담가능시간</label><input type="text" id="e-상담가능시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+
+        <!-- 재통화일정: 한 줄 전체 -->
+        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4">
+          <label style="font-size:11px;color:#888;font-weight:600">재통화일정</label>
+          <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:nowrap">
+            <input type="date" id="e-재통화일정-date" style="flex:2;min-width:130px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px">
+            <select id="e-재통화일정-ampm" style="flex:1;min-width:70px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff">
+              <option value="오전">오전</option><option value="오후">오후</option>
+            </select>
+            <select id="e-재통화일정-hour" style="flex:1;min-width:60px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff">
+              <option value="1">1시</option><option value="2">2시</option><option value="3">3시</option><option value="4">4시</option><option value="5">5시</option><option value="6">6시</option><option value="7">7시</option><option value="8">8시</option><option value="9">9시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option>
+            </select>
+            <select id="e-재통화일정-min" style="flex:1;min-width:70px;padding:6px 8px;border:1px solid #d8d8d4;border-radius:6px;font-size:13px;background:#fff"><option value="00">00분</option><option value="10">10분</option><option value="20">20분</option><option value="30">30분</option><option value="40">40분</option><option value="50">50분</option></select>
+          </div>
+        </div>
+
+        <!-- 응시/합격 정보 (그대로 유지) -->
+        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 응시 및 합격 정보</label></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">응시날짜</label><input type="date" id="e-응시날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">구분</label><select id="e-구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>선행</option><option>정규</option><option>후속</option></select></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">지역</label><select id="e-지역" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>서울</option><option>수원</option><option>대전</option><option>대구</option><option>광주</option><option>부산</option><option>인천</option><option>강릉</option><option>원주</option><option>전주</option><option>울산</option><option>순천</option><option>창원</option><option>제주</option><option>포항</option></select></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">시험시간</label><input type="text" id="e-시험시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">합격날짜</label><input type="date" id="e-합격날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">담당EM</label><input type="text" id="e-배정지점장" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉여부</label><select id="e-위촉여부" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>위촉</option><option>미위촉</option></select></div>
-        <div style="padding:10px 12px;grid-column:2/-1;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">위촉코드</label><input type="text" id="e-위촉코드" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px" oninput="syncWichokStatus('e-위촉코드','e-위촉여부','위촉')"></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">배당</label><input type="text" id="e-배당" list="e-배당-list" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px" placeholder="예: 2차배당">
-          <datalist id="e-배당-list"><option>2차배당</option><option>3차배당</option></datalist>
+
+        <!-- 사전준비 -->
+        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 사전준비</label></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">보장분석 동의</label><select id="e-보장분석동의" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">브릿지콜</label><select id="e-브릿지콜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">가계약</label><select id="e-가계약" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
+
+        <!-- 상담이력 및 특이사항: 맨 아래 쪽, 폭 최대로 -->
+        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;background:#4A7FC1;border-radius:6px;padding:6px 10px">
+            <label style="font-size:12px;color:#fff;font-weight:700">상담이력 및 특이사항</label>
+            <button type="button" class="btn btn-sm" style="background:#B4372F;color:#fff;border-color:#B4372F;padding:3px 14px;font-size:11px" onclick="addNoteEntry('e')">입력</button>
+          </div>
+          <div id="e-상담이력-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto"></div>
         </div>
-        <div id="e-owner-wrap" style="display:none;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff;padding:10px 12px">
+
+        <!-- 관리자 전용: 맨 아래 -->
+        <div id="e-owner-wrap" style="display:none;grid-column:1/-1;background:#faf9ff;padding:10px 12px">
           <label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 관리자 전용 · 담당 지점장 / 센터</label>
           <div style="display:flex;gap:10px;margin-top:6px">
             <select id="e-담당자" onchange="syncOwnerCenterEdit()" style="flex:1;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></select>
@@ -1037,10 +1060,6 @@ tr.today-row td{background:#fdf8ee}
             </select>
           </div>
         </div>
-        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 사전준비</label></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">보장분석 동의</label><select id="e-보장분석동의" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">브릿지콜</label><select id="e-브릿지콜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
-        <div style="padding:10px 12px"><label style="font-size:11px;color:#888;font-weight:600">가계약</label><select id="e-가계약" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
       </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -1988,61 +2007,26 @@ function renderStatsBarDebounced(){
   _statsBarTimer = setTimeout(renderStatsBar, 300);
 }
 function renderStatsBar(){
-  const vis=getVisibleData();
+  /* ★ 표에 적용된 현재 필터(센터/지점장/검색 등) 기준으로 전부 계산 — 지점장은 애초에 본인 데이터만 lastFiltered에 담김 */
+  const base = lastFiltered;
   const thisMonth=todayStr.substring(0,7);
   const thisMonthLabel=`${today.getMonth()+1}월`;
   /* ★ 당월 기준 카운트: 파트너스=인입날짜, 합격자=합격날짜가 이번 달인 건만 */
-  const total=vis.filter(d=>d.인입날짜&&cleanDate(d.인입날짜).substring(0,7)===thisMonth).length;
-  const passed=vis.filter(d=>d.합격날짜&&cleanDate(d.합격날짜).substring(0,7)===thisMonth).length;
-  const todayR=vis.filter(d=>cleanDate(d.재통화일정)===todayStr).length;
+  const total=base.filter(d=>d.인입날짜&&cleanDate(d.인입날짜).substring(0,7)===thisMonth).length;
+  const passed=base.filter(d=>d.합격날짜&&cleanDate(d.합격날짜).substring(0,7)===thisMonth).length;
+  const todayR=base.filter(d=>cleanDate(d.재통화일정)===todayStr).length;
 
-  if(isAdmin){
-    /* ★ 관리자 전용 통계바: 누적/당월 파트너스, 2차·3차 배당 터치 현황, 당월 합격자, 오늘 재통화 */
-    document.getElementById('stats-bar').innerHTML=`
-      <div class="stat">
-        <div class="stat-num" style="font-size:17px">${data.length}</div>
-        <div class="stat-label">누적 파트너스</div>
-        <div class="stat-num" style="font-size:17px;margin-top:4px">${total}</div>
-        <div class="stat-label">당월(${thisMonthLabel})</div>
-      </div>
-      ${baeDangCardHtml('2차배당')}
-      ${baeDangCardHtml('3차배당')}
-      <div class="stat"><div class="stat-num">${passed}</div><div class="stat-label">당월(${thisMonthLabel}) 합격자</div></div>
-      <div class="stat" style="cursor:pointer" onclick="showRecallPopup(true)">
-        <div class="stat-num" style="color:${todayR>0?'#BA7517':'#534AB7'}">${todayR}</div>
-        <div class="stat-label">오늘 재통화 📞</div>
-      </div>`;
-    return;
-  }
-
-  // 익월 계산
-  const t=new Date(today.getFullYear(),today.getMonth()+1,1);
-  const nextMonth=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;
-  const nextMonthLabel=`${t.getMonth()+1}월`;
-  const 당월선행=vis.filter(d=>d.구분==='선행'&&d.응시날짜&&d.응시날짜.substring(0,7)===thisMonth).length;
-  const 당월정규=vis.filter(d=>d.구분==='정규'&&d.응시날짜&&d.응시날짜.substring(0,7)===thisMonth).length;
-  const 당월후속=vis.filter(d=>d.구분==='후속'&&d.응시날짜&&d.응시날짜.substring(0,7)===thisMonth).length;
-  const 익월선행=vis.filter(d=>d.구분==='선행'&&d.응시날짜&&d.응시날짜.substring(0,7)===nextMonth).length;
-  const 익월정규=vis.filter(d=>d.구분==='정규'&&d.응시날짜&&d.응시날짜.substring(0,7)===nextMonth).length;
-  const 익월후속=vis.filter(d=>d.구분==='후속'&&d.응시날짜&&d.응시날짜.substring(0,7)===nextMonth).length;
+  /* ★ 관리자·지점장 공통 통계바: 누적/당월 파트너스, 2차·3차 배당 터치 현황, 당월 합격자, 오늘 재통화
+     (모두 현재 필터 기준. 지점장 로그인 시에는 본인 데이터만 필터에 담기므로 자연히 본인 것만 보임) */
   document.getElementById('stats-bar').innerHTML=`
-    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">${isAdmin?'전체':'내'} 파트너스 · 당월(${thisMonthLabel}) 인입</div></div>
     <div class="stat">
-      <div style="display:flex;justify-content:center;gap:10px;align-items:baseline">
-        <span><div class="stat-num" style="font-size:17px">${당월선행}</div><div class="stat-label">선행</div></span>
-        <span><div class="stat-num" style="font-size:17px">${당월정규}</div><div class="stat-label">정규</div></span>
-        <span><div class="stat-num" style="font-size:17px">${당월후속}</div><div class="stat-label">후속</div></span>
-      </div>
-      <div class="stat-label" style="margin-top:6px">당월(${thisMonthLabel}) 응시</div>
+      <div class="stat-num" style="font-size:17px">${base.length}</div>
+      <div class="stat-label">누적 파트너스</div>
+      <div class="stat-num" style="font-size:17px;margin-top:4px">${total}</div>
+      <div class="stat-label">당월(${thisMonthLabel})</div>
     </div>
-    <div class="stat">
-      <div style="display:flex;justify-content:center;gap:10px;align-items:baseline">
-        <span><div class="stat-num" style="font-size:17px;color:#E07B39">${익월선행}</div><div class="stat-label">선행</div></span>
-        <span><div class="stat-num" style="font-size:17px;color:#E07B39">${익월정규}</div><div class="stat-label">정규</div></span>
-        <span><div class="stat-num" style="font-size:17px;color:#E07B39">${익월후속}</div><div class="stat-label">후속</div></span>
-      </div>
-      <div class="stat-label" style="margin-top:6px">익월(${nextMonthLabel}) 응시</div>
-    </div>
+    ${baeDangCardHtml('2차배당')}
+    ${baeDangCardHtml('3차배당')}
     <div class="stat"><div class="stat-num">${passed}</div><div class="stat-label">당월(${thisMonthLabel}) 합격자</div></div>
     <div class="stat" style="cursor:pointer" onclick="showRecallPopup(true)">
       <div class="stat-num" style="color:${todayR>0?'#BA7517':'#534AB7'}">${todayR}</div>
