@@ -1936,7 +1936,9 @@ function stampToISO(stamp){
 }
 function computeBaeDangStats(label){
   const thisMonth = todayStr.substring(0,7);
-  const list = data.filter(d => String(d.배당||'').trim()===label && d.배당일 && cleanDate(d.배당일).substring(0,7)===thisMonth);
+  /* ★ 표에 적용된 현재 필터(센터/지점장/검색 등) 기준 데이터로 계산 (renderTable 이후 항상 호출되므로 최신값) */
+  const base = lastFiltered;
+  const list = base.filter(d => String(d.배당||'').trim()===label && d.배당일 && cleanDate(d.배당일).substring(0,7)===thisMonth);
   let touched1=0, miss3=0, miss5=0;
   list.forEach(d=>{
     const assignDate = cleanDate(d.배당일);
@@ -2483,6 +2485,7 @@ function renderTable(){
   /* 헤더 클릭 정렬 적용 */
   const sorted = lastFiltered = applyPSort(filtered);
   updateSortArrows();
+  renderStatsBar();   /* ★ 필터가 바뀔 때마다 상단 통계(배당-터치 포함)도 같이 갱신 */
 
   const tbody=document.getElementById('table-body');
   DEL.sync(sorted);
