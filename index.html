@@ -1024,22 +1024,13 @@ tr.today-row td{background:#fdf8ee}
           </div>
         </div>
 
-        <!-- 응시/합격 정보 (그대로 유지) -->
-        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 응시 및 합격 정보</label></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">응시날짜</label><input type="date" id="e-응시날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">구분</label><select id="e-구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>선행</option><option>정규</option><option>후속</option></select></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">지역</label><select id="e-지역" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>서울</option><option>수원</option><option>대전</option><option>대구</option><option>광주</option><option>부산</option><option>인천</option><option>강릉</option><option>원주</option><option>전주</option><option>울산</option><option>순천</option><option>창원</option><option>제주</option><option>포항</option></select></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">시험시간</label><input type="text" id="e-시험시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">합격날짜</label><input type="date" id="e-합격날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">담당EM</label><input type="text" id="e-배정지점장" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-
         <!-- 사전준비 -->
         <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 사전준비</label></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">보장분석 동의</label><select id="e-보장분석동의" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">브릿지콜</label><select id="e-브릿지콜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">가계약</label><select id="e-가계약" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
 
-        <!-- 상담이력 및 특이사항: 맨 아래 쪽, 폭 최대로 -->
+        <!-- 상담이력 및 특이사항 -->
         <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;background:#4A7FC1;border-radius:6px;padding:6px 10px">
             <label style="font-size:12px;color:#fff;font-weight:700">상담이력 및 특이사항</label>
@@ -1047,6 +1038,15 @@ tr.today-row td{background:#fdf8ee}
           </div>
           <div id="e-상담이력-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto"></div>
         </div>
+
+        <!-- 응시 및 합격 정보: 맨 아래쪽 (관리자 전용 바로 앞) -->
+        <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4;background:#faf9ff"><label style="font-size:11px;color:#534AB7;font-weight:700;letter-spacing:.5px">📌 응시 및 합격 정보</label></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">응시날짜</label><input type="date" id="e-응시날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">구분</label><select id="e-구분" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>선행</option><option>정규</option><option>후속</option></select></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">지역</label><select id="e-지역" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>서울</option><option>수원</option><option>대전</option><option>대구</option><option>광주</option><option>부산</option><option>인천</option><option>강릉</option><option>원주</option><option>전주</option><option>울산</option><option>순천</option><option>창원</option><option>제주</option><option>포항</option></select></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">시험시간</label><input type="text" id="e-시험시간" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">합격날짜</label><input type="date" id="e-합격날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
+        <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">담당EM</label><input type="text" id="e-배정지점장" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
 
         <!-- 관리자 전용: 맨 아래 -->
         <div id="e-owner-wrap" style="display:none;grid-column:1/-1;background:#faf9ff;padding:10px 12px">
