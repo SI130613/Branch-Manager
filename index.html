@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>파트너스 관리대장 (지점장)</title>
+<title>원노트 웹앱</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
@@ -278,7 +278,7 @@ tr.today-row td{background:#fdf8ee}
 <!-- 로그인 -->
 <div id="screen-login">
   <div style="text-align:center;padding:2rem 0 1.5rem">
-    <h2 style="color:#534AB7">◆ 파트너스 관리대장 (지점장)</h2>
+    <h2 style="color:#534AB7">◆ 원노트 웹앱</h2>
   </div>
   <div class="login-wrap">
     <div class="login-box">
@@ -301,7 +301,7 @@ tr.today-row td{background:#fdf8ee}
 <!-- 메인 -->
 <div id="screen-main" style="display:none">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-    <h2 style="color:#534AB7">◆ 파트너스 관리대장 (지점장)</h2>
+    <h2 style="color:#534AB7">◆ 원노트 웹앱</h2>
     <div class="sync-status" id="sync-status"><span class="dot dot-loading"></span> 연결 중...</div>
   </div>
 
@@ -390,6 +390,7 @@ tr.today-row td{background:#fdf8ee}
       <button class="btn btn-sm" onclick="XL.openPartnerUpload()" title="엑셀 파일로 일괄 등록">⬆ 엑셀 업로드</button>
       <button class="btn btn-sm btn-danger" id="p-del-btn" onclick="DEL.confirm()" disabled>🗑 선택 삭제</button>
       <button class="btn btn-sm" id="fill-baedang-btn" style="display:none" onclick="fillMissingBaeDangDate()" title="배당은 입력돼 있지만 배당일이 비어있는 기존 건에 날짜를 채워 통계에 반영합니다">🔧 기존 배당일 채우기</button>
+      <button class="btn btn-sm" id="fill-indate-btn" style="display:none" onclick="fillMissingInDateFromBaeDang()" title="배당일은 있는데 인입날짜가 비어있는 건에, 배당일과 같은 날짜로 인입날짜를 채웁니다">📅 배당일→인입날짜 채우기</button>
       <span id="list-count" style="font-size:12px;color:#888;margin-left:auto"></span>
     </div>
     <style>
@@ -1066,6 +1067,10 @@ tr.today-row td{background:#fdf8ee}
           <input type="radio" name="xlMode" value="append" checked style="width:auto;margin:3px 0 0"> 
           <span><b>추가</b> — 기존 데이터는 그대로 두고 새 건만 붙입니다. 이미 등록된 건(중복)은 자동으로 건너뜁니다 <span style="color:#0A5540;font-size:11px">(권장)</span></span>
         </label>
+        <label id="xl-fillblank-option" style="display:none;font-size:13px;gap:7px;align-items:flex-start;margin-bottom:8px;cursor:pointer">
+          <input type="radio" name="xlMode" value="fillblank" style="width:auto;margin:3px 0 0"> 
+          <span><b>빈칸채우기 + 신규추가</b> — 가코드 · 이름+전화번호 · 위촉코드 중 하나라도 같은 기존 건은 <b>빈 칸만</b> 채우고 기존 값은 그대로 유지합니다. 명단에 없는 새 사람은 추가됩니다 <span style="color:#0A5540;font-size:11px">(다운받은 엑셀에 내용 더 채워서 재업로드할 때 추천)</span></span>
+        </label>
         <label style="font-size:13px;display:flex;gap:7px;align-items:flex-start;cursor:pointer">
           <input type="radio" name="xlMode" value="replace" style="width:auto;margin:3px 0 0"> 
           <span><b id="xl-replace-label">전체 교체</b> <span style="color:#B4372F;font-size:11px">— 기존 데이터를 모두 지우고 새로 넣습니다</span></span>
@@ -1676,6 +1681,7 @@ function doLogin(restoring){
     document.getElementById('tab-btn-mgrinfo').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('tab-btn-wichok').style.display = isAdmin ? 'block' : 'none';
     const fbBtn = document.getElementById('fill-baedang-btn'); if(fbBtn) fbBtn.style.display = isAdmin ? '' : 'none';
+    const fiBtn = document.getElementById('fill-indate-btn'); if(fiBtn) fiBtn.style.display = isAdmin ? '' : 'none';
     if(isAdmin && typeof MGR!=='undefined' && MGR.ensure){
       MGR.ensure().then(()=>{                      // 담당 지점장 드롭다운용 명단 미리 로드
         if(document.getElementById('tab-add').style.display !== 'none') syncCenterField();
@@ -2056,6 +2062,26 @@ async function fillMissingBaeDangDate(){
   if(btn){ btn.disabled = false; btn.textContent = '🔧 기존 배당일 채우기'; }
   renderTable(); renderStatsBar();
   showToast(`${done}건에 배당일을 채웠습니다`, 'ok');
+}
+
+/* ★ 배당일은 있는데 인입날짜가 비어있는 건들에, 인입날짜를 배당일과 같게 자동으로 채움 */
+async function fillMissingInDateFromBaeDang(){
+  const targets = data.filter(d => String(d.배당일||'').trim() && !String(d.인입날짜||'').trim());
+  if(!targets.length){ showToast('인입날짜가 비어있는 배당 건이 없습니다','ok'); return; }
+  if(!confirm(`총 ${targets.length}건의 인입날짜를 배당일과 같은 날짜로 채워 저장합니다.\n계속할까요?`)) return;
+  const btn = document.getElementById('fill-indate-btn');
+  if(btn){ btn.disabled = true; }
+  let done = 0;
+  for(let i=0;i<targets.length;i++){
+    const d = targets[i];
+    if(btn) btn.textContent = `📅 채우는 중… (${i+1}/${targets.length})`;
+    d.인입날짜 = d.배당일;
+    const ok = await updateRow(d);
+    if(ok) done++;
+  }
+  if(btn){ btn.disabled = false; btn.textContent = '📅 배당일→인입날짜 채우기'; }
+  renderTable(); renderStatsBar(); updateYearFilter();
+  showToast(`${done}건의 인입날짜를 채웠습니다`, 'ok');
 }
 
 /* 전체목록에서 현재 필터가 적용된 데이터 (엑셀 다운로드에서 재사용) */
@@ -4375,6 +4401,9 @@ var XL = (function(){
 
   /* 엑셀 헤더(보기 좋은 이름) ↔ 실제 항목 */
   const P_ALIAS = { '담당EM':'배정지점장', '보장분석 동의':'보장분석동의', '재통화 일정':'재통화일정' };
+  /* 엑셀 다운로드 시 화면에 보이는 라벨로 표시 (내부 항목명과 다른 것만) */
+  const P_HEADER_LABEL = { '배정지점장':'담당EM' };
+  const pDisplayHeaders = () => P_FIELDS.map(k => P_HEADER_LABEL[k] || k);
 
   const M_FIELDS = ['센터','지점장명','연락처','위촉코드','기수','입사월','차월','패키지','교육이수','경력사항','특이사항'];
 
@@ -4442,11 +4471,11 @@ var XL = (function(){
   async function downloadPartners(){
     const rows = getFilteredPartners();
     if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
-    if(!hasExcelJS()){ save([{ name:'파트너스', header:P_FIELDS, rows: toSheet(rows, P_FIELDS) }], `파트너스_관리대장_${today()}.xlsx`); return; }
+    if(!hasExcelJS()){ save([{ name:'파트너스', header:pDisplayHeaders(), rows: toSheet(rows, P_FIELDS) }], `파트너스_관리대장_${today()}.xlsx`); return; }
 
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('파트너스');
-    ws.addRow(P_FIELDS);
+    ws.addRow(pDisplayHeaders());
     rows.forEach(r => ws.addRow(P_FIELDS.map(k => (r[k]===null||r[k]===undefined) ? '' : String(r[k]))));
     ws.columns = P_FIELDS.map(k => ({ width: Math.max(11, k.length * 2 + 3) }));
     styleRange(ws, 1, rows.length + 1, P_FIELDS.length, { header:true });
@@ -4459,10 +4488,10 @@ var XL = (function(){
 
   /* ---------- ①-2 파트너스 빈 양식 다운로드 (헤더만, 데이터 없음) ---------- */
   async function downloadPartnersBlank(){
-    if(!hasExcelJS()){ save([{ name:'파트너스', header:P_FIELDS, rows: [] }], `파트너스_빈양식_${today()}.xlsx`); return; }
+    if(!hasExcelJS()){ save([{ name:'파트너스', header:pDisplayHeaders(), rows: [] }], `파트너스_빈양식_${today()}.xlsx`); return; }
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('파트너스');
-    ws.addRow(P_FIELDS);
+    ws.addRow(pDisplayHeaders());
     ws.columns = P_FIELDS.map(k => ({ width: Math.max(11, k.length * 2 + 3) }));
     styleRange(ws, 1, 1, P_FIELDS.length, { header:true });
     ws.views = [{ state:'frozen', ySplit:1 }];
@@ -4651,6 +4680,7 @@ var XL = (function(){
       + (isAdmin ? '' : '<b>본인 데이터만</b> 등록됩니다. 담당자·센터는 자동으로 채워집니다.');
     document.getElementById('xl-replace-label').textContent = isAdmin ? '전체 데이터 교체' : '내 데이터 교체';
     document.getElementById('xl-mode').style.display = '';
+    document.getElementById('xl-fillblank-option').style.display = 'flex';
     resetUpload();
     document.getElementById('xl-modal').classList.add('open');
   }
@@ -4663,6 +4693,7 @@ var XL = (function(){
       + '<span style="color:#0A5540">"추가" 모드에서는 <b>빈 칸으로 둔 항목은 기존 값을 그대로 유지</b>합니다. (예: 연락처만 채워 올리면 연락처만 갱신됩니다)';
     document.getElementById('xl-replace-label').textContent = '전체 교체 (기존 명단 삭제 후 새로 등록)';
     document.getElementById('xl-mode').style.display = '';
+    document.getElementById('xl-fillblank-option').style.display = 'none';
     resetUpload();
     document.getElementById('xl-modal').classList.add('open');
   }
@@ -4827,6 +4858,8 @@ var XL = (function(){
         }
       }
       job = gasCall({ action:'replace', rows: finalRows, confirm: true });
+    } else if(m === 'fillblank'){
+      job = gasCall({ action:'fillblank', rows: parsed });
     } else {
       job = gasCall({ action:'append', rows: parsed });
     }
@@ -4844,6 +4877,8 @@ var XL = (function(){
         }else{
           showToast(`${added}건이 반영되었습니다`,'ok');
         }
+      }else if(m === 'fillblank' && typeof j.added === 'number'){
+        showToast(`빈칸 채움 ${j.updated||0}건 · 신규 추가 ${j.added||0}건`,'ok');
       }else{
         showToast(`${parsed.length}건이 반영되었습니다`,'ok');
       }
