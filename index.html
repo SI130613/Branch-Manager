@@ -1721,13 +1721,13 @@ function doLogin(restoring){
 /* ---- 위촉코드(지점장 코드) 검증 ----
    · 지점장 정보에 위촉코드이 등록돼 있으면 → 반드시 일치해야 로그인
    · 아직 위촉코드이 등록되지 않은 사람은 → 위촉코드 없이도 로그인 (초기 운영 배려)      */
-function verifyCode(name, code){
+function verifyCode(name, code, _isRetry){
   /* 관리자는 코드 없이도 로그인 (나중에 코드를 넣어도 로그인 시 요구하지 않음) */
   if(adminNames().includes(name)) return Promise.resolve(null);
   return fetch(GAS_URL + '?type=mgr&t=' + Date.now())
     .then(r=>r.json())
     .then(list=>{
-      if(!Array.isArray(list)){ window._mgrNameSet = null; return null; }
+      if(!Array.isArray(list)) throw new Error('명단 응답 형식 오류');
       /* ★ 등록 사용자 명단 저장 (로그인 최종 단계에서 미등록자 차단에 사용)
          폐쇄(퇴사)·보직변경 처리된 지점장은 명단에서 제외 → 로그인 불가 */
       window._mgrNameSet = new Set(list
@@ -1748,7 +1748,9 @@ function verifyCode(name, code){
     })
     .catch(e=>{
       if(e && e.message && (e.message.indexOf('위촉코드') >= 0)) throw e;
-      window._mgrNameSet = null;                          // 명단을 못 읽음
+      /* ★ 명단 응답 실패는 일시적 네트워크/콜드스타트일 수 있으므로 한 번 재시도 */
+      if(!_isRetry) return new Promise(r=>setTimeout(r, 800)).then(()=>verifyCode(name, code, true));
+      window._mgrNameSet = null;                          // 재시도까지 실패 → 명단을 못 읽음
       return null;
     });
 }
@@ -1835,21 +1837,6 @@ function restoreSession(){
   if(s.center) currentCenter = s.center;
   doLogin(true);
 }
-/* ★ 화면이 뜨자마자 두 구글 서버(파트너스/매출관리)를 미리 살짝 깨워둠
-   → 로그인 버튼 누르기 전에 콜드스타트를 미리 흡수해서 실제 로그인 대기시간을 줄임 */
-function warmUpServers(){
-  try{ fetch(GAS_URL + '?type=ping&t=' + Date.now(), { cache:'no-store' }).catch(()=>{}); }catch(e){}
-  try{
-    if(SALES_GAS_URL.indexOf('http') === 0){
-      fetch(SALES_GAS_URL, {
-        method:'POST',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({ action:'getAdmins' })
-      }).catch(()=>{});
-    }
-  }catch(e){}
-}
-window.addEventListener('load', warmUpServers);
 window.addEventListener('load', restoreSession);
 
 /* 비밀번호 관리: 개인=내 비밀번호 변경 / 관리자=설정(변경·초기화·월마감) */
