@@ -1287,8 +1287,13 @@ let data = [];
 let currentUser = null;
 let isAdmin = false;
 const today = new Date(); today.setHours(0,0,0,0);
-const todayStr = today.toISOString().slice(0,10);
-function getWeekEnd(){const d=new Date(today);d.setDate(d.getDate()+(6-d.getDay()));return d.toISOString().slice(0,10);}
+/* ★ 로컬 날짜 기준 yyyy-MM-dd 문자열 (toISOString()은 UTC 변환 과정에서
+   한국 등 UTC+시간대에서 하루 이르게 나오는 문제가 있어 로컬 getter로 계산) */
+function localDateStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+const todayStr = localDateStr(today);
+function getWeekEnd(){const d=new Date(today);d.setDate(d.getDate()+(6-d.getDay()));return localDateStr(d);}
 
 function showToast(msg, type='ok'){
   const t=document.getElementById('toast');
@@ -4413,7 +4418,7 @@ var XL = (function(){
   let mode = null;      // 'partner' | 'mgr'
   let parsed = null;
 
-  function today(){ return new Date().toISOString().slice(0,10); }
+  function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
   /* ═══ 서식 있는 엑셀 만들기 (ExcelJS) ═══ */
   const LINE  = { style:'thin', color:{ argb:'FFC9C7C2' } };
@@ -6172,7 +6177,7 @@ function downloadXlsx(){
   ws["!cols"] = SHEADERS.map(function(h, i){ return { wch: i === 13 ? 28 : Math.max(10, h.length * 2 + 2) }; });
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "종합");
-  XLSX.writeFile(wb, "후속차월_매출관리_" + new Date().toISOString().slice(0, 10) + ".xlsx");
+  XLSX.writeFile(wb, "후속차월_매출관리_" + localDateStr(new Date()) + ".xlsx");
 }
 
 /* ----- 비밀번호 / 설정 ----- */
@@ -6483,7 +6488,7 @@ function targetsDown(){
   var ws = XLSX.utils.aoa_to_sheet(aoa);
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "목표달성");
-  XLSX.writeFile(wb, "지점장_목표달성_" + new Date().toISOString().slice(0,10) + ".xlsx");
+  XLSX.writeFile(wb, "지점장_목표달성_" + localDateStr(new Date()) + ".xlsx");
 }
 /* 엑셀 업로드: 지점장명/코드로 매칭해 목표·담당코치 갱신, 없는 지점장은 새로 등록 */
 function targetsUp(inp){
