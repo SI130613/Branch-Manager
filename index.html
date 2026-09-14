@@ -1343,10 +1343,12 @@ var PF = (function(){
       const extra = [...new Set(data.map(d=>d.센터||'').filter(Boolean))].filter(c=>!CENTERS_ALL.includes(c));
       return CENTERS_ALL.concat(extra.sort());
     }
-    /* 지점장: 센터가 선택되면 그 센터 소속만 */
-    if(!SEL.center.length) return collectManagers('');
+    /* 지점장: 센터가 선택되면 그 센터 소속만, 지점장 차월이 선택되면 그 차월만 */
+    const mchaEl = document.getElementById('filter-mcha');
+    const ft = (mchaEl && mchaEl.value) ? mchaEl.value : '';
+    if(!SEL.center.length) return collectManagers('', ft);
     const set = new Set();
-    SEL.center.forEach(c => collectManagers(c).forEach(n => set.add(n)));
+    SEL.center.forEach(c => collectManagers(c, ft).forEach(n => set.add(n)));
     return [...set].sort((a,b)=>String(a).localeCompare(String(b),'ko'));
   }
 
@@ -1620,9 +1622,10 @@ let currentCenter = '';
 function checkAdminInput(){ /* 센터는 지점장 정보에서 자동으로 가져옵니다 */ }
 
 /* 매출관리 서버 호출 (통합 로그인·비밀번호 검증 담당) */
-function salesCall(action, payload){
+function salesCall(action, payload, _retriesLeft){
   if(!AUTH) return Promise.reject(new Error('로그인이 필요합니다.'));
   if(SALES_GAS_URL.indexOf('http') !== 0) return Promise.reject(new Error('매출관리 웹앱 URL이 설정되지 않았습니다. index.html 상단의 SALES_GAS_URL을 채워주세요.'));
+  if(_retriesLeft === undefined) _retriesLeft = 2;   /* ★ 콜드스타트/일시적 네트워크 오류 대비 최대 2회 자동 재시도 */
   return fetch(SALES_GAS_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1637,6 +1640,10 @@ function salesCall(action, payload){
     if (j.ok) return j;
     throw new Error(j.error || '요청 실패');
   }).catch(err => {
+    const isNetworkIssue = (err instanceof TypeError) || String(err.message||'').indexOf('연결할 수 없습니다') >= 0;
+    if(isNetworkIssue && _retriesLeft > 0){
+      return new Promise(r=>setTimeout(r, 800)).then(()=>salesCall(action, payload, _retriesLeft - 1));
+    }
     if (err instanceof TypeError) throw new Error('네트워크 연결 실패. 매출관리 웹앱 URL을 확인해 주세요.');
     throw err;
   });
@@ -1721,9 +1728,10 @@ function doLogin(restoring){
 /* ---- 위촉코드(지점장 코드) 검증 ----
    · 지점장 정보에 위촉코드이 등록돼 있으면 → 반드시 일치해야 로그인
    · 아직 위촉코드이 등록되지 않은 사람은 → 위촉코드 없이도 로그인 (초기 운영 배려)      */
-function verifyCode(name, code, _isRetry){
+function verifyCode(name, code, _retriesLeft){
   /* 관리자는 코드 없이도 로그인 (나중에 코드를 넣어도 로그인 시 요구하지 않음) */
   if(adminNames().includes(name)) return Promise.resolve(null);
+  if(_retriesLeft === undefined) _retriesLeft = 2;
   return fetch(GAS_URL + '?type=mgr&t=' + Date.now())
     .then(r=>r.json())
     .then(list=>{
@@ -1748,8 +1756,8 @@ function verifyCode(name, code, _isRetry){
     })
     .catch(e=>{
       if(e && e.message && (e.message.indexOf('위촉코드') >= 0)) throw e;
-      /* ★ 명단 응답 실패는 일시적 네트워크/콜드스타트일 수 있으므로 한 번 재시도 */
-      if(!_isRetry) return new Promise(r=>setTimeout(r, 800)).then(()=>verifyCode(name, code, true));
+      /* ★ 명단 응답 실패는 일시적 네트워크/콜드스타트일 수 있으므로 최대 2회 재시도 */
+      if(_retriesLeft > 0) return new Promise(r=>setTimeout(r, 800)).then(()=>verifyCode(name, code, _retriesLeft - 1));
       window._mgrNameSet = null;                          // 재시도까지 실패 → 명단을 못 읽음
       return null;
     });
@@ -2468,8 +2476,15 @@ function renderTable(){
       if(finTo && dt>finTo) return false;
     }
     if(fmc){
-      const c = mgrChaByName(String(d.담당자||'').trim());
-      if(String(c==null?'':c)!==String(fmc))return false;
+      let c = null;
+      try{
+        const mgrList = (typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : [];
+        const nm = String(d.담당자||'').trim();
+        const mrec = mgrList.find(m=>String(m.지점장명||'').trim() === nm);
+        /* ★ 폐쇄·보직변경 지점장은 차월 필터에서 제외 (배정된 파트너스가 있어도 안 보이게) */
+        if(mrec && !isMgrInactiveStatus(mrec.상태)) c = mgrChaByName(nm);
+      }catch(err){ c = null; }
+      if(String(c==null?'':c)!==String(fmc)) return false;
     }
     if(fg&&d.구분!==fg)return false;if(fe&&d.경력구분!==fe)return false;
     if(fh==='y'&&!d.합격날짜)return false;if(fh==='n'&&d.합격날짜)return false;
@@ -2870,16 +2885,18 @@ function collectManagers(fc, ft){
     set.add(String(m.지점장명).trim());
   });
 
-  // ② 파트너스 관리대장 담당자
+  // ② 파트너스 관리대장 담당자 (지점장정보에 폐쇄·보직변경으로 등록된 사람은 여기서도 제외)
   (typeof data!=='undefined' ? data : []).forEach(d=>{
     if(!isMgrName(d.담당자)) return;
+    if(isClosedMgr(d.담당자)) return;
     if(fc && (d.센터||'') !== fc) return;
     set.add(String(d.담당자).trim());
   });
 
-  // ③ 매출관리 지점장
+  // ③ 매출관리 지점장 (동일하게 폐쇄·보직변경 제외)
   ((typeof S!=='undefined' && S.getRows) ? S.getRows() : []).forEach(r=>{
     if(!isMgrName(r.mgr)) return;
+    if(isClosedMgr(r.mgr)) return;
     if(fc && (r.center||'') !== fc) return;
     set.add(String(r.mgr).trim());
   });
