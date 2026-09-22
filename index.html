@@ -350,7 +350,7 @@ tr.today-row td{background:#fdf8ee}
       <select id="filter-mcha" onchange="renderTable()" style="width:110px;display:none"><option value="">지점장 차월 전체</option></select>
 
       <input type="text" id="filter-배당" list="filter-배당-list" placeholder="🔍 배당" oninput="renderTable()" style="width:110px">
-      <datalist id="filter-배당-list"><option value="2차배당"></option><option value="3차배당"></option></datalist>
+      <datalist id="filter-배당-list"><option value="2차배당"></option><option value="3차배당"></option><option value="POM"></option><option value="센터배당"></option><option value="기타배당"></option></datalist>
       <select id="filter-재통화" onchange="renderTable()" style="width:125px">
         <option value="">재통화 전체</option>
         <option value="today">오늘</option>
@@ -482,8 +482,10 @@ tr.today-row td{background:#fdf8ee}
         <div class="form-group"><label>위촉 여부</label><select id="f-위촉여부"><option value="">선택</option><option>위촉</option><option selected>미위촉</option></select></div>
         <div class="form-group"><label>위촉코드</label><input type="text" id="f-위촉코드" placeholder="위촉 후 부여되는 코드" oninput="syncWichokStatus('f-위촉코드','f-위촉여부','위촉')"></div>
         <div class="form-group"><label>배당</label>
-          <input type="text" id="f-배당" list="f-배당-list" placeholder="예: 2차배당 (직접 입력도 가능)">
-          <datalist id="f-배당-list"><option>2차배당</option><option>3차배당</option></datalist>
+          <select id="f-배당">
+            <option value="">선택</option>
+            <option>2차배당</option><option>3차배당</option><option>POM</option><option>센터배당</option><option>기타배당</option>
+          </select>
         </div>
       </div>
     </div>
@@ -990,8 +992,11 @@ tr.today-row td{background:#fdf8ee}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         <!-- 인입날짜 · 배당종류 -->
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">인입날짜</label><input type="date" id="e-인입날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
-        <div style="padding:10px 12px;grid-column:span 2;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">배당 종류</label><input type="text" id="e-배당" list="e-배당-list" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px" placeholder="예: 2차배당">
-          <datalist id="e-배당-list"><option>2차배당</option><option>3차배당</option></datalist>
+        <div style="padding:10px 12px;grid-column:span 2;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">배당 종류</label>
+          <select id="e-배당" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px">
+            <option value="">선택</option>
+            <option>2차배당</option><option>3차배당</option><option>POM</option><option>센터배당</option><option>기타배당</option>
+          </select>
         </div>
 
         <!-- 가코드 · 위촉여부 · 위촉코드 -->
@@ -2456,7 +2461,7 @@ function renderTable(){
   /* 배당 자동완성 목록: 기본 후보 + 실제 데이터에 있는 값 */
   const ddl = document.getElementById('filter-배당-list');
   if(ddl){
-    const known = ['2차배당','3차배당'];
+    const known = ['2차배당','3차배당','POM','센터배당','기타배당'];
     const extra = [...new Set(vis.map(d=>String(d.배당||'').trim()).filter(v=>v && !known.includes(v)))];
     ddl.innerHTML = known.concat(extra.sort()).map(v=>`<option value="${v}"></option>`).join('');
   }
@@ -3117,6 +3122,9 @@ function renderStatsPage(keepFilters=false){
     </div>
     <div class="st-grid" id="st-apply"></div>
 
+    <div class="section-title" style="margin:1.4rem 0 10px">🎯 배당(DB) 터치 현황 <span class="sub" style="font-size:11px;color:#aaa;font-weight:500">지점장 차월 → 센터 → 이름 순 · 당월 배당 기준</span></div>
+    <div id="st-dbtouch"></div>
+
     <div class="section-title" style="margin:1.4rem 0 10px">매출 현황</div>
     <div class="st-grid" id="st-sales">
       <div class="st-card"><div class="empty" style="padding:1.2rem">매출 데이터 불러오는 중…</div></div>
@@ -3213,6 +3221,10 @@ function renderStatsPage(keepFilters=false){
   if (typeof MGR !== 'undefined' && MGR.ensure) MGR.ensure().then(fillApply).catch(()=>{});
   if (typeof WK !== 'undefined' && WK.ensure) WK.ensure().then(fillApply).catch(()=>{});
   if (WI_DATA === null) loadWI().then(fillApply); else loadWI().then(fillApply);
+
+  /* --- 배당(DB) 터치 현황 표: 차월 → 센터 → 이름 순, 지점장별 2차/3차배당 나란히 --- */
+  renderDbTouchTable(baseKey);
+  if (typeof MGR !== 'undefined' && MGR.ensure) MGR.ensure().then(()=>renderDbTouchTable(baseKey)).catch(()=>{});
 
   /* --- 매출 (비동기 로드) --- */
   if(typeof S!=='undefined' && S.ensureRows){
@@ -3330,7 +3342,112 @@ function renderStatsSales(prevKey, baseKey, fc, fp, ft){
   if (typeof S !== 'undefined' && S.renderTargetSection) S.renderTargetSection('st-target', baseKey);
 }
 
-/* ═══════════════════ 지점장 정보 (관리자 전용) ═══════════════════ */
+/* ═══════════ 배당(DB) 터치 현황: 통계 탭 전용 상세표 ═══════════
+   지점장 한 명의 특정 배당(2차/3차)에 대한 총건/1차터치/미터치(3~4일)/미터치(5일↑) 계산 */
+function computeMgrBaeDangStats(mgrName, label, baseKey){
+  const list = data.filter(d =>
+    String(d.담당자||'').trim() === mgrName &&
+    String(d.배당||'').trim() === label &&
+    d.배당일 && cleanDate(d.배당일).substring(0,7) === baseKey
+  );
+  let touched1=0, miss3=0, miss5=0;
+  list.forEach(d=>{
+    const assignDate = cleanDate(d.배당일);
+    const touchDates = parseNoteLog(d.상담이력)
+      .filter(en=>en.stamp)
+      .map(en=>stampToISO(en.stamp))
+      .filter(ds=>ds>=assignDate)
+      .sort();
+    if(touchDates.length) touched1++;
+    const refDate = touchDates.length ? touchDates[touchDates.length-1] : assignDate;
+    const elapsed = bizDaysBetween(refDate, todayStr) - 1;
+    if(elapsed>=3 && elapsed<5) miss3++;
+    if(elapsed>=5) miss5++;
+  });
+  return { total:list.length, touched1, miss3, miss5 };
+}
+function renderDbTouchTable(baseKey){
+  const host = document.getElementById('st-dbtouch');
+  if(!host) return;
+  const mlist = (typeof MGR!=='undefined' && MGR.getList) ? MGR.getList() : [];
+  const rows = mlist
+    .filter(m => String(m.지점장명||'').trim() && !isMgrInactiveStatus(m.상태))
+    .map(m => {
+      const name = String(m.지점장명).trim();
+      return {
+        name, center: String(m.센터||'').replace(/센터$/,''),
+        cha: mgrChaByName(name),
+        s2: computeMgrBaeDangStats(name, '2차배당', baseKey),
+        s3: computeMgrBaeDangStats(name, '3차배당', baseKey)
+      };
+    })
+    .filter(r => r.s2.total > 0 || r.s3.total > 0)
+    .sort((a,b)=>{
+      const ca = a.cha===null ? Infinity : a.cha, cb = b.cha===null ? Infinity : b.cha;
+      if(ca !== cb) return ca - cb;
+      const ia = CENTER_ORDER.indexOf(a.center + '센터'), ib = CENTER_ORDER.indexOf(b.center + '센터');
+      if((ia<0?99:ia) !== (ib<0?99:ib)) return (ia<0?99:ia) - (ib<0?99:ib);
+      return a.name.localeCompare(b.name, 'ko');
+    });
+
+  if(!rows.length){
+    host.innerHTML = '<div class="section" style="padding:1.2rem"><div class="empty">이번 달 배당(2차/3차) 데이터가 없습니다</div></div>';
+    return;
+  }
+
+  /* 차월·센터 rowspan 계산 (매출목표관리 표와 동일 방식) */
+  let chaSpan = {}, ctSpan = {};
+  rows.forEach((r,i)=>{
+    if(i===0 || r.cha !== rows[i-1].cha){ chaSpan[i]=1; r._chaStart=i; }
+    else { chaSpan[r._chaStart = rows[i-1]._chaStart] += 1; }
+    const sameCha = i>0 && r._chaStart === rows[i-1]._chaStart;
+    if(!sameCha || r.center !== rows[i-1].center){ ctSpan[i]=1; r._ctStart=i; }
+    else { ctSpan[r._ctStart = rows[i-1]._ctStart] += 1; }
+  });
+
+  const cell = (v, cls) => `<td style="text-align:center${cls?';'+cls:''}">${v}</td>`;
+  let tot2 = {total:0,touched1:0,miss3:0,miss5:0}, tot3 = {total:0,touched1:0,miss3:0,miss5:0};
+  const bodyRows = rows.map((r,i)=>{
+    ['total','touched1','miss3','miss5'].forEach(k=>{ tot2[k]+=r.s2[k]; tot3[k]+=r.s3[k]; });
+    const topLine = (i in chaSpan && i>0) ? 'border-top:2px solid #BBB' : 'border-top:1px solid #EFEFEF';
+    let tds = '';
+    if(i in chaSpan) tds += `<td rowspan="${chaSpan[i]}" style="${topLine};text-align:center;font-weight:700;background:#FAFAFA">${r.cha===null?'-':r.cha+'차월'}</td>`;
+    if(i in ctSpan)  tds += `<td rowspan="${ctSpan[i]}" style="${topLine};text-align:center">${r.center||'-'}</td>`;
+    tds += `<td style="${topLine};padding:6px 8px;font-weight:600;text-align:left">${r.name}</td>`
+      + cell(r.s2.total) + cell(r.s2.touched1) + cell(r.s2.miss3, r.s2.miss3>0?'color:#BA7517;font-weight:700':'') + cell(r.s2.miss5, r.s2.miss5>0?'color:#c0392b;font-weight:700':'')
+      + cell(r.s3.total) + cell(r.s3.touched1) + cell(r.s3.miss3, r.s3.miss3>0?'color:#BA7517;font-weight:700':'') + cell(r.s3.miss5, r.s3.miss5>0?'color:#c0392b;font-weight:700':'');
+    return `<tr>${tds}</tr>`;
+  }).join('');
+  const totRow = `<tr style="font-weight:700;background:#EDECF8;border-top:2px solid #999">
+    <td colspan="3" style="text-align:center;padding:8px">총 ${rows.length}명</td>
+    ${cell(tot2.total)}${cell(tot2.touched1)}${cell(tot2.miss3)}${cell(tot2.miss5)}
+    ${cell(tot3.total)}${cell(tot3.touched1)}${cell(tot3.miss3)}${cell(tot3.miss5)}
+  </tr>`;
+
+  host.innerHTML = `
+    <div class="section" style="padding:14px 16px">
+      <div class="table-wrap" style="max-height:60vh;overflow-y:auto;border:1px solid #EEE;border-radius:8px">
+        <table class="st-t" style="min-width:920px;white-space:nowrap">
+          <thead>
+            <tr>
+              <th rowspan="2" style="position:sticky;top:0;background:#f4f3f0;z-index:5">차월</th>
+              <th rowspan="2" style="position:sticky;top:0;background:#f4f3f0;z-index:5">센터</th>
+              <th rowspan="2" style="position:sticky;top:0;background:#f4f3f0;z-index:5;text-align:left">지점장</th>
+              <th colspan="4" style="position:sticky;top:0;background:#EEEDFE;color:#3C3489;z-index:5">2차배당</th>
+              <th colspan="4" style="position:sticky;top:0;background:#FBF0DF;color:#946200;z-index:5">3차배당</th>
+            </tr>
+            <tr>
+              <th style="position:sticky;top:24px;background:#f6f5ff;z-index:5">총건</th><th style="position:sticky;top:24px;background:#f6f5ff;z-index:5">1차터치</th><th style="position:sticky;top:24px;background:#f6f5ff;z-index:5">미터치(3~4일)</th><th style="position:sticky;top:24px;background:#f6f5ff;z-index:5">미터치(5일↑)</th>
+              <th style="position:sticky;top:24px;background:#fdf6ea;z-index:5">총건</th><th style="position:sticky;top:24px;background:#fdf6ea;z-index:5">1차터치</th><th style="position:sticky;top:24px;background:#fdf6ea;z-index:5">미터치(3~4일)</th><th style="position:sticky;top:24px;background:#fdf6ea;z-index:5">미터치(5일↑)</th>
+            </tr>
+          </thead>
+          <tbody>${bodyRows}${totRow}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+
 /* 기수 → 입사월 */
 const GISU_MONTH = {
   '24기':'2026-07', '23기':'2026-06', '22기':'2026-05', '21기':'2026-04',
@@ -4479,16 +4596,20 @@ var XL = (function(){
   async function downloadPartners(){
     const rows = getFilteredPartners();
     if(!rows.length){ showToast('다운로드할 데이터가 없습니다.','err'); return; }
-    if(!hasExcelJS()){ save([{ name:'파트너스', header:pDisplayHeaders(), rows: toSheet(rows, P_FIELDS) }], `파트너스_관리대장_${today()}.xlsx`); return; }
+    /* ★ 지점장 차월은 다운로드에만 붙는 계산값(담당자 기준) — 업로드 스키마(P_FIELDS)에는 포함하지 않음 */
+    const DL_FIELDS = P_FIELDS.concat(['지점장차월']);
+    const DL_HEADERS = pDisplayHeaders().concat(['지점장차월']);
+    const chaOf = r => { const c = (typeof mgrChaByName==='function') ? mgrChaByName(String(r.담당자||'').trim()) : null; return c==null ? '' : c; };
+    if(!hasExcelJS()){ save([{ name:'파트너스', header:DL_HEADERS, rows: rows.map(r=>DL_FIELDS.map(k=>k==='지점장차월'?chaOf(r):(r[k]==null?'':r[k]))) }], `파트너스_관리대장_${today()}.xlsx`); return; }
 
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('파트너스');
-    ws.addRow(pDisplayHeaders());
-    rows.forEach(r => ws.addRow(P_FIELDS.map(k => (r[k]===null||r[k]===undefined) ? '' : String(r[k]))));
-    ws.columns = P_FIELDS.map(k => ({ width: Math.max(11, k.length * 2 + 3) }));
-    styleRange(ws, 1, rows.length + 1, P_FIELDS.length, { header:true });
+    ws.addRow(DL_HEADERS);
+    rows.forEach(r => ws.addRow(DL_FIELDS.map(k => k==='지점장차월' ? chaOf(r) : ((r[k]===null||r[k]===undefined) ? '' : String(r[k])))));
+    ws.columns = DL_FIELDS.map(k => ({ width: Math.max(11, k.length * 2 + 3) }));
+    styleRange(ws, 1, rows.length + 1, DL_FIELDS.length, { header:true });
     ws.views = [{ state:'frozen', ySplit:1 }];
-    ws.autoFilter = { from:{ row:1, column:1 }, to:{ row:1, column:P_FIELDS.length } };
+    ws.autoFilter = { from:{ row:1, column:1 }, to:{ row:1, column:DL_FIELDS.length } };
 
     await writeWb(wb, `파트너스_관리대장_${today()}.xlsx`);
     showToast(`${rows.length}건을 엑셀로 저장했습니다`,'ok');
