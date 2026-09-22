@@ -3385,7 +3385,7 @@ function renderDbTouchTable(baseKey){
     .sort((a,b)=>{
       const ca = a.cha===null ? Infinity : a.cha, cb = b.cha===null ? Infinity : b.cha;
       if(ca !== cb) return ca - cb;
-      const ia = CENTER_ORDER.indexOf(a.center + '센터'), ib = CENTER_ORDER.indexOf(b.center + '센터');
+      const ia = CENTERS_ALL.indexOf(a.center + '센터'), ib = CENTERS_ALL.indexOf(b.center + '센터');
       if((ia<0?99:ia) !== (ib<0?99:ib)) return (ia<0?99:ia) - (ib<0?99:ib);
       return a.name.localeCompare(b.name, 'ko');
     });
