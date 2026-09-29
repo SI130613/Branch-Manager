@@ -4467,9 +4467,10 @@ var WK = (function(){
     reader.readAsArrayBuffer(file);
   }
   function Utilities_fmtDate(d){
-    /* ★ SheetJS(xlsx.js)가 cellDates:true로 만든 Date는 "로컬 자정" 기준으로 생성되므로
-       UTC getter를 쓰면 시간대에 따라 하루 앞으로 밀릴 수 있음 → 로컬 getter로 정확한 날짜 복원 */
-    var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    /* ★ SheetJS(xlsx.js)가 cellDates:true로 만든 Date는 "UTC 자정" 기준으로 생성됨.
+       로컬 getter를 쓰면 브라우저/PC의 시스템 시간대가 UTC보다 느린 경우(예: 미국 표준시)
+       하루 앞으로 밀려 보일 수 있음 → UTC getter로 읽어야 시간대와 무관하게 항상 정확함 */
+    var y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
     return y+'-'+m+'-'+day;
   }
   function renderUploadModes(){
@@ -4873,9 +4874,10 @@ var XL = (function(){
           FIELDS.forEach(f=>{ o[f] = ''; });
           Object.keys(map).forEach(hd=>{
             let v = r[hd];
-            /* ★ SheetJS(cellDates:true)는 로컬 자정 기준 Date 객체를 만들기 때문에
-               toISOString()(UTC)으로 읽으면 시간대에 따라 하루 앞으로 밀릴 수 있음 → 로컬 getter로 정확히 복원 */
-            if(v instanceof Date) v = v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+            /* ★ SheetJS(cellDates:true)는 "UTC 자정" 기준으로 Date 객체를 만듦.
+               로컬 getter를 쓰면 PC 시스템 시간대가 UTC보다 느릴 때(예: 미국 표준시) 하루
+               앞으로 밀릴 수 있음 → UTC getter로 읽어야 시간대와 무관하게 항상 정확함 */
+            if(v instanceof Date) v = v.getUTCFullYear()+'-'+String(v.getUTCMonth()+1).padStart(2,'0')+'-'+String(v.getUTCDate()).padStart(2,'0');
             o[map[hd]] = (v===null||v===undefined) ? '' : String(v).trim();
           });
           return o;
@@ -5285,7 +5287,7 @@ function esc(s){ return String(s === null || s === undefined ? "" : s).replace(/
 function fmt(n){ return (n === null || n === undefined || n === "") ? "" : Number(n).toLocaleString("ko-KR"); }
 function toDateStr(v){
   if (v === null || v === undefined || v === "") return null;
-  if (v instanceof Date){ function p(x){return String(x).padStart(2,"0");} return v.getFullYear()+"-"+p(v.getMonth()+1)+"-"+p(v.getDate()); }
+  if (v instanceof Date){ function p(x){return String(x).padStart(2,"0");} return v.getUTCFullYear()+"-"+p(v.getUTCMonth()+1)+"-"+p(v.getUTCDate()); }
   var s = String(v).trim().replace(/[./]/g,"-");
   var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (m) return m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0");
