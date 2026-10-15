@@ -64,6 +64,9 @@ tr.today-row td{background:#fdf8ee}
 .search-bar input{flex:1;min-width:180px}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
 .overlay.open{display:flex}
+.memo-tag{margin-top:3px;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;line-height:1.3;color:#8a6d00;background:#FFF3B8;border:1px solid #E8C547;border-radius:4px;padding:1px 3px;cursor:help;text-align:left}
+#memo-bubble{position:fixed;z-index:99999;display:none;max-width:280px;background:#FFF8DC;color:#333;border:1px solid #E8C547;border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-all;box-shadow:0 6px 20px rgba(0,0,0,.18);pointer-events:none}
+#memo-bubble::before{content:'📝 메모';display:block;font-size:11px;font-weight:700;color:#8a6d00;margin-bottom:3px}
 .modal-box{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:580px;max-height:85vh;overflow-y:auto;border:1px solid #d8d8d4;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .modal-field{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #efefed;font-size:13px}
 .modal-key{color:#888;min-width:140px;font-weight:600;font-size:12px}
@@ -988,7 +991,7 @@ tr.today-row td{background:#fdf8ee}
       <h3 id="edit-modal-title">✏️ 정보 수정</h3>
       <button class="btn btn-sm" onclick="closeModal('edit-modal')">✕</button>
     </div>
-    <div style="border:1px solid #d8d8d4;border-radius:8px;overflow:hidden;margin-bottom:1rem">
+    <div style="border:1px solid #d8d8d4;border-radius:8px;overflow:clip;margin-bottom:1rem">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         <!-- 인입날짜 · 배당종류 -->
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">인입날짜</label><input type="date" id="e-인입날짜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"></div>
@@ -1034,6 +1037,12 @@ tr.today-row td{background:#fdf8ee}
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">보장분석 동의</label><select id="e-보장분석동의" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
         <div style="padding:10px 12px;border-right:1px solid #d8d8d4;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">브릿지콜</label><select id="e-브릿지콜" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
         <div style="padding:10px 12px;border-bottom:1px solid #d8d8d4"><label style="font-size:11px;color:#888;font-weight:600">가계약</label><select id="e-가계약" style="width:100%;margin-top:4px;border:1px solid #d8d8d4;border-radius:6px;padding:6px 8px;font-size:13px"><option value="">선택</option><option>O</option><option>X</option></select></div>
+
+        <!-- 메모: 스크롤해도 항상 상단에 떠있음(sticky) -->
+        <div id="e-메모-wrap" style="position:sticky;top:-1px;z-index:4;grid-column:1/-1;padding:8px 12px;background:#FFF8DC;border-bottom:2px solid #E8C547;box-shadow:0 3px 6px rgba(0,0,0,.08)">
+          <label style="font-size:12px;color:#8a6d00;font-weight:700">📝 메모 <span style="font-weight:400;color:#a58a2a">(관리대장 표에도 표시됩니다)</span></label>
+          <textarea id="e-메모" rows="2" placeholder="이 파트너스에 대한 메모를 입력하세요" style="width:100%;margin-top:4px;border:1px solid #E8C547;border-radius:6px;padding:6px 8px;font-size:13px;background:#fffdf3;resize:vertical;box-sizing:border-box"></textarea>
+        </div>
 
         <!-- 상담이력 및 특이사항 -->
         <div style="padding:10px 12px;grid-column:1/-1;border-bottom:1px solid #d8d8d4">
@@ -1222,6 +1231,27 @@ function buildRecall(dateEl, ampmEl, hourEl, minEl){
    저장 형식: ◆yymmdd.HH:MM◆ 줄 다음에 그 항목의 내용이 이어짐.
    ◆..◆ 표식이 없는 옛날 자유서식 메모는 "기존" 항목으로 그대로 보존됩니다. */
 let noteEntries_e = [];
+/* 메모 말풍선(마우스를 올리면 전체 내용 표시) */
+(function(){
+  let bub=null;
+  function ensure(){ if(!bub){ bub=document.createElement('div'); bub.id='memo-bubble'; document.body.appendChild(bub);} return bub; }
+  function place(e){
+    const b=ensure(); const pad=14;
+    let x=e.clientX+pad, y=e.clientY+pad;
+    const w=b.offsetWidth, h=b.offsetHeight;
+    if(x+w>window.innerWidth-8) x=Math.max(8,e.clientX-w-pad);
+    if(y+h>window.innerHeight-8) y=Math.max(8,e.clientY-h-pad);
+    b.style.left=x+'px'; b.style.top=y+'px';
+  }
+  document.addEventListener('mouseover',e=>{
+    const t=e.target.closest&&e.target.closest('.memo-tag'); if(!t) return;
+    const b=ensure(); b.textContent=t.getAttribute('data-memo')||''; b.style.display='block'; place(e);
+  });
+  document.addEventListener('mousemove',e=>{ if(bub&&bub.style.display==='block') place(e); });
+  document.addEventListener('mouseout',e=>{
+    const t=e.target.closest&&e.target.closest('.memo-tag'); if(t&&bub) bub.style.display='none';
+  });
+})();
 const NOTE_MARK = /^◆(\d{6}\.\d{2}:\d{2})◆$/;
 function nowStamp(){
   const d = new Date();
@@ -2561,6 +2591,7 @@ function renderTable(){
       <td style="text-align:center;font-size:11px">${d.배당||'-'}</td>
       <td class="row-actions" onclick="event.stopPropagation()">
         <button class="btn btn-sm" title="이 파트너스 매출 보기" onclick="openPartnerSales(${ri})">💰</button>
+        ${String(d.메모||'').trim() ? `<div class="memo-tag" data-memo="${String(d.메모).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">📝 ${String(d.메모).replace(/[&<>"']/g,'').replace(/\s+/g,' ').slice(0,8)}</div>` : ''}
       </td>
       <td><span class="badge ${ADMINS.includes(d.담당자)?'badge-admin':'badge-new'}">${d.담당자||'-'}</span></td>
       <td style="font-size:11px">${d.센터||'-'}</td>
@@ -2739,7 +2770,7 @@ function openAddModal(){
   /* 입력칸 초기화 */
   ['e-인입날짜','e-가코드','e-파트너스명','e-생년월일','e-경력구분','e-직업','e-전화번호','e-상담가능시간',
    'e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min','e-응시날짜','e-구분',
-   'e-지역','e-시험시간','e-합격날짜','e-배정지점장','e-위촉코드','e-보장분석동의','e-브릿지콜','e-가계약']
+   'e-지역','e-시험시간','e-합격날짜','e-배정지점장','e-위촉코드','e-보장분석동의','e-브릿지콜','e-가계약','e-메모']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   noteEntries_e = []; renderNoteList('e');
   const wiEl = document.getElementById('e-위촉여부'); if(wiEl) wiEl.value = '미위촉';   /* ★ 기본값: 미위촉 */
@@ -2776,7 +2807,7 @@ function openEdit(idx){
     }
   }
   const rp=parseRecall(d.재통화일정);document.getElementById('e-재통화일정-date').value=rp.date;document.getElementById('e-재통화일정-ampm').value=rp.ampm;document.getElementById('e-재통화일정-hour').value=rp.hour;document.getElementById('e-재통화일정-min').value=rp.min;
-  const fields={'e-인입날짜':cleanDate(d.인입날짜),'e-가코드':d.가코드,'e-파트너스명':d.파트너스명,'e-생년월일':cleanDate(d.생년월일),'e-경력구분':d.경력구분,'e-직업':d.직업,'e-전화번호':d.전화번호,'e-상담가능시간':d.상담가능시간,'e-재통화일정':d.재통화일정,'e-응시날짜':cleanDate(d.응시날짜),'e-구분':d.구분,'e-지역':d.지역,'e-시험시간':d.시험시간,'e-합격날짜':cleanDate(d.합격날짜),'e-배정지점장':d.배정지점장,'e-위촉여부':d.위촉여부,'e-위촉코드':d.위촉코드,'e-보장분석동의':d.보장분석동의,'e-브릿지콜':d.브릿지콜,'e-가계약':d.가계약,'e-배당':d.배당};
+  const fields={'e-메모':d.메모,'e-인입날짜':cleanDate(d.인입날짜),'e-가코드':d.가코드,'e-파트너스명':d.파트너스명,'e-생년월일':cleanDate(d.생년월일),'e-경력구분':d.경력구분,'e-직업':d.직업,'e-전화번호':d.전화번호,'e-상담가능시간':d.상담가능시간,'e-재통화일정':d.재통화일정,'e-응시날짜':cleanDate(d.응시날짜),'e-구분':d.구분,'e-지역':d.지역,'e-시험시간':d.시험시간,'e-합격날짜':cleanDate(d.합격날짜),'e-배정지점장':d.배정지점장,'e-위촉여부':d.위촉여부,'e-위촉코드':d.위촉코드,'e-보장분석동의':d.보장분석동의,'e-브릿지콜':d.브릿지콜,'e-가계약':d.가계약,'e-배당':d.배당};
   Object.entries(fields).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||''});
   noteEntries_e = parseNoteLog(d.상담이력);
   renderNoteList('e');
@@ -2803,7 +2834,7 @@ async function saveEdit(){
       지역:get('e-지역'), 시험시간:get('e-시험시간'), 합격날짜:get('e-합격날짜'),
       배정지점장:get('e-배정지점장'), 위촉여부:get('e-위촉여부'), 위촉코드:get('e-위촉코드'), 배당:newBaeDang,
       배당일:(newBaeDang ? todayStr : ''),
-      보장분석동의:get('e-보장분석동의'), 브릿지콜:get('e-브릿지콜'), 가계약:get('e-가계약'),
+      보장분석동의:get('e-보장분석동의'), 브릿지콜:get('e-브릿지콜'), 가계약:get('e-가계약'), 메모:get('e-메모'),
       등록일시:new Date().toLocaleString()
     };
     const ok=await addRow(entry);
@@ -2832,7 +2863,7 @@ async function saveEdit(){
   const newBaeDang2 = get('e-배당');
   if(newBaeDang2 && newBaeDang2 !== String(d.배당||'').trim()) d.배당일 = todayStr;   /* ★ 배당이 새로 지정/변경되면 오늘 날짜로 자동 기록 */
   d.배정지점장=get('e-배정지점장');d.위촉여부=get('e-위촉여부');d.위촉코드=get('e-위촉코드');d.배당=newBaeDang2;
-  d.보장분석동의=get('e-보장분석동의');d.브릿지콜=get('e-브릿지콜');d.가계약=get('e-가계약');
+  d.보장분석동의=get('e-보장분석동의');d.브릿지콜=get('e-브릿지콜');d.가계약=get('e-가계약');d.메모=get('e-메모');
   d.수정일시=new Date().toLocaleString();
   const ok=await updateRow(d);
   if(ok){showToast('✓ 수정되었습니다!','ok');closeModal('edit-modal');renderTable();renderStatsBar();updateYearFilter();}
@@ -4523,7 +4554,7 @@ var XL = (function(){
   const P_FIELDS = ['담당자','센터','인입날짜','가코드','파트너스명','생년월일','경력구분','직업',
     '전화번호','상담가능시간','재통화일정','재통화완료','재통화완료일시','상담이력',
     '응시날짜','구분','지역','시험시간','합격날짜',
-    '보장분석동의','브릿지콜','가계약','배정지점장','위촉여부','위촉코드','배당','배당일','등록일시','수정일시'];
+    '보장분석동의','브릿지콜','가계약','배정지점장','위촉여부','위촉코드','배당','배당일','메모','등록일시','수정일시'];
 
   /* 엑셀 헤더(보기 좋은 이름) ↔ 실제 항목 */
   const P_ALIAS = { '담당EM':'배정지점장', '보장분석 동의':'보장분석동의', '재통화 일정':'재통화일정' };
@@ -4531,7 +4562,7 @@ var XL = (function(){
   const P_HEADER_LABEL = { '배정지점장':'담당EM' };
   const pDisplayHeaders = () => P_FIELDS.map(k => P_HEADER_LABEL[k] || k);
 
-  const M_FIELDS = ['센터','지점장명','연락처','위촉코드','기수','입사월','차월','패키지','교육이수','경력사항','특이사항'];
+  const M_FIELDS = ['센터','지점장명','연락처','담당코치','위촉코드','기수','입사월','차월','패키지','교육이수','경력사항','특이사항'];
 
   let mode = null;      // 'partner' | 'mgr'
   let parsed = null;
@@ -4819,7 +4850,7 @@ var XL = (function(){
     mode = 'mgr';
     document.getElementById('xl-title').textContent = '지점장 정보 엑셀 업로드';
     document.getElementById('xl-hint').innerHTML =
-      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다.<br>(센터, 지점장명, 연락처, 위촉코드, 기수, 입사월, 차월, 패키지, 교육이수, 경력사항, 특이사항)<br>'
+      '엑셀 다운로드로 받은 파일과 <b>같은 헤더</b>여야 합니다.<br>(센터, 지점장명, 연락처, 담당코치, 위촉코드, 기수, 입사월, 차월, 패키지, 교육이수, 경력사항, 특이사항)<br>'
       + '<span style="color:#0A5540">"추가" 모드에서는 <b>빈 칸으로 둔 항목은 기존 값을 그대로 유지</b>합니다. (예: 연락처만 채워 올리면 연락처만 갱신됩니다)';
     document.getElementById('xl-replace-label').textContent = '전체 교체 (기존 명단 삭제 후 새로 등록)';
     document.getElementById('xl-mode').style.display = '';
@@ -4933,7 +4964,14 @@ var XL = (function(){
         if(!confirm(`지점장 명단을 ${parsed.length}명으로 전부 교체합니다.\n기존 명단은 삭제됩니다. 계속할까요?`)){
           btn.disabled = false; btn.textContent = '반영하기'; return;
         }
-        next = parsed.slice();
+        /* ★ 업로드 파일에 없는 항목(월매출목표·상태·폐쇄일 등)과 담당코치는 기존 값을 보존 */
+        const oldList = MGR.getList();
+        next = parsed.map(o=>{
+          const old = oldList.find(x=>String(x.지점장명||'').trim() === String(o.지점장명||'').trim());
+          const merged = Object.assign({}, old || {}, o);
+          if(old && !String(o.담당코치||'').trim() && old.담당코치) merged.담당코치 = old.담당코치;
+          return merged;
+        });
       } else {
         /* 추가: 같은 이름이 있으면 '빈 값이 아닌 항목만' 채워 넣고, 없으면 뒤에 붙임
            (업로드 파일에 빈 칸으로 둔 기존 항목은 그대로 유지됩니다) */
