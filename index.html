@@ -2772,6 +2772,8 @@ function openAddModal(){
    'e-재통화일정-date','e-재통화일정-ampm','e-재통화일정-hour','e-재통화일정-min','e-응시날짜','e-구분',
    'e-지역','e-시험시간','e-합격날짜','e-배정지점장','e-위촉코드','e-보장분석동의','e-브릿지콜','e-가계약','e-메모']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  /* 재통화 시간 선택칸이 빈 상태로 보이지 않도록 기본값 지정 */
+  document.getElementById('e-재통화일정-ampm').value='오전'; document.getElementById('e-재통화일정-hour').value='1'; document.getElementById('e-재통화일정-min').value='00';
   noteEntries_e = []; renderNoteList('e');
   const wiEl = document.getElementById('e-위촉여부'); if(wiEl) wiEl.value = '미위촉';   /* ★ 기본값: 미위촉 */
   const ow=document.getElementById('e-owner-wrap');
