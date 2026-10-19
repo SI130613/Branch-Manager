@@ -341,6 +341,7 @@ tr.today-row td{background:#fdf8ee}
   <!-- 목록 -->
   <div id="tab-list">
     <div class="stats" id="stats-bar"></div>
+    <!-- 1열: 기간 / 응시년 / 응시월 / 구분 / 합격 / 경력 -->
     <div class="search-bar" id="filter-row-1" style="margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:4px" title="인입날짜 기간 조회">
         <input type="date" id="filter-인입-from" onchange="renderTable()" style="width:140px;padding:8px 6px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;font-family:inherit">
@@ -348,7 +349,14 @@ tr.today-row td{background:#fdf8ee}
         <input type="date" id="filter-인입-to" onchange="renderTable()" style="width:140px;padding:8px 6px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;font-family:inherit">
       </div>
 
-      <!-- 관리자 전용: 센터 · 지점장차월 · 지점장 (다중/단일 선택) -->
+      <select id="filter-년" onchange="updateMonthFilter();renderTable()" style="width:105px"><option value="">응시년 전체</option></select>
+      <select id="filter-월" onchange="renderTable()" style="width:100px"><option value="">응시월 전체</option></select>
+      <select id="filter-구분" onchange="renderTable()" style="width:115px"><option value="">구분 전체</option><option>선행</option><option>정규</option><option>후속</option></select>
+      <select id="filter-합격" onchange="renderTable()" style="width:115px"><option value="">합격 전체</option><option value="y">합격</option><option value="n">미합격</option></select>
+      <select id="filter-경력" onchange="renderTable()" style="width:115px"><option value="">경력 전체</option><option>신인</option><option>경력</option><option>재등록</option></select>
+    </div>
+    <!-- 2열(관리자 전용): 센터 / 지점장차월 / 지점장 -->
+    <div class="search-bar" id="filter-row-admin" style="margin-bottom:8px;display:none">
       <div class="pf" id="pf-wrap-center" style="display:none">
         <button class="pf-btn" id="pf-btn-center" onclick="PF.toggle('center',event)">
           <span class="pf-txt">🏢 센터 전체</span><span>▾</span>
@@ -356,16 +364,22 @@ tr.today-row td{background:#fdf8ee}
         <div class="pf-pop hidden" id="pf-pop-center"></div>
       </div>
       <select id="filter-mcha" onchange="renderTable()" style="width:110px;display:none"><option value="">지점장 차월 전체</option></select>
-
+      <div class="pf" id="pf-wrap-mgr" style="display:none">
+        <button class="pf-btn" id="pf-btn-mgr" onclick="PF.toggle('mgr',event)">
+          <span class="pf-txt">👤 지점장 전체</span><span>▾</span>
+        </button>
+        <div class="pf-pop hidden" id="pf-pop-mgr"></div>
+      </div>
+    </div>
+    <!-- 3열: 배당 / 배당조회일(관리자) / 검색 / 사전준비 / 재통화 -->
+    <div class="search-bar" id="filter-row-2">
       <input type="text" id="filter-배당" list="filter-배당-list" placeholder="🔍 배당" oninput="renderTable()" style="width:110px">
       <datalist id="filter-배당-list"><option value="2차배당"></option><option value="3차배당"></option><option value="POM"></option><option value="센터배당"></option><option value="기타배당"></option></datalist>
-      <select id="filter-재통화" onchange="renderTable()" style="width:125px">
-        <option value="">재통화 전체</option>
-        <option value="today">오늘</option>
-        <option value="week">이번주</option>
-        <option value="past">지난 미완료</option>
-      </select>
-
+      <div id="wrap-배당조회일" style="display:none;align-items:center;gap:4px" title="배당 통계 카드를 이 날짜 기준(과거)으로 계산합니다. 비우면 오늘 기준">
+        <span style="font-size:12px;color:#888;white-space:nowrap">배당조회일</span>
+        <input type="date" id="filter-배당조회일" onchange="renderTable();renderStatsBar()" style="width:140px;padding:8px 6px;border:1px solid #d8d8d4;border-radius:8px;font-size:13px;background:#fff;font-family:inherit">
+      </div>
+      <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." style="flex:0 0 auto;width:280px;min-width:0" oninput="renderTable()">
       <select id="filter-사전준비" onchange="renderTable()" style="width:150px">
         <option value="">사전준비 전체</option>
         <option value="보장분석동의">보장분석 동의 O</option>
@@ -373,21 +387,13 @@ tr.today-row td{background:#fdf8ee}
         <option value="가계약">가계약 O</option>
         <option value="미완료">사전준비 미완료</option>
       </select>
-      <div class="pf" id="pf-wrap-mgr" style="display:none">
-        <button class="pf-btn" id="pf-btn-mgr" onclick="PF.toggle('mgr',event)">
-          <span class="pf-txt">👤 지점장 전체</span><span>▾</span>
-        </button>
-        <div class="pf-pop hidden" id="pf-pop-mgr"></div>
-      </div>
-      <select id="filter-년" onchange="updateMonthFilter();renderTable()" style="width:105px"><option value="">응시년 전체</option></select>
-      <select id="filter-월" onchange="renderTable()" style="width:100px"><option value="">응시월 전체</option></select>
-      <select id="filter-구분" onchange="renderTable()" style="width:115px"><option value="">구분 전체</option><option>선행</option><option>정규</option><option>후속</option></select>
-      <select id="filter-경력" onchange="renderTable()" style="width:115px"><option value="">경력 전체</option><option>신인</option><option>경력</option><option>재등록</option></select>
-      <select id="filter-합격" onchange="renderTable()" style="width:115px"><option value="">합격 전체</option><option value="y">합격</option><option value="n">미합격</option></select>
+      <select id="filter-재통화" onchange="renderTable()" style="width:125px">
+        <option value="">재통화 전체</option>
+        <option value="today">오늘</option>
+        <option value="week">이번주</option>
+        <option value="past">지난 미완료</option>
+      </select>
       <button class="btn btn-sm btn-blue" id="filter-reset" onclick="resetListFilters()" style="display:none">↺ 필터 초기화</button>
-    </div>
-    <div class="search-bar" id="filter-row-2">
-      <input type="text" id="search" placeholder="🔍  이름, 전화번호, 가코드 검색..." style="flex:0 0 auto;width:430px;min-width:0" oninput="renderTable()">
       <button class="btn btn-sm" onclick="openAddModal()" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:#E0403A;color:#fff;border-color:#E0403A;white-space:nowrap">+ 건 추가</button>
     </div>
 
@@ -414,7 +420,7 @@ tr.today-row td{background:#fdf8ee}
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th style="width:64px" data-psort="배당">배당</th><th style="width:60px">관리</th><th data-psort="담당자">담당자</th><th data-psort="센터">센터</th><th data-psort="인입날짜">인입날짜</th><th data-psort="가코드">가코드</th><th data-psort="위촉여부">위촉여부</th><th data-psort="위촉코드">위촉코드</th><th data-psort="파트너스명">파트너스명</th><th data-psort="경력구분">경력구분</th><th data-psort="직업">직업</th><th data-psort="전화번호">전화번호</th><th style="width:220px">상담이력</th><th data-psort="재통화일정">재통화일정</th><th data-psort="응시날짜">응시일</th><th data-psort="구분">구분</th><th data-psort="지역">지역</th><th data-psort="합격날짜">합격여부</th><th class="prep-th" data-psort="보장분석동의">보장분석<br>동의</th><th class="prep-th" data-psort="브릿지콜">브릿지콜</th><th class="prep-th" data-psort="가계약">가계약</th></tr>
+            <tr><th style="width:34px"><input type="checkbox" id="pSelAll" class="p-sel" title="현재 목록 전체 선택" onclick="DEL.toggleAll(this.checked)"></th><th>No.</th><th style="width:64px" data-psort="배당">배당</th><th style="width:60px">관리</th><th data-psort="담당자">담당자</th><th data-psort="센터">센터</th><th data-psort="인입날짜">인입날짜</th><th data-psort="가코드">가코드</th><th data-psort="위촉여부">위촉여부</th><th data-psort="위촉코드">위촉코드</th><th data-psort="파트너스명">파트너스명</th><th data-psort="경력구분">경력구분</th><th data-psort="직업">직업</th><th data-psort="전화번호">전화번호</th><th style="width:220px">상담이력</th><th class="prep-th" data-psort="보장분석동의">보장분석<br>동의</th><th class="prep-th" data-psort="브릿지콜">브릿지콜</th><th class="prep-th" data-psort="가계약">가계약</th><th data-psort="재통화일정">재통화일정</th><th data-psort="응시날짜">응시일</th><th data-psort="구분">구분</th><th data-psort="지역">지역</th><th data-psort="합격날짜">합격여부</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -1503,6 +1509,10 @@ var PF = (function(){
     });
     const mc = document.getElementById('filter-mcha');
     if(mc) mc.style.display = on ? '' : 'none';
+    const adminRow = document.getElementById('filter-row-admin');
+    if(adminRow) adminRow.style.display = on ? '' : 'none';
+    const aw = document.getElementById('wrap-배당조회일');
+    if(aw) aw.style.display = on ? 'flex' : 'none';
     if(!on) reset();
   }
 
@@ -1530,13 +1540,14 @@ function syncListFilters(){
     || document.getElementById('filter-배당').value
     || document.getElementById('filter-인입-from').value
     || document.getElementById('filter-인입-to').value
-    || document.getElementById('filter-mcha').value;
+    || document.getElementById('filter-mcha').value
+    || (document.getElementById('filter-배당조회일')||{}).value;
   rst.style.display = anyF ? '' : 'none';
 }
 
 /* 필터 전부 해제 */
 function resetListFilters(){
-  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비','filter-배당','filter-인입-from','filter-인입-to','filter-mcha']
+  ['search','filter-년','filter-월','filter-구분','filter-경력','filter-재통화','filter-합격','filter-사전준비','filter-배당','filter-인입-from','filter-인입-to','filter-mcha','filter-배당조회일']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   PF.reset();
   _touchFilter = null;
@@ -2023,16 +2034,25 @@ function touchInfo(d, asOf){
   const elapsed = bizDaysBetween(refDate, asOf) - 1;   /* refDate 당일은 제외하고 지난 영업일 수 */
   return { touched: touchDates.length>0, miss3: (elapsed>=3 && elapsed<5), miss5: (elapsed>=5) };
 }
-function isThisMonthBaeDang(d, label){
-  const thisMonth = todayStr.substring(0,7);
-  return String(d.배당||'').trim()===label && d.배당일 && cleanDate(d.배당일).substring(0,7)===thisMonth;
+/* 목록 상단 카드의 기준일: 관리자가 '배당조회일'을 고르면 그 날짜(과거), 아니면 오늘 */
+function listAsOf(){
+  if(!isAdmin) return todayStr;
+  const v = (document.getElementById('filter-배당조회일')||{}).value || '';
+  return (v && v < todayStr) ? v : todayStr;
+}
+function isThisMonthBaeDang(d, label, asOf){
+  asOf = asOf || todayStr;
+  if(String(d.배당||'').trim()!==label || !d.배당일) return false;
+  const bd = cleanDate(d.배당일);
+  return bd.substring(0,7)===asOf.substring(0,7) && (asOf===todayStr || bd<=asOf);
 }
 function computeBaeDangStats(label){
   /* ★ 표에 적용된 현재 필터(센터/지점장/검색 등) 기준 데이터로 계산 (카드 클릭 필터는 제외한 기준이라 숫자가 바뀌지 않음) */
-  const list = lastFiltered.filter(d => isThisMonthBaeDang(d, label));
+  const asOf = listAsOf();
+  const list = lastFiltered.filter(d => isThisMonthBaeDang(d, label, asOf));
   let touched1=0, miss3=0, miss5=0;
   list.forEach(d=>{
-    const t = touchInfo(d);
+    const t = touchInfo(d, asOf);
     if(t.touched) touched1++;
     if(t.miss3) miss3++;   /* ★ 3~4일 지난 건만 (5일 이상은 miss5로 분리 집계) */
     if(t.miss5) miss5++;
@@ -2045,10 +2065,11 @@ const TF_KIND_LABEL = { total:'총건', touched:'1차터치', miss3:'미터치(3
 function tfApply(list){
   if(!_touchFilter) return list;
   const {label, kind} = _touchFilter;
+  const asOf = listAsOf();
   return list.filter(d=>{
-    if(!isThisMonthBaeDang(d, label)) return false;
+    if(!isThisMonthBaeDang(d, label, asOf)) return false;
     if(kind==='total') return true;
-    const t = touchInfo(d);
+    const t = touchInfo(d, asOf);
     return kind==='touched' ? t.touched : (kind==='miss3' ? t.miss3 : t.miss5);
   });
 }
@@ -2067,8 +2088,9 @@ function tfLink(label, kind, inner, color){
 }
 function baeDangCardHtml(label){
   const s = computeBaeDangStats(label);
+  const asOf = listAsOf(), asOfPast = asOf !== todayStr;
   return `<div class="stat">
-    <div class="stat-label" style="font-weight:700;color:#534AB7;margin-bottom:4px">당월(${today.getMonth()+1}월) ${label}</div>
+    <div class="stat-label" style="font-weight:700;color:#534AB7;margin-bottom:4px">${asOfPast ? `${Number(asOf.substring(5,7))}월 ${label}` : `당월(${today.getMonth()+1}월) ${label}`}${asOfPast ? `<br><span style="color:#B3261E;font-weight:700">📅 ${asOf.substring(5).replace('-','/')} 기준</span>` : ''}</div>
     <div style="font-size:13px;color:#1a1a1a;margin-bottom:6px">총 ${tfLink(label,'total','<b>'+s.total+'</b>','#1a1a1a')}건 중 1차터치 ${tfLink(label,'touched','<b class="stat-num" style="font-size:15px">'+s.touched1+'</b>','#534AB7')}</div>
     <div class="stat-label" style="text-align:left;line-height:1.6">
       - 미터치(3~4일) : ${tfLink(label,'miss3','<b>'+s.miss3+'</b>','#BA7517')}<br>
@@ -2586,7 +2608,7 @@ function renderTable(){
     return true;
   });
   /* 필터가 바뀌면 1페이지로 */
-  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fd,finFrom,finTo,fmc,fcs.join(','),fms.join(','), _touchFilter?(_touchFilter.label+_touchFilter.kind):''].join('|');
+  const sig = [q,fg,fe,fh,fr,fp,fy,fm,fd,finFrom,finTo,fmc,fcs.join(','),fms.join(','), _touchFilter?(_touchFilter.label+_touchFilter.kind):'', listAsOf()].join('|');
   if(sig !== _pFilterSig){ _pFilterSig = sig; PPAGE = 1; }
 
   /* 헤더 클릭 정렬 적용 */
@@ -2654,13 +2676,13 @@ function renderTable(){
         ${d.상담이력?`<div class="memo-preview" style="max-width:210px">${noteDisplay(d.상담이력).split('\n').join(' ')}</div>
         <div class="memo-tooltip" style="width:340px">${noteDisplay(d.상담이력).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:'<span style="color:#ddd;font-size:11px">-</span>'}
       </td>
+      <td style="text-align:center">${prepBadge(d.보장분석동의)}</td>
+      <td style="text-align:center">${prepBadge(d.브릿지콜)}</td>
+      <td style="text-align:center">${prepBadge(d.가계약)}</td>
       <td>${recallCell}</td><td>${cleanDate(d.응시날짜)||'-'}</td>
       <td>${d.구분?`<span class="badge ${구분B}">${d.구분}</span>`:'-'}</td>
       <td>${d.지역||'-'}</td>
       <td>${d.합격날짜?`<span class="badge badge-pass">✓ ${cleanDate(d.합격날짜)}</span>`:'<span style="color:#aaa;font-size:11px">미합격</span>'}</td>
-      <td style="text-align:center">${prepBadge(d.보장분석동의)}</td>
-      <td style="text-align:center">${prepBadge(d.브릿지콜)}</td>
-      <td style="text-align:center">${prepBadge(d.가계약)}</td>
     </tr>`;
   }).join('');
 }
